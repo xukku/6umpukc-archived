@@ -1,0 +1,275 @@
+#!/usr/bin/env perl
+use 5.016;
+use warnings;
+use FindBin qw($RealBin $Bin $Script);
+use Config;
+use File::Basename;
+use File::Copy;
+
+sub is_mingw() {
+    my $msystem = exists $ENV{'MSYSTEM'} ? $ENV{'MSYSTEM'} : '';
+    if (($msystem eq 'MINGW64') or ($msystem eq 'MINGW32') or ($msystem eq 'MSYS')) {
+        return 1;
+    }
+    return 0;
+}
+
+sub file_get_contents {
+    my $filename = shift;
+    my $result = '';
+    if (open(my $fh, '<:encoding(UTF-8)', $filename)) {
+        while (my $line = <$fh>) {
+            $result .= $line;
+        }
+    }
+    return $result;
+}
+
+sub file_put_contents {
+    my $filename = shift;
+    my $content = shift;
+    if (open(my $fh, '>:encoding(UTF-8)', $filename)) {
+        print $fh $content;
+        close $fh;
+        return 1;
+    }
+    return 0;
+}
+
+sub trim {
+    my $s = shift;
+    $s =~ s/^\s+|\s+$//g;
+    return $s;
+}
+
+sub confirm_continue {
+    my $title = shift;
+    print $title . " Type 'yes' to continue: ";
+    my $line = <STDIN>;
+    chomp $line;
+    return trim($line) eq 'yes';
+}
+
+sub check_command {
+    my $cmd = shift;
+    my $test = 'which ' . $cmd;
+    if (qx{$test} eq '') {
+        return 0;
+    }
+    return 1;
+}
+
+sub require_command {
+    my $cmd = shift;
+    my $test = 'which ' . $cmd;
+    if (qx{$test} eq '') {
+        die('[' . $cmd . '] command - not found.');
+    }
+}
+
+sub request_useragent {
+    return 'Mozilla/5.0 (X11; Linux x86_64; rv:66.0) Gecko/20100101 Firefox/66.0';
+}
+
+sub request_get {
+    require_command('curl');
+
+    my ($url, $outfile) = @_;
+    my $result = '';
+    my $cmd = "curl -L '$url'"
+        . " -A '" . request_useragent() . "'";
+    if ($outfile && ($outfile ne '')) {
+        $cmd .= " -o '$outfile'";
+    }
+    $result = qx{$cmd};
+    return $result;
+}
+
+sub is_bx_debug() {
+	return (exists $ENV{'BX_DEBUG'} && ($ENV{'BX_DEBUG'} eq '1'));
+}
+
+sub run {
+	my $cmd = shift;
+	my $sudo = shift;
+	my $debug = shift;
+	if (!defined($sudo) || $sudo ne 'sudo') {
+		$sudo = '';
+	}
+	$cmd = trim($sudo . ' ' . $cmd);
+	if (!defined $debug || $debug) {
+		if (is_bx_debug()) {
+			say '';
+			say $cmd;
+		}
+	}
+	return system($cmd);
+}
+
+sub is_ubuntu {
+	my $os = $Config{'myuname'};
+	return (index($os, 'debian') > 0
+		|| index($os, 'ubuntu') >= 0
+		|| index($os, 'Ubuntu') >= 0);
+}
+
+sub sudo_run {
+	my $cmd = shift;
+	my $sudo = '';
+	if (is_ubuntu()) {
+		$sudo = 'sudo';
+	}
+	if (exists $ENV{'BX_ROOT_USER'} && ($ENV{'BX_ROOT_USER'} eq '1')) {
+		$sudo = '';
+	}
+	return run($cmd, $sudo);
+}
+
+sub sudo_patch_file {
+	my $fname = shift;
+	my $content = shift;
+	if (! -f $fname) {
+		return;
+	}
+	my $path = $ENV{'HOME'};
+	my $tmp = $path . '/.patch.' . basename($fname) . '.tmp';
+	my $originalContent = file_get_contents($fname);
+	if (index($originalContent, $content) < 0) {
+		$content = $originalContent . "\n" . $content . "\n";
+		file_put_contents($tmp, $content);
+		sudo_run("mv '" . $tmp . "' " . $fname);
+	}
+}
+
+sub action_install {
+    my $homeBin = $ENV{'HOME'} . '/bin';
+    if (!-d $homeBin) {
+        mkdir($homeBin);
+    }
+
+    if (is_mingw()) {
+        my $fname = $ENV{'HOME'} . '/.bash_profile';
+        my $initPath = 'PATH=$PATH:$HOME/bin/6umpukc';
+        if (-f $fname) {
+            my $content = file_get_contents($fname);
+            if (index($content, $initPath) < 0) {
+                file_put_contents($fname, $content . "\n" . $initPath . "\n");
+            }
+        }
+        else {
+            file_put_contents($fname, "\n" . $initPath . "\n");
+        }
+    }
+    else {
+        my $homeScript = $homeBin . '/' . $Script;
+        if (-l $homeScript) {
+            unlink($homeScript);
+        }
+        symlink($RealBin . '/' . $Script, $homeScript);
+    }
+
+    my $releasesUrl = 'https://github.com/whateveruse/6umpukc/releases/';
+    if (confirm_continue("Install compiled bx from $releasesUrl ?")) {
+        say 'TODO!!! download bx.exe from releases';
+        #request_get($srcUrl, $outputFile);
+    }
+    elsif (check_command('dart')) {
+		system "dart pub get";
+        if (confirm_continue('Compile bx?')) {
+            system "dart compile exe '$RealBin/bx.dart'";
+        }
+    }
+    else {
+        say 'You must install Dart https://dart.dev/get-dart';
+        say "  or download bx.exe from $releasesUrl to ~/bin/6umpukc/";
+    }
+}
+
+
+sub action_lamp_install {
+	if (is_ubuntu()) {
+		say '';
+		say '# Install php, apache2, mysql and tools...';
+		sudo_run(
+            'apt install'
+			. ' unzip wget curl dos2unix pwgen sshpass screen'
+			. ' php apache2 libapache2-mod-php mysql-server mysql-client php-mysql'
+			. ' php-mbstring php-opcache php-zip php-xml php-curl php-gd php-sqlite3 php-imagick'
+			. ' php-xdebug'
+			. ' msmtp'
+        );
+        sudo_run('apt install optipng jpegoptim pngquant');
+        sudo_run('apt install rinetd');
+
+		sudo_run('a2enmod rewrite');
+		sudo_run('a2enmod proxy');
+		sudo_run('a2enmod proxy_http');
+
+		sudo_run('snap install node --classic');
+
+        # patch configs
+		my $phpContent = file_get_contents($RealBin . '/.template/bitrix.php.ini');
+		my @phpDirs = glob('/etc/php/*');
+        my @tmp = map { basename($_) } sort { $b cmp $a } @phpDirs;
+        my $phpVersion = shift @tmp;
+		sudo_patch_file('/etc/php/' . $phpVersion . '/apache2/php.ini', $phpContent);
+		sudo_patch_file('/etc/php/' . $phpVersion . '/cli/php.ini', $phpContent);
+
+		my $homePath = $ENV{'HOME'};
+		my $extWww = $homePath . '/ext_www';
+		if (! -d $extWww) {
+			mkdir $extWww;
+		}
+		sudo_run('usermod -a -G www-data ' . $ENV{'USER'});
+		#run 'chmod +x /home/' . $ENV{'USER'};
+
+		say '';
+		say '# Mysql config setup...';
+		sudo_run('mysql_secure_installation');
+		say '';
+		say '# Mysql config check...';
+		sudo_run('mysqladmin -p -u root version');
+
+		my $mysqlContent = file_get_contents($RealBin . '/.template/ubuntu18.04/bitrix.my.cnf');
+		sudo_patch_file('/etc/mysql/my.cnf', $mysqlContent);
+
+		say '';
+		say '# Mail sender setup...';
+		copy($RealBin . '/.template/.msmtprc', $homePath . '/.msmtprc');
+		sudo_run('chown www-data:www-data ' . $homePath . '/.msmtprc');
+		sudo_run('chmod 0600 ' . $homePath . '/.msmtprc');
+		if (-f '/etc/msmtprc') {
+			sudo_run('unlink /etc/msmtprc');
+		}
+		sudo_run('ln -s ' . $homePath . '/.msmtprc /etc/msmtprc');
+
+		say '';
+		say '# Setup locale for windows-1251...';
+		sudo_run('locale-gen ru_RU.CP1251');
+		sudo_run('dpkg-reconfigure locales');
+
+		# check locale:
+		#	`locale -a | grep ru`
+		#	`less /usr/share/i18n/SUPPORTED | grep ru_RU | grep CP1251`
+		# for centos:
+		#	`localedef -c -i ru_RU -f CP1251 ru_RU.CP1251`
+	}
+}
+
+if (defined($ARGV[0]) && ($ARGV[0] eq 'self-install')) {
+    action_install();
+}
+elsif (defined($ARGV[0]) && ($ARGV[0] eq 'lamp-install')) {
+    action_lamp_install();
+}
+else {
+    my $args = join(' ', @ARGV);
+    if (-f "$RealBin/bx.exe") {
+        system "'$RealBin/bx.exe' $args";
+    }
+    else {
+        system "dart run '$RealBin/bx.dart' $args";
+    }
+}
+
+
