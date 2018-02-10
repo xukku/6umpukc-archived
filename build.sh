@@ -14,3 +14,4 @@ tar -zcvf ../bitrix.tar.gz ./
 cd ..
 
 #    --exclude "./bitrix/modules/fileman" \
+#    --exclude "./bitrix/wizards/bitrix/first_site" \
