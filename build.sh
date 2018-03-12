@@ -1,4 +1,7 @@
 
+rm minimal.tar.gz
+rm small.tar.gz
+
 rm -R tmp
 mkdir tmp
 cd tmp
