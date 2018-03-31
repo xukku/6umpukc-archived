@@ -1,6 +1,5 @@
 
 echo "Cleanup..."
-
 if [ -f small.tar.gz ]
 then
     rm small.tar.gz
