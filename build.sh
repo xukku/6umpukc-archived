@@ -16,7 +16,8 @@ curl -OL http://www.1c-bitrix.ru/download/first_site_encode_php5.tar.gz
 
 echo "Unpacking..."
 tar -xzf first_site_encode_php5.tar.gz \
-    --exclude "./bitrix/modules/iblock"
+    --exclude "./bitrix/modules/iblock" \
+    --exclude "./bitrix/wizards/bitrix/first_site"
 
 # small
 echo "Create small archive..."
