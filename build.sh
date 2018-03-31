@@ -1,22 +1,25 @@
 
-rm minimal.tar.gz
-rm small.tar.gz
+echo "Cleanup..."
 
-rm -R tmp
-mkdir tmp
-cd tmp
+if [ -f small.tar.gz ]
+then
+    rm small.tar.gz
+fi
+if [ -d tmp ]
+then
+    rm -R tmp
+    mkdir tmp
+    cd tmp
+fi
 
+echo "Loading..."
 curl -OL http://www.1c-bitrix.ru/download/first_site_encode_php5.tar.gz
 
-# small
-tar -xvzf first_site_encode_php5.tar.gz \
+echo "Unpacking..."
+tar -xzf first_site_encode_php5.tar.gz \
     --exclude "./bitrix/modules/iblock"
+
+# small
+echo "Create small archive..."
 rm first_site_encode_php5.tar.gz
-tar -zcvf ../small.tar.gz ./
-
-# minimal
-rm -R ./bitrix/modules/fileman
-rm -R ./bitrix/wizards/bitrix/first_site
-tar -zcvf ../minimal.tar.gz ./
-
-cd ..
+tar -zcf ../small.tar.gz ./
