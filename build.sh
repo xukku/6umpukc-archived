@@ -7,9 +7,10 @@ fi
 if [ -d tmp ]
 then
     rm -R tmp
-    mkdir tmp
-    cd tmp
 fi
+
+mkdir tmp
+cd tmp
 
 echo "Loading..."
 curl -OL http://www.1c-bitrix.ru/download/first_site_encode_php5.tar.gz
