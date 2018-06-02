@@ -18,6 +18,7 @@ curl -OL https://www.1c-bitrix.ru/download/start_encode_php5.tar.gz
 echo "Unpacking..."
 tar -xzf start_encode_php5.tar.gz \
     --exclude "./bitrix/modules/iblock/install/components/bitrix" \
+    --exclude "./bitrix/modules/fileman/install/components/bitrix" \
     --exclude "./bitrix/modules/highloadblock" \
     --exclude "./bitrix/modules/seo" \
     --exclude "./bitrix/modules/bitrix.sitecorporate" \
