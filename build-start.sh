@@ -33,4 +33,6 @@ echo "Create start archive..."
 rm start_encode_php5.tar.gz
 tar -zcf ../start.tar.gz ./
 
-#TODO!!! если не используются лендинги и др - поудалять еще модулей и запаковать в минимальную сборку
+rm -R /bitrix/modules/compression/
+rm -R /bitrix/modules/landing/
+tar -zcf ../core.tar.gz ./
