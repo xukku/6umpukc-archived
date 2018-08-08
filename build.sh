@@ -28,11 +28,11 @@ tar -xzf start_encode_php5.tar.gz \
     --exclude "./bitrix/modules/translate" \
     --exclude "./bitrix/wizards/bitrix/demo"
 
-# start
 echo "Create start archive..."
 rm start_encode_php5.tar.gz
 tar -zcf ../start.tar.gz ./
 
-rm -R /bitrix/modules/compression/
-rm -R /bitrix/modules/landing/
+echo "Create core archive..."
+rm -R bitrix/modules/compression/
+rm -R bitrix/modules/landing/
 tar -zcf ../core.tar.gz ./
