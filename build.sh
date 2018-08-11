@@ -20,11 +20,9 @@ tar -xzf start_encode_php5.tar.gz \
     --exclude "./bitrix/modules/iblock/install/components/bitrix" \
     --exclude "./bitrix/modules/fileman/install/components/bitrix" \
     --exclude "./bitrix/modules/highloadblock" \
-    --exclude "./bitrix/modules/seo" \
     --exclude "./bitrix/modules/bitrix.sitecorporate" \
     --exclude "./bitrix/modules/perfmon" \
     --exclude "./bitrix/modules/bitrixcloud" \
-    --exclude "./bitrix/modules/search" \
     --exclude "./bitrix/modules/translate" \
     --exclude "./bitrix/wizards/bitrix/demo"
 
@@ -33,7 +31,7 @@ rm start_encode_php5.tar.gz
 tar -zcf ../start.tar.gz ./
 
 echo "Create core archive..."
-#TODO поудалять еще какие нибуть ненужные в минимальной сборке модули
+#TODO!!! поудалять еще какие нибуть ненужные в минимальной сборке модули
 rm -R bitrix/modules/compression/
 rm -R bitrix/modules/landing/
 tar -zcf ../core.tar.gz ./
