@@ -34,4 +34,6 @@ echo "Create core archive..."
 #TODO!!! поудалять еще какие нибуть ненужные в минимальной сборке модули
 rm -R bitrix/modules/compression/
 rm -R bitrix/modules/landing/
+#rm -R bitrix/modules/seo/ тут наверное тоже нужно
+rm -R bitrix/modules/search/
 tar -zcf ../core.tar.gz ./
