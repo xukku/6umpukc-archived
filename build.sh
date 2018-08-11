@@ -33,6 +33,7 @@ rm start_encode_php5.tar.gz
 tar -zcf ../start.tar.gz ./
 
 echo "Create core archive..."
+#TODO поудалять еще какие нибуть ненужные в минимальной сборке модули
 rm -R bitrix/modules/compression/
 rm -R bitrix/modules/landing/
 tar -zcf ../core.tar.gz ./
