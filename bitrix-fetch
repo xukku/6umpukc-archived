@@ -35,7 +35,32 @@ sub archive_extract {
     return $result;
 }
 
+sub bitrix_minimize {
+    my @removeDirs = (
+        # ненужные компоненты
+        'bitrix/modules/iblock/install/components/bitrix',
+        'bitrix/modules/fileman/install/components/bitrix',
+        # ненужные модули
+        'bitrix/modules/highloadblock',
+        'bitrix/modules/perfmon',
+        'bitrix/modules/bitrixcloud',
+        'bitrix/modules/translate',
+        'bitrix/modules/compression',
+        'bitrix/modules/landing',
+        'bitrix/modules/seo',
+        'bitrix/modules/search',
+        # ненужные демо решения
+        'bitrix/modules/bitrix.sitecorporate',
+        'bitrix/wizards/bitrix/demo',
+    );
+    for my $dir (@removeDirs) {
+        my $cmd = "rm -R '$dir'";
+        qx{$cmd};
+    }
+}
+
 my %urlEditions = (
+    'core'     => 'https://www.1c-bitrix.ru/download/start_encode_php5.tar.gz',
     'start'    => 'https://www.1c-bitrix.ru/download/start_encode_php5.tar.gz',
     'business' => 'https://www.1c-bitrix.ru/download/business_encode_php5.tar.gz',
     'crm'      => 'https://www.1c-bitrix.ru/download/portal/bitrix24_encode_php5.tar.gz',
@@ -54,12 +79,19 @@ if (!exists $urlEditions{$edition}) {
 if (-f $outputFile) {
     unlink($outputFile);
 }
+
 my $srcUrl = $urlEditions{$edition};
-say "Loading $srcUrl ...";
+say "Loading $srcUrl...";
 request_get($srcUrl, $outputFile);
 if (!-f $outputFile) {
     die('Error on loading bitrix edition ' . $srcUrl);
 }
+
 say 'Extracting files...';
 archive_extract($outputFile, './');
 unlink($outputFile);
+
+say 'Minimize...';
+if ($edition eq 'core') {
+    bitrix_minimize();
+}
