@@ -6,11 +6,8 @@
 - Запускать в директории куда нужно загрузить bitrix
 
 ~~~
+bitrix-fetch core
 bitrix-fetch или bitrix-fetch start
 bitrix-fetch business
 bitrix-fetch crm
 ~~~
-
-## TODO
-
-- bitrix-fetch core - качает start и удаляет лишнее
