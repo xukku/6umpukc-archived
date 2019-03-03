@@ -1,0 +1,68 @@
+#!/usr/bin/env perl
+use 5.016;
+use warnings;
+
+sub request_useragent {
+    return 'Mozilla/5.0 (X11; Linux x86_64; rv:66.0) Gecko/20100101 Firefox/66.0';
+}
+
+sub request_get {
+    if (qx{which curl} eq '') {
+        return undef;
+    }
+    my ($url, $outfile) = @_;
+    my $result = '';
+    my $cmd = "curl -L --silent '$url'"
+        . " -A '" . request_useragent() . "'";
+    if ($outfile && $outfile ne '') {
+        $cmd .= " -o '$outfile'";
+    }
+    $result = qx{$cmd};
+    return $result;
+    #elsif (qx{which wget} ne '') {
+    #    $result = qx{wget --quiet --output-document=- '$url'};
+    #}
+}
+
+sub archive_extract {
+    if (qx{which tar} eq '') {
+        return undef;
+    }
+    my ($src, $dest) = @_;
+    my $result = '';
+    my $cmd = "tar -xvzf '$src' '$dest'";
+    $result = qx{$cmd};
+    return $result;
+}
+
+my %urlEditions = {
+    'start'    => 'https://www.1c-bitrix.ru/download/start_encode_php5.tar.gz',
+    'business' => 'https://www.1c-bitrix.ru/download/business_encode_php5.tar.gz',
+    'crm'      => 'https://www.1c-bitrix.ru/download/portal/bitrix24_encode_php5.tar.gz',
+};
+my $outputDir = '.tmp';
+my $outputFile = $outputDir . '/bitrix.tag.gz';
+
+my $edition = '';
+if (scalar @ARGV == 0) {
+    $edition = 'start';
+}
+else {
+    $edition = $ARGV[0];
+}
+if (!exists $urlEditions{$edition}) {
+    $edition = 'start';
+}
+if (!-d $outputDir) {
+    mkdir $outputDir;
+}
+if (-f $outputFile) {
+    unlink($outputFile);
+}
+say "Loading $srcUrl ...";
+my $srcUrl = $urlEditions{$edition};
+request_get($srcUrl, $outputFile);
+if (-f $outputFile) {
+    die('Error on loading bitrix edition ' . $srcUrl);
+}
+archive_extract($outputFile, './');
