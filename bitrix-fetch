@@ -12,7 +12,7 @@ sub request_get {
     }
     my ($url, $outfile) = @_;
     my $result = '';
-    my $cmd = "curl -L --silent '$url'"
+    my $cmd = "curl -L '$url'"
         . " -A '" . request_useragent() . "'";
     if ($outfile && $outfile ne '') {
         $cmd .= " -o '$outfile'";
@@ -35,14 +35,12 @@ sub archive_extract {
     return $result;
 }
 
-my %urlEditions = {
+my %urlEditions = (
     'start'    => 'https://www.1c-bitrix.ru/download/start_encode_php5.tar.gz',
     'business' => 'https://www.1c-bitrix.ru/download/business_encode_php5.tar.gz',
     'crm'      => 'https://www.1c-bitrix.ru/download/portal/bitrix24_encode_php5.tar.gz',
-};
-my $outputDir = '.tmp';
-my $outputFile = $outputDir . '/bitrix.tag.gz';
-
+);
+my $outputFile = '.bitrix.tar.gz';
 my $edition = '';
 if (scalar @ARGV == 0) {
     $edition = 'start';
@@ -53,16 +51,15 @@ else {
 if (!exists $urlEditions{$edition}) {
     $edition = 'start';
 }
-if (!-d $outputDir) {
-    mkdir $outputDir;
-}
 if (-f $outputFile) {
     unlink($outputFile);
 }
-say "Loading $srcUrl ...";
 my $srcUrl = $urlEditions{$edition};
+say "Loading $srcUrl ...";
 request_get($srcUrl, $outputFile);
-if (-f $outputFile) {
+if (!-f $outputFile) {
     die('Error on loading bitrix edition ' . $srcUrl);
 }
+say 'Extracting files...';
 archive_extract($outputFile, './');
+unlink($outputFile);
