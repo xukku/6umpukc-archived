@@ -91,7 +91,7 @@ say 'Extracting files...';
 archive_extract($outputFile, './');
 unlink($outputFile);
 
-say 'Minimize...';
 if ($edition eq 'core') {
+	say 'Minimize...';
     bitrix_minimize();
 }
