@@ -54,12 +54,50 @@ sub bitrix_minimize {
         'bitrix/wizards/bitrix/demo',
     );
     for my $dir (@removeDirs) {
-        my $cmd = "rm -R '$dir'";
-        qx{$cmd};
+		if (-d $dir) {
+			my $cmd = "rm -Rf '$dir'";
+			qx{$cmd};
+		}
     }
 }
 
+sub bitrix_micromize {
+    my %bitrixExcludeDirs = (
+		'cache' => 1,
+		'managed_cache' => 1,
+		'modules' => 1,
+		#'php_interface' => 1,
+	);
+	my %bitrixExcludeFiles = (
+		'.settings.php' => 1,
+	);
+	my $dirName = './bitrix';
+	my $dh;
+	my $res = opendir $dh, $dirName;
+	if (!$res) {
+		die('Could not open ' . $dirName . ' for reading ' . $! . "\n");
+	}
+	my @files = readdir $dh;
+	for my $f (@files) {
+		if ($f eq '.' or $f eq '..') {
+			next;
+		}
+		if (exists $bitrixExcludeDirs{$f} or exists $bitrixExcludeFiles{$f}) {
+			next;
+		}
+		$f = $dirName . '/' . $f;
+		if (-d $f) {
+			my $cmd = "rm -Rf '$f'";
+			qx{$cmd};
+		} elsif (-f $f) {
+			unlink($f);
+		}
+	}
+	closedir $dh;
+}
+
 my %urlEditions = (
+	'micro'    => 'https://www.1c-bitrix.ru/download/start_encode_php5.tar.gz',
     'core'     => 'https://www.1c-bitrix.ru/download/start_encode_php5.tar.gz',
     'start'    => 'https://www.1c-bitrix.ru/download/start_encode_php5.tar.gz',
     'business' => 'https://www.1c-bitrix.ru/download/business_encode_php5.tar.gz',
@@ -94,4 +132,8 @@ unlink($outputFile);
 if ($edition eq 'core') {
 	say 'Minimize...';
     bitrix_minimize();
+} elsif ($edition eq 'micro') {
+	say 'Micromize...';
+    bitrix_minimize();
+	bitrix_micromize();
 }
