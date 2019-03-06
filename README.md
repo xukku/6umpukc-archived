@@ -5,9 +5,22 @@
 
 - Запускать в директории куда нужно загрузить bitrix
 
-~~~
-bitrix-fetch core
-bitrix-fetch или bitrix-fetch start
-bitrix-fetch business
-bitrix-fetch crm
-~~~
+## Минимизированное ядро
+
+Часть модулей/компонентов убрана, при этом будет рабочая Bitrix панель и шаблоны.
+
+`bitrix-fetch core`
+
+## "Микроядро"
+
+Оставлены только классы модулей - чтобы пилить свой микрофреймворк, переиспользуя кодовую базу Bitrix.
+
+`bitrix-fetch micro`
+
+## Стандартные редакции
+
+`bitrix-fetch` или `bitrix-fetch start`
+
+`bitrix-fetch business`
+
+`bitrix-fetch crm`
