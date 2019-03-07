@@ -1,0 +1,55 @@
+#!/usr/bin/env php
+<?php
+
+$mainFile = 'index.php';
+$destDir = '.outputwww/';
+$srcFile = 'vendor/.deps.log';
+
+if (!file_exists($srcFile)) {
+	die("File with dependencies not exists\n");
+}
+
+$srcDir = dirname($srcFile);
+$classMapFile = $srcDir . '/composer/autoload_classmap.php';
+if (!file_exists($classMapFile)) {
+	die("Classmap file not exists - use: composer -o dump-autoload\n");
+}
+$classMap = require $classMapFile;
+
+$usedClasses = [];
+foreach (file($srcFile) as $className) {
+	$className = trim($className);
+	if (trim($className) == '') {
+		continue;
+	}
+	$usedClasses[$className] = 1;
+}
+ksort($usedClasses);
+
+echo "Copy deps...\n";
+if (is_dir($destDir)) {
+	system('rm -Rf ' . $destDir);
+}
+$l = strlen($baseDir);
+foreach ($usedClasses as $className => $_) {
+	if (!isset($classMap[$className])) {
+		continue;
+	}
+	$srcClassFile = ltrim(substr($classMap[$className], $l), '/');
+	$destClassFile = $destDir . $srcClassFile;
+	$destClassDir = dirname($destClassFile);
+	if (!is_dir($destClassDir)) {
+		mkdir($destClassDir, 0777, true);
+	}
+	copy($srcClassFile, $destClassFile);
+}
+// save fixed deps list
+file_put_contents(
+	$srcFile,
+	implode("\n", array_keys($usedClasses)) . "\n"
+);
+
+copy($mainFile, $destDir . $mainFile);
+copy('composer.prod.json', $destDir . 'composer.json');
+chdir($destDir);
+system('composer -o dump-autoload');
