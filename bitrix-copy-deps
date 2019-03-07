@@ -50,6 +50,8 @@ file_put_contents(
 );
 
 copy($mainFile, $destDir . $mainFile);
+system('cp -r --parents local ' . $destDir);
+
 copy('composer.prod.json', $destDir . 'composer.json');
 chdir($destDir);
 system('composer -o dump-autoload');
