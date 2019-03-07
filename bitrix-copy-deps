@@ -6,13 +6,13 @@ $destDir = '.outputwww/';
 $srcFile = 'vendor/.deps.log';
 
 if (!file_exists($srcFile)) {
-	die("File with dependencies not exists\n");
+	die("File $srcFile with dependencies not exists\n");
 }
 
 $srcDir = dirname($srcFile);
 $classMapFile = $srcDir . '/composer/autoload_classmap.php';
 if (!file_exists($classMapFile)) {
-	die("Classmap file not exists - use: composer -o dump-autoload\n");
+	die("Classmap file $classMapFile not exists, use:\n\tcomposer -o dump-autoload\n");
 }
 $classMap = require $classMapFile;
 
