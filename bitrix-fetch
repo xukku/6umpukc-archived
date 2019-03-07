@@ -105,6 +105,7 @@ sub bitrix_micromize {
 		'readme.html',
 		'readme.php',
 		'web.config',
+		'bitrix/modules/main/classes/mysql/database_mysql.php',
     );
     for my $f (@removeFiles) {
 		if (-f $f) {
