@@ -4,9 +4,45 @@
 $mainFile = 'index.php';
 $destDir = '.outputwww/';
 $srcFile = 'vendor/.deps.log';
-
+$replacesFile = 'vendor/.replaces.log';
 if (!file_exists($srcFile)) {
 	die("File $srcFile with dependencies not exists\n");
+}
+
+function ProcessFile($srcClassFile, $destClassFile) {
+	global $replacesFrom, $replacesTo;
+
+	$destClassDir = dirname($destClassFile);
+	if (!is_dir($destClassDir)) {
+		mkdir($destClassDir, 0777, true);
+	}
+	if (count($replacesFrom)) {
+		$content = str_replace(
+			$replacesFrom,
+			$replacesTo,
+			file_get_contents($srcClassFile)
+		);
+		file_put_contents($destClassFile, $content);
+	} else {
+		copy($srcClassFile, $destClassFile);
+	}
+}
+
+$replacesFrom = [];
+$replacesTo = [];
+if (file_exists($replacesFile)) {
+	foreach (explode("\n", file_get_contents($replacesFile)) as $v) {
+		$v = trim($v);
+		if ($v == '') {
+			continue;
+		}
+		$tmp = explode("\t", $v);
+		if (count($tmp) < 2) {
+			continue;
+		}
+		$replacesFrom[] = $tmp[0];
+		$replacesTo[] = $tmp[1];
+	}
 }
 
 $srcDir = dirname($srcFile);
@@ -15,7 +51,10 @@ if (!file_exists($classMapFile)) {
 	die("Classmap file $classMapFile not exists, use:\n\tcomposer -o dump-autoload\n");
 }
 $classMap = require $classMapFile;
-
+$filesMapFile = $srcDir . '/composer/autoload_files.php';
+if (file_exists($filesMapFile)) {
+	$filesMap = require $filesMapFile;
+}
 $usedClasses = [];
 foreach (file($srcFile) as $className) {
 	$className = trim($className);
@@ -31,26 +70,27 @@ if (is_dir($destDir)) {
 	system('rm -Rf ' . $destDir);
 }
 $l = strlen($baseDir);
+// copy class files
 foreach ($usedClasses as $className => $_) {
 	if (!isset($classMap[$className])) {
 		continue;
 	}
 	$srcClassFile = ltrim(substr($classMap[$className], $l), '/');
 	$destClassFile = $destDir . $srcClassFile;
-	$destClassDir = dirname($destClassFile);
-	if (!is_dir($destClassDir)) {
-		mkdir($destClassDir, 0777, true);
-	}
-	copy($srcClassFile, $destClassFile);
+	ProcessFile($srcClassFile, $destClassFile);
 }
 // save fixed deps list
 file_put_contents(
 	$srcFile,
 	implode("\n", array_keys($usedClasses)) . "\n"
 );
-
-copy($mainFile, $destDir . $mainFile);
-system('cp -r --parents local ' . $destDir);
+// copy included files
+foreach ($filesMap as $includedFile) {
+	$srcIncludeFile = ltrim(substr($includedFile, $l), '/');
+	$destIncludeFile = $destDir . $srcIncludeFile;
+	ProcessFile($srcIncludeFile, $destIncludeFile);
+}
+ProcessFile($mainFile, $destDir . $mainFile);
 
 copy('composer.prod.json', $destDir . 'composer.json');
 chdir($destDir);
