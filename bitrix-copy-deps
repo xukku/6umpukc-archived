@@ -1,39 +1,146 @@
 #!/usr/bin/env php
 <?php
 
-//TODO!!! тест - сборка в 1 файл
+const DEST_DIR_RIGHTS = 0777;
+
+const SRC_FILE_DEPS = 'vendor/.deps.log';
+const REPLACES_FILE = 'vendor/.replaces.log';
+const DEBUG_FILE = 'local/php_interface/debug-autoload.php';
+
+const PHP_BEGIN_TAG = '<' . '?php';
+const PHP_BEGIN_SHORTTAG = '<' . '?';
+const PHP_END_TAG = '?' . '>';
+const PHP_NAMESPACE = 'namespace';
+
+define('PHP_BEGIN_TAG_LENGTH', strlen(PHP_BEGIN_TAG));
+define('PHP_BEGIN_SHORTTAG_LENGTH', strlen(PHP_BEGIN_SHORTTAG));
+define('PHP_END_TAG_LENGTH', strlen(PHP_END_TAG));
+define('PHP_NAMESPACE_LENGTH', strlen(PHP_NAMESPACE));
+
+define('DEBUG_FILE_LENGTH', strlen(DEBUG_FILE));
 
 $mainFile = 'index.php';
 $destDir = '.outputwww/';
-$srcFile = 'vendor/.deps.log';
-$replacesFile = 'vendor/.replaces.log';
-if (!file_exists($srcFile)) {
-	die("File $srcFile with dependencies not exists\n");
+
+if (!file_exists(SRC_FILE_DEPS)) {
+	die("File " . SRC_FILE_DEPS . " with dependencies not exists\n");
+}
+$createSingleFile = false;
+if (!empty($_SERVER['argv'][1]) && $_SERVER['argv'][1] == 'onefile') {
+	$createSingleFile = true;
+}
+
+function FilterFixNamespace($contentLines) {
+	$found = false;
+	foreach ($contentLines as $i => $line) {
+		$line = trim($line);
+		if (substr($line, 0, PHP_NAMESPACE_LENGTH) == PHP_NAMESPACE
+				&& substr($line, -1) == ';') {
+			$contentLines[$i] = substr($line, 0, -1) . ' {';
+			$found = true;
+			break;
+		}
+	}
+	if (!$found) {
+		array_unshift($contentLines, "\nnamespace {\n");
+	}
+	$contentLines[] = "}\n";
+	return $contentLines;
+}
+
+function FilterVendorAutoload($contentLines) {
+	$result = [];
+	$found = false;
+	foreach ($contentLines as $line) {
+		if (!$found) {
+			if (strpos($line, 'lib/php/Boot.class.php') !== false
+					|| strpos($line, 'vendor/autoload.php') !== false) {
+				$found = true;
+				continue;
+			}
+		}
+		$result[] = $line;
+	}
+	return $result;
+}
+
+function FilterOldHaxeAutoload($content) {
+	$content = str_replace(
+		"spl_autoload_register('_hx_autoload')",
+		"//spl_autoload_register('_hx_autoload')",
+		$content
+	);
+	$content = str_replace(
+		'if(!file_exists($_hx_autload_cache_file)) {',
+		'if(0 && !file_exists($_hx_autload_cache_file)) {',
+		$content
+	);
+	$content = str_replace(
+		'require($_hx_autload_cache_file);',
+		'//require($_hx_autload_cache_file);',
+		$content
+	);
+	return $content;
 }
 
 function ProcessFile($srcClassFile, $destClassFile) {
-	global $replacesFrom, $replacesTo;
+	global $replacesFrom, $replacesTo, $createSingleFile, $out;
+
+	// ignore debug file
+	if (substr($srcClassFile, -DEBUG_FILE_LENGTH) == DEBUG_FILE) {
+		return;
+	}
+	if ($createSingleFile) {
+		$content = trim(file_get_contents($srcClassFile));
+		// clear begin tag
+		$phpEndTagLength = strlen(PHP_BEGIN_TAG);
+		if (substr($content, 0, PHP_BEGIN_TAG_LENGTH) == PHP_BEGIN_TAG) {
+			$content = substr($content, PHP_BEGIN_TAG_LENGTH);
+		} else if (substr($content, 0, PHP_BEGIN_SHORTTAG_LENGTH) == PHP_BEGIN_SHORTTAG) {
+			$content = substr($content, PHP_BEGIN_SHORTTAG_LENGTH);
+		}
+		// clear end tag
+		if (substr($content, -PHP_END_TAG_LENGTH) == PHP_END_TAG) {
+			$content = substr($content, 0, -PHP_BEGIN_TAG_LENGTH + 1);
+		}
+		// filter code
+		$contentLines = FilterFixNamespace(
+			FilterVendorAutoload(
+				explode("\n", $content)
+			)
+		);
+		$content = implode("\n", $contentLines);
+		// filter some haxe code
+		if (basename($srcClassFile) == 'Boot.class.php') {
+			$content = FilterOldHaxeAutoload($content);
+		}
+		fwrite($out, $content . "\n");
+		return;
+	}
 
 	$destClassDir = dirname($destClassFile);
 	if (!is_dir($destClassDir)) {
-		mkdir($destClassDir, 0777, true);
+		mkdir($destClassDir, DEST_DIR_RIGHTS, true);
+	}
+	$content = file_get_contents($srcClassFile);
+	// filter some haxe code
+	if (basename($srcClassFile) == 'Boot.class.php') {
+		$content = FilterOldHaxeAutoload($content);
 	}
 	if (count($replacesFrom)) {
 		$content = str_replace(
 			$replacesFrom,
 			$replacesTo,
-			file_get_contents($srcClassFile)
+			$content
 		);
-		file_put_contents($destClassFile, $content);
-	} else {
-		copy($srcClassFile, $destClassFile);
 	}
+	file_put_contents($destClassFile, $content);
 }
 
 $replacesFrom = [];
 $replacesTo = [];
-if (file_exists($replacesFile)) {
-	foreach (explode("\n", file_get_contents($replacesFile)) as $v) {
+if (file_exists(REPLACES_FILE)) {
+	foreach (explode("\n", file_get_contents(REPLACES_FILE)) as $v) {
 		$v = trim($v);
 		if ($v == '') {
 			continue;
@@ -47,7 +154,7 @@ if (file_exists($replacesFile)) {
 	}
 }
 
-$srcDir = dirname($srcFile);
+$srcDir = dirname(SRC_FILE_DEPS);
 $classMapFile = $srcDir . '/composer/autoload_classmap.php';
 if (!file_exists($classMapFile)) {
 	die("Classmap file $classMapFile not exists, use:\n\tcomposer -o dump-autoload\n");
@@ -58,7 +165,7 @@ if (file_exists($filesMapFile)) {
 	$filesMap = require $filesMapFile;
 }
 $usedClasses = [];
-foreach (file($srcFile) as $className) {
+foreach (file(SRC_FILE_DEPS) as $className) {
 	$className = trim($className);
 	if (trim($className) == '') {
 		continue;
@@ -69,6 +176,14 @@ foreach (file($srcFile) as $className) {
 echo "Copy deps...\n";
 if (is_dir($destDir)) {
 	system('rm -Rf ' . $destDir);
+}
+mkdir($destDir, DEST_DIR_RIGHTS, true);
+if ($createSingleFile) {
+	$out = fopen($destDir . $mainFile, 'w');
+	fwrite($out, PHP_BEGIN_TAG . "\n");
+	if (!$out) {
+		die("Can't write to file: " . $destDir . $mainFile);
+	}
 }
 $l = strlen($baseDir);
 // copy class files
@@ -82,7 +197,7 @@ foreach ($usedClasses as $className => $_) {
 }
 // save fixed deps list
 file_put_contents(
-	$srcFile,
+	SRC_FILE_DEPS,
 	implode("\n", array_keys($usedClasses)) . "\n"
 );
 // copy included files
@@ -92,7 +207,12 @@ foreach ($filesMap as $includedFile) {
 	ProcessFile($srcIncludeFile, $destIncludeFile);
 }
 ProcessFile($mainFile, $destDir . $mainFile);
-
-copy('composer.prod.json', $destDir . 'composer.json');
-chdir($destDir);
-system('composer -o dump-autoload');
+if ($createSingleFile) {
+	fclose($out);
+}
+// init autoloader
+if (!$createSingleFile) {
+	copy('composer.prod.json', $destDir . 'composer.json');
+	chdir($destDir);
+	system('composer -o dump-autoload');
+}
