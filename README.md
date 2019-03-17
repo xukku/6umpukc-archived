@@ -42,6 +42,12 @@ composer -o dump-autoload
 bitrix-copy-deps
 ```
 
+Создать одно-файловое приложение
+```
+composer -o dump-autoload
+bitrix-copy-deps onefile
+```
+
 ## Стандартные редакции
 
 `bitrix-fetch` или `bitrix-fetch start`
