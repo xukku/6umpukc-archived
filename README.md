@@ -35,7 +35,7 @@ HelloWorld\Config
 HelloWorld\GreetingsService
 ```
 
-Для сопоставления и автозагрузки используются данные автозагрузки composer
+Для сопоставления классов и файлов используются данные автозагрузки composer
 
 ```
 composer -o dump-autoload
