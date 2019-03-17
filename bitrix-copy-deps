@@ -83,8 +83,16 @@ function FilterOldHaxeAutoload($content) {
 	return $content;
 }
 
+function FilterRawReplace($content) {
+	global $replacesFrom, $replacesTo;
+
+	return count($replacesFrom)?
+		str_replace($replacesFrom, $replacesTo, $content)
+		: $content;
+}
+
 function ProcessFile($srcClassFile, $destClassFile) {
-	global $replacesFrom, $replacesTo, $createSingleFile, $out;
+	global $createSingleFile, $out;
 
 	// ignore debug file
 	if (substr($srcClassFile, -DEBUG_FILE_LENGTH) == DEBUG_FILE) {
@@ -114,6 +122,7 @@ function ProcessFile($srcClassFile, $destClassFile) {
 		if (basename($srcClassFile) == 'Boot.class.php') {
 			$content = FilterOldHaxeAutoload($content);
 		}
+		$content = FilterRawReplace($content);
 		fwrite($out, $content . "\n");
 		return;
 	}
@@ -127,13 +136,7 @@ function ProcessFile($srcClassFile, $destClassFile) {
 	if (basename($srcClassFile) == 'Boot.class.php') {
 		$content = FilterOldHaxeAutoload($content);
 	}
-	if (count($replacesFrom)) {
-		$content = str_replace(
-			$replacesFrom,
-			$replacesTo,
-			$content
-		);
-	}
+	$content = FilterRawReplace($content);
 	file_put_contents($destClassFile, $content);
 }
 
@@ -187,11 +190,16 @@ if ($createSingleFile) {
 }
 $l = strlen($baseDir);
 // copy class files
+$includedFiles = [];
 foreach ($usedClasses as $className => $_) {
 	if (!isset($classMap[$className])) {
 		continue;
 	}
 	$srcClassFile = ltrim(substr($classMap[$className], $l), '/');
+	if (isset($includedFiles[$srcClassFile])) {
+		continue;
+	}
+	$includedFiles[$srcClassFile] = 1;
 	$destClassFile = $destDir . $srcClassFile;
 	ProcessFile($srcClassFile, $destClassFile);
 }
