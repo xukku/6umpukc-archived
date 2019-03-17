@@ -37,8 +37,10 @@ HelloWorld\GreetingsService
 
 Для сопоставления и автозагрузки используются данные автозагрузки composer
 
-`composer -o dump-autoload`
-`bitrix-copy-deps`
+```
+composer -o dump-autoload
+bitrix-copy-deps
+```
 
 ## Стандартные редакции
 
