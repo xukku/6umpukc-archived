@@ -19,8 +19,25 @@
 
 `bitrix-fetch micro`
 
-Cборка на основе полученного списка классов и файлов
+### Cборка на основе полученного списка классов и файлов
 
+В папке проекта должен существовать файл vendor/.deps.log - который содержит список полных названий классов, достаточный для запуска приложения.
+
+Например:
+```
+Bitrix\Main\Application
+Bitrix\Main\ArgumentException
+Bitrix\Main\ArgumentNullException
+Bitrix\Main\Config\Configuration
+Bitrix\Main\Context
+HelloWorld\App
+HelloWorld\Config
+HelloWorld\GreetingsService
+```
+
+Для сопоставления и автозагрузки используются данные автозагрузки composer
+
+`composer -o dump-autoload`
 `bitrix-copy-deps`
 
 ## Стандартные редакции
