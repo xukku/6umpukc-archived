@@ -1,6 +1,8 @@
 #!/usr/bin/env php
 <?php
 
+//TODO!!! тест - сборка в 1 файл
+
 $mainFile = 'index.php';
 $destDir = '.outputwww/';
 $srcFile = 'vendor/.deps.log';
@@ -63,7 +65,6 @@ foreach (file($srcFile) as $className) {
 	}
 	$usedClasses[$className] = 1;
 }
-ksort($usedClasses);
 
 echo "Copy deps...\n";
 if (is_dir($destDir)) {
