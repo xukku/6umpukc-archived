@@ -13,7 +13,7 @@ const PHP_END_TAG = '?' . '>';
 const PHP_NAMESPACE = 'namespace';
 const PHP_USE = 'use';
 
-const PHP_AUTOLOAD = '
+const PHP_AUTOLOAD_BEGIN = '
 namespace {
 	spl_autoload_register(function ($className) {
 		global $_6uTpukc;
@@ -22,7 +22,10 @@ namespace {
 		}
 		return $_6uTpukc[$className]();
 	}, true, true);
-}
+
+';
+const PHP_AUTOLOAD_END = '}
+
 ';
 
 define('PHP_BEGIN_TAG_LENGTH', strlen(PHP_BEGIN_TAG));
@@ -45,7 +48,7 @@ if (!empty($_SERVER['argv'][1]) && $_SERVER['argv'][1] == 'onefile') {
 }
 
 function FilterFixClassForAutoloader($content, $className, $srcClassFile) {
-	global $classesLinksForFile;
+	global $classesLinksForFile, $classesLinksForAutoload;
 	$linkClassName = isset($classesLinksForFile[$className])?
 		$classesLinksForFile[$className] : $className;
 	if ($className == $linkClassName) {
@@ -55,9 +58,8 @@ function FilterFixClassForAutoloader($content, $className, $srcClassFile) {
 };
 		";
 	} else {
-		$content = "
-\$_6uTpukc['$className'] = \$_6uTpukc['$linkClassName'];
-		";
+		$classesLinksForAutoload[$className] = $linkClassName;
+		return "// $className -> $srcClassFile\n";
 	}
 	return $content;
 }
@@ -210,6 +212,7 @@ foreach ($classMap as $className => $fname) {
 	$fileForClass[$fname][] = $className;
 }
 $classesLinksForFile = [];
+$classesLinksForAutoload = [];
 foreach ($fileForClass as $fname => $classes) {
 	if (count($classes) > 1) {
 		$firstClassName = array_shift($classes);
@@ -243,7 +246,6 @@ if ($createSingleFile) {
 	if (!$out) {
 		die("Can't write to file: " . $destDir . $mainFile);
 	}
-	fwrite($out, PHP_AUTOLOAD . "\n");
 }
 $l = strlen($baseDir);
 // copy class files
@@ -265,6 +267,13 @@ file_put_contents(
 	SRC_FILE_DEPS,
 	implode("\n", array_keys($usedClasses)) . "\n"
 );
+if ($createSingleFile) {
+	fwrite($out, PHP_AUTOLOAD_BEGIN);
+	foreach ($classesLinksForAutoload as $className => $linkClassName) {
+		fwrite($out, "	\$_6uTpukc['$className'] = \$_6uTpukc['$linkClassName'];\n");
+	}
+	fwrite($out, PHP_AUTOLOAD_END);
+}
 // copy included files
 foreach ($filesMap as $includedFile) {
 	$srcIncludeFile = ltrim(substr($includedFile, $l), '/');
