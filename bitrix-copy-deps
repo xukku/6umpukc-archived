@@ -11,11 +11,25 @@ const PHP_BEGIN_TAG = '<' . '?php';
 const PHP_BEGIN_SHORTTAG = '<' . '?';
 const PHP_END_TAG = '?' . '>';
 const PHP_NAMESPACE = 'namespace';
+const PHP_USE = 'use';
+
+const PHP_AUTOLOAD = '
+namespace {
+	spl_autoload_register(function ($className) {
+		global $_6uTpukc;
+		if (!isset($_6uTpukc[$className]) || !is_callable($_6uTpukc[$className])) {
+			return false;
+		}
+		return $_6uTpukc[$className]();
+	}, true, true);
+}
+';
 
 define('PHP_BEGIN_TAG_LENGTH', strlen(PHP_BEGIN_TAG));
 define('PHP_BEGIN_SHORTTAG_LENGTH', strlen(PHP_BEGIN_SHORTTAG));
 define('PHP_END_TAG_LENGTH', strlen(PHP_END_TAG));
 define('PHP_NAMESPACE_LENGTH', strlen(PHP_NAMESPACE));
+define('PHP_USE_LENGTH', strlen(PHP_USE));
 
 define('DEBUG_FILE_LENGTH', strlen(DEBUG_FILE));
 
@@ -30,20 +44,44 @@ if (!empty($_SERVER['argv'][1]) && $_SERVER['argv'][1] == 'onefile') {
 	$createSingleFile = true;
 }
 
+function FilterFixClassForAutoloader($content, $className, $srcClassFile) {
+	global $classesLinksForFile;
+	$linkClassName = isset($classesLinksForFile[$className])?
+		$classesLinksForFile[$className] : $className;
+	if ($className == $linkClassName) {
+		$content = "
+\$_6uTpukc['$className'] = function () {
+	$content
+};
+		";
+	} else {
+		$content = "
+\$_6uTpukc['$className'] = \$_6uTpukc['$linkClassName'];
+		";
+	}
+	return $content;
+}
+
 function FilterFixNamespace($contentLines) {
-	$found = false;
+	$namespaceLine = PHP_NAMESPACE . " {\n";
+	$useLines = [];
 	foreach ($contentLines as $i => $line) {
 		$line = trim($line);
 		if (substr($line, 0, PHP_NAMESPACE_LENGTH) == PHP_NAMESPACE
 				&& substr($line, -1) == ';') {
-			$contentLines[$i] = substr($line, 0, -1) . ' {';
-			$found = true;
-			break;
+			$namespaceLine = substr($line, 0, -1) . " {\n";
+			unset($contentLines[$i]);
+		} else if (substr($line, 0, PHP_USE_LENGTH) == PHP_USE
+				&& substr($line, -1) == ';') {
+			$useLines[] = $line;
+			unset($contentLines[$i]);
 		}
 	}
-	if (!$found) {
-		array_unshift($contentLines, "\nnamespace {\n");
+	rsort($useLines);
+	foreach ($useLines as $line) {
+		array_unshift($contentLines, $line);
 	}
+	array_unshift($contentLines, $namespaceLine);
 	$contentLines[] = "}\n";
 	return $contentLines;
 }
@@ -91,7 +129,7 @@ function FilterRawReplace($content) {
 		: $content;
 }
 
-function ProcessFile($srcClassFile, $destClassFile) {
+function ProcessFile($srcClassFile, $destClassFile, $isClassFile = false, $className = null) {
 	global $createSingleFile, $out;
 
 	// ignore debug file
@@ -99,7 +137,9 @@ function ProcessFile($srcClassFile, $destClassFile) {
 		return;
 	}
 	if ($createSingleFile) {
-		$content = trim(file_get_contents($srcClassFile));
+		$content = file_get_contents($srcClassFile);
+		//$content = FilterConvertNamespaces($content);
+		$content = trim($content);
 		// clear begin tag
 		$phpEndTagLength = strlen(PHP_BEGIN_TAG);
 		if (substr($content, 0, PHP_BEGIN_TAG_LENGTH) == PHP_BEGIN_TAG) {
@@ -112,11 +152,13 @@ function ProcessFile($srcClassFile, $destClassFile) {
 			$content = substr($content, 0, -PHP_BEGIN_TAG_LENGTH + 1);
 		}
 		// filter code
-		$contentLines = FilterFixNamespace(
-			FilterVendorAutoload(
-				explode("\n", $content)
-			)
-		);
+		$contentLines = FilterVendorAutoload(explode("\n", $content));
+		$content = implode("\n", $contentLines);
+		if ($isClassFile) {
+			$content = FilterFixClassForAutoloader($content, $className, $srcClassFile);
+		}
+		$contentLines = explode("\n", $content);
+		$contentLines = FilterFixNamespace($contentLines);
 		$content = implode("\n", $contentLines);
 		// filter some haxe code
 		if (basename($srcClassFile) == 'Boot.class.php') {
@@ -163,6 +205,20 @@ if (!file_exists($classMapFile)) {
 	die("Classmap file $classMapFile not exists, use:\n\tcomposer -o dump-autoload\n");
 }
 $classMap = require $classMapFile;
+$fileForClass = [];
+foreach ($classMap as $className => $fname) {
+	$fileForClass[$fname][] = $className;
+}
+$classesLinksForFile = [];
+foreach ($fileForClass as $fname => $classes) {
+	if (count($classes) > 1) {
+		$firstClassName = array_shift($classes);
+		$classesLinksForFile[$firstClassName] = $firstClassName;
+		foreach ($classes as $className) {
+			$classesLinksForFile[$className] = $firstClassName;
+		}
+	}
+}
 $filesMapFile = $srcDir . '/composer/autoload_files.php';
 if (file_exists($filesMapFile)) {
 	$filesMap = require $filesMapFile;
@@ -187,6 +243,7 @@ if ($createSingleFile) {
 	if (!$out) {
 		die("Can't write to file: " . $destDir . $mainFile);
 	}
+	fwrite($out, PHP_AUTOLOAD . "\n");
 }
 $l = strlen($baseDir);
 // copy class files
@@ -196,12 +253,12 @@ foreach ($usedClasses as $className => $_) {
 		continue;
 	}
 	$srcClassFile = ltrim(substr($classMap[$className], $l), '/');
-	if (isset($includedFiles[$srcClassFile])) {
+	if (!$createSingleFile && isset($includedFiles[$srcClassFile])) {
 		continue;
 	}
 	$includedFiles[$srcClassFile] = 1;
 	$destClassFile = $destDir . $srcClassFile;
-	ProcessFile($srcClassFile, $destClassFile);
+	ProcessFile($srcClassFile, $destClassFile, true, $className);
 }
 // save fixed deps list
 file_put_contents(
