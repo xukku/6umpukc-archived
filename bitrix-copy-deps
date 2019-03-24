@@ -39,8 +39,10 @@ define('DEBUG_FILE_LENGTH', strlen(DEBUG_FILE));
 $mainFile = 'index.php';
 $destDir = '.outputwww/';
 
+$useAllClassesFromAutoload = false;
 if (!file_exists(SRC_FILE_DEPS)) {
-	die("File " . SRC_FILE_DEPS . " with dependencies not exists\n");
+	$useAllClassesFromAutoload = true;
+	trigger_error("File " . SRC_FILE_DEPS . " with dependencies not exists. All classes from autoload will be used.\n", E_USER_WARNING);
 }
 $createSingleFile = false;
 if (!empty($_SERVER['argv'][1]) && $_SERVER['argv'][1] == 'onefile') {
@@ -223,18 +225,22 @@ foreach ($fileForClass as $fname => $classes) {
 	}
 }
 $filesMapFile = $srcDir . '/composer/autoload_files.php';
+$filesMap = [];
 if (file_exists($filesMapFile)) {
 	$filesMap = require $filesMapFile;
 }
 $usedClasses = [];
-foreach (file(SRC_FILE_DEPS) as $className) {
-	$className = trim($className);
-	if (trim($className) == '') {
-		continue;
+if (!$useAllClassesFromAutoload) {
+	foreach (file(SRC_FILE_DEPS) as $className) {
+		$className = trim($className);
+		if (trim($className) == '') {
+			continue;
+		}
+		$usedClasses[$className] = 1;
 	}
-	$usedClasses[$className] = 1;
+} else {
+	$usedClasses = $classMap;
 }
-
 echo "Copy deps...\n";
 if (is_dir($destDir)) {
 	system('rm -Rf ' . $destDir);
@@ -262,11 +268,13 @@ foreach ($usedClasses as $className => $_) {
 	$destClassFile = $destDir . $srcClassFile;
 	ProcessFile($srcClassFile, $destClassFile, true, $className);
 }
-// save fixed deps list
-file_put_contents(
-	SRC_FILE_DEPS,
-	implode("\n", array_keys($usedClasses)) . "\n"
-);
+if (!$useAllClassesFromAutoload) {
+	// save fixed deps list
+	file_put_contents(
+		SRC_FILE_DEPS,
+		implode("\n", array_keys($usedClasses)) . "\n"
+	);
+}
 if ($createSingleFile) {
 	fwrite($out, PHP_AUTOLOAD_BEGIN);
 	foreach ($classesLinksForAutoload as $className => $linkClassName) {
