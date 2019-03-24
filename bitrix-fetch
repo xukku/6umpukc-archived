@@ -120,6 +120,7 @@ my %urlEditions = (
     'start'    => 'https://www.1c-bitrix.ru/download/start_encode_php5.tar.gz',
     'business' => 'https://www.1c-bitrix.ru/download/business_encode_php5.tar.gz',
     'crm'      => 'https://www.1c-bitrix.ru/download/portal/bitrix24_encode_php5.tar.gz',
+	'setup'    => 'https://www.1c-bitrix.ru/download/scripts/bitrixsetup.php',
 );
 my $outputFile = '.bitrix.tar.gz';
 my $edition = '';
@@ -135,6 +136,9 @@ if (!exists $urlEditions{$edition}) {
 if (-f $outputFile) {
     unlink($outputFile);
 }
+if ($edition eq 'setup') {
+	$outputFile = 'bitrixsetup.php';
+}
 
 my $srcUrl = $urlEditions{$edition};
 say "Loading $srcUrl...";
@@ -143,6 +147,9 @@ if (!-f $outputFile) {
     die('Error on loading bitrix edition ' . $srcUrl);
 }
 
+if ($edition eq 'setup') {
+	exit;
+}
 say 'Extracting files...';
 archive_extract($outputFile, './');
 unlink($outputFile);
