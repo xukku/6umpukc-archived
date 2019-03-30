@@ -56,6 +56,10 @@ bitrix-copy-deps onefile
 
 `bx fetch crm`
 
+## Скачать скрипт инсталятора bitrixsetup.php
+
+`bx fetch setup`
+
 ## TODO
 
 - пример для сборки классов
