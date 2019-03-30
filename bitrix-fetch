@@ -97,7 +97,7 @@ sub bitrix_micromize {
 
 	my @removeFiles = (
         '.access.php',
-		'.htaccess',
+		#'.htaccess',
 		#'index.php',
 		'install.config',
 		'license.html',
