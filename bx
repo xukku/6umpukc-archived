@@ -115,7 +115,7 @@ sub bitrix_micromize {
 }
 
 sub action_help {
-    say 'Go https://github.com/rivetweb/bitrix.core/';
+    say 'Go https://github.com/rivetweb/6umpukc/';
 }
 
 sub action_fetch {
