@@ -11,13 +11,13 @@
 
 Данная сборка после установки уместится в лимиты на количество файлов бесплатного хостинга Beget - https://beget.com/ru/free-hosting
 
-`bitrix-fetch core`
+`bx fetch core`
 
 ## "Микроядро"
 
 Оставлены только классы модулей - чтобы пилить свой микрофреймворк, переиспользуя кодовую базу Bitrix.
 
-`bitrix-fetch micro`
+`bx fetch micro`
 
 ### Cборка на основе полученного списка классов и файлов
 
@@ -50,11 +50,11 @@ bitrix-copy-deps onefile
 
 ## Стандартные редакции
 
-`bitrix-fetch` или `bitrix-fetch start`
+`bx fetch` или `bx fetch start`
 
-`bitrix-fetch business`
+`bx fetch business`
 
-`bitrix-fetch crm`
+`bx fetch crm`
 
 ## TODO
 
