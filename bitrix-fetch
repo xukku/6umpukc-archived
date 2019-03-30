@@ -98,7 +98,7 @@ sub bitrix_micromize {
 	my @removeFiles = (
         '.access.php',
 		'.htaccess',
-		'index.php',
+		#'index.php',
 		'install.config',
 		'license.html',
 		'license.php',
@@ -123,6 +123,7 @@ my %urlEditions = (
 	'setup'    => 'https://www.1c-bitrix.ru/download/scripts/bitrixsetup.php',
 );
 my $outputFile = '.bitrix.tar.gz';
+my $extractOptions = './';
 my $edition = '';
 if (scalar @ARGV == 0) {
     $edition = 'start';
@@ -138,6 +139,8 @@ if (-f $outputFile) {
 }
 if ($edition eq 'setup') {
 	$outputFile = 'bitrixsetup.php';
+} elsif ($edition eq 'micro') {
+    $extractOptions = './bitrix/modules';
 }
 
 my $srcUrl = $urlEditions{$edition};
@@ -146,12 +149,11 @@ request_get($srcUrl, $outputFile);
 if (!-f $outputFile) {
     die('Error on loading bitrix edition ' . $srcUrl);
 }
-
 if ($edition eq 'setup') {
 	exit;
 }
 say 'Extracting files...';
-archive_extract($outputFile, './');
+archive_extract($outputFile, $extractOptions);
 unlink($outputFile);
 
 if ($edition eq 'core') {
