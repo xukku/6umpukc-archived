@@ -14,6 +14,6 @@ if (empty($_SERVER['DOCUMENT_ROOT'])) {
 
 // fake functions
 
-function nop__spl_autoload_register($autoload_function, $throw = true, $prepend = false)
+function spl_autoload_register__nop($autoload_function, $throw = true, $prepend = false)
 {
 }
