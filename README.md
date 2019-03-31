@@ -40,12 +40,14 @@
 composer -o dump-autoload
 bx build
 ```
+или `bx rebuild`
 
 Создать одно-файловое приложение
 ```
 composer -o dump-autoload
 bx build onefile
 ```
+или `bx rebuild onefile`
 
 ### Пример структуры проекта
 

@@ -173,6 +173,11 @@ sub action_build {
         . ($ARGV[1]? $ARGV[1] : '');
 }
 
+sub action_rebuild {
+	system 'composer -o dump-autoload';
+	action_build();
+}
+
 my $action = '';
 if (scalar @ARGV == 0) {
     $action = 'help';
@@ -184,6 +189,8 @@ if ($action eq 'fetch') {
     action_fetch();
 } elsif ($action eq 'build') {
     action_build();
+} elsif ($action eq 'rebuild') {
+    action_rebuild();
 } else {
     action_help();
 }
