@@ -6,6 +6,18 @@
 
 - Запускать в рабочей директории проекта (куда нужно загрузить Bitrix)
 
+## Скачать скрипт инсталятора bitrixsetup.php
+
+`bx fetch setup`
+
+## Стандартные редакции
+
+`bx fetch` или `bx fetch start`
+
+`bx fetch business`
+
+`bx fetch crm`
+
 ## Минимизированное ядро
 
 Часть модулей/компонентов убрана, при этом будет рабочая Bitrix панель и шаблоны.
@@ -22,20 +34,6 @@
 
 ### Cборка на основе полученного списка классов и файлов
 
-В папке проекта должен существовать файл vendor/.deps.log - который содержит список полных названий классов, достаточный для запуска приложения.
-
-Например:
-```
-Bitrix\Main\Application
-Bitrix\Main\ArgumentException
-Bitrix\Main\ArgumentNullException
-Bitrix\Main\Config\Configuration
-Bitrix\Main\Context
-HelloWorld\App
-HelloWorld\Config
-HelloWorld\GreetingsService
-```
-
 Для сопоставления классов и файлов используются данные автозагрузки composer
 
 ```
@@ -49,19 +47,19 @@ composer -o dump-autoload
 bx build onefile
 ```
 
-## Стандартные редакции
+### Пример структуры проекта
 
-`bx fetch` или `bx fetch start`
+В папке проекта должен существовать файл `vendor/.deps.log` - который содержит список полных названий классов, достаточный для запуска приложения.
 
-`bx fetch business`
+```
+Bitrix\Main\Application
+Bitrix\Main\ArgumentException
+Bitrix\Main\ArgumentNullException
+Bitrix\Main\Config\Configuration
+Bitrix\Main\Context
+HelloWorld\App
+HelloWorld\Config
+HelloWorld\GreetingsService
+```
 
-`bx fetch crm`
-
-## Скачать скрипт инсталятора bitrixsetup.php
-
-`bx fetch setup`
-
-## TODO
-
-- пример для сборки классов
-- замена ненужных и отсутсвующих классов/функций на заглушки
+`vendor/.replaces.log` - набор строк для замены кода

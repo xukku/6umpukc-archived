@@ -1,0 +1,11 @@
+{
+	"autoload": {
+		"classmap": [
+			"bitrix/modules",
+			"local"
+		],
+		"files": [
+			"local/php_interface/init.php"
+		]
+	}
+}

@@ -105,26 +105,6 @@ function FilterVendorAutoload($contentLines) {
 	return $result;
 }
 
-function FilterOldHaxeAutoload($content) {
-	//TODO!!! перенести в файл замен - vendor/.replaces.log
-	$content = str_replace(
-		"spl_autoload_register('_hx_autoload')",
-		"//spl_autoload_register('_hx_autoload')",
-		$content
-	);
-	$content = str_replace(
-		'if(!file_exists($_hx_autload_cache_file)) {',
-		'if(0 && !file_exists($_hx_autload_cache_file)) {',
-		$content
-	);
-	$content = str_replace(
-		'require($_hx_autload_cache_file);',
-		'//require($_hx_autload_cache_file);',
-		$content
-	);
-	return $content;
-}
-
 function FilterRawReplace($content) {
 	global $replacesFrom, $replacesTo;
 
@@ -164,10 +144,6 @@ function ProcessFile($srcClassFile, $destClassFile, $isClassFile = false, $class
 		$contentLines = explode("\n", $content);
 		$contentLines = FilterFixNamespace($contentLines);
 		$content = implode("\n", $contentLines);
-		// filter some haxe code
-		if (basename($srcClassFile) == 'Boot.class.php') {
-			$content = FilterOldHaxeAutoload($content);
-		}
 		$content = FilterRawReplace($content);
 		fwrite($out, $content . "\n");
 		return;
@@ -178,10 +154,6 @@ function ProcessFile($srcClassFile, $destClassFile, $isClassFile = false, $class
 		mkdir($destClassDir, DEST_DIR_RIGHTS, true);
 	}
 	$content = file_get_contents($srcClassFile);
-	// filter some haxe code
-	if (basename($srcClassFile) == 'Boot.class.php') {
-		$content = FilterOldHaxeAutoload($content);
-	}
 	$content = FilterRawReplace($content);
 	file_put_contents($destClassFile, $content);
 }
