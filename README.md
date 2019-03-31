@@ -2,6 +2,7 @@
 # Скачивание редакции Bitrix
 
 - Скопировать в ~/bin/ или прописать в PATH (для Windows можно использовать из под командной строки Git Bash https://gitforwindows.org/)
+или добавить символьные ссылки `ln -s /home/user/work/6umpukc/bx /home/user/bin/bx`
 
 - Запускать в рабочей директории проекта (куда нужно загрузить Bitrix)
 
@@ -39,13 +40,13 @@ HelloWorld\GreetingsService
 
 ```
 composer -o dump-autoload
-bitrix-copy-deps
+bx build
 ```
 
 Создать одно-файловое приложение
 ```
 composer -o dump-autoload
-bitrix-copy-deps onefile
+bx build onefile
 ```
 
 ## Стандартные редакции

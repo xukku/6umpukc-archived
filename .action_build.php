@@ -1,4 +1,3 @@
-#!/usr/bin/env php
 <?php
 
 const DEST_DIR_RIGHTS = 0777;

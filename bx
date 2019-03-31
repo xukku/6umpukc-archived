@@ -1,6 +1,9 @@
 #!/usr/bin/env perl
 use 5.016;
 use warnings;
+use FindBin qw($RealBin);
+
+#TODO!!! задавать список - какие еще файлы копировать - настроек bitrix/.settings.php и тп
 
 sub request_useragent {
     return 'Mozilla/5.0 (X11; Linux x86_64; rv:66.0) Gecko/20100101 Firefox/66.0';
@@ -115,7 +118,7 @@ sub bitrix_micromize {
 }
 
 sub action_help {
-    say 'Go https://github.com/rivetweb/6umpukc/';
+    system "cat '$RealBin/README.md'";
 }
 
 sub action_fetch {
@@ -166,7 +169,8 @@ sub action_fetch {
 }
 
 sub action_build {
-    #TODO!!! rewrite bitrix-copy-deps
+    system "php '$RealBin/.action_build.php' "
+        . ($ARGV[1]? $ARGV[1] : '');
 }
 
 my $action = '';
