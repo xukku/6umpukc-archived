@@ -106,6 +106,7 @@ function FilterVendorAutoload($contentLines) {
 }
 
 function FilterOldHaxeAutoload($content) {
+	//TODO!!! перенести в файл замен - vendor/.replaces.log
 	$content = str_replace(
 		"spl_autoload_register('_hx_autoload')",
 		"//spl_autoload_register('_hx_autoload')",
