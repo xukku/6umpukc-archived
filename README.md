@@ -1,5 +1,5 @@
 
-# Скачивание редакции Bitrix
+# Как скачать редакцию Bitrix автоматически и собрать проект в 1 файл без использования PHAR
 
 - Скопировать в ~/bin/ или прописать в PATH (для Windows можно использовать из под командной строки Git Bash https://gitforwindows.org/)
 или добавить символьные ссылки `ln -s /home/user/work/6umpukc/bx /home/user/bin/bx`
