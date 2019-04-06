@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 use 5.016;
 use warnings;
-use FindBin qw($RealBin);
+use FindBin qw($RealBin $Bin $Script);
 
 #TODO!!! задавать список - какие еще файлы копировать - настроек bitrix/.settings.php и тп
 
@@ -178,6 +178,19 @@ sub action_rebuild {
 	action_build();
 }
 
+sub action_self_install {
+    my $homeBin = $ENV{'HOME'} . '/bin';
+    if (-d $homeBin) {
+        my $homeScript = $homeBin . '/' . $Script;
+        if (-l $homeScript) {
+            unlink($homeScript);
+        }
+        symlink($Bin . '/' . $Script, $homeScript);
+    } else {
+        die('$HOME/bin/ not exists');
+    }
+}
+
 my $action = '';
 if (scalar @ARGV == 0) {
     $action = 'help';
@@ -191,6 +204,8 @@ if ($action eq 'fetch') {
     action_build();
 } elsif ($action eq 'rebuild') {
     action_rebuild();
+} elsif ($action eq 'self-install') {
+    action_self_install();
 } else {
     action_help();
 }

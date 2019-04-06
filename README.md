@@ -3,10 +3,13 @@
 
 *Для сборки поддерживается не только лишь Bitrix, но и любые современные PHP-фреймворки или проекты использующие автозагрузку классов*
 
-- Скопировать в ~/bin/ или прописать в PATH (для Windows можно использовать из под командной строки Git Bash https://gitforwindows.org/)
-или добавить символьные ссылки `ln -s /home/user/work/6umpukc/bx /home/user/bin/bx`
+По аналогии с тулингом dotnet - команды запускаются в рабочей директории проекта.
 
-- Запускать в рабочей директории проекта (куда нужно загрузить Bitrix)
+## Установка
+
+`git clone https://github.com/6umpukc-uHKBu3umop/6umpukc.git && cd 6umpukc && chmod +x bx && ./bx self-install`
+
+для Windows запускать в командной строке Git Bash https://gitforwindows.org/ или http://www.msys2.org/
 
 ## Скачать скрипт инсталятора bitrixsetup.php
 
