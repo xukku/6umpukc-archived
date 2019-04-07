@@ -19,7 +19,7 @@ foreach (token_get_all(file_get_contents($fname)) as $t) {
 	if (is_array($t)) {
 		$t[0] = token_name($t[0]);
 	} else {
-		$t = [$t];
+		$t = ['', $t, ''];
 	}
 	fputcsv($fout, $t);
 }
