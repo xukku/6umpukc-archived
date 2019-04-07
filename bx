@@ -189,6 +189,11 @@ sub action_self_install {
     }
 }
 
+sub action_parse {
+    system "php '$RealBin/.action_parse.php' "
+        . ($ARGV[1]? $ARGV[1] : 'index.php');
+}
+
 my $action = '';
 if (scalar @ARGV == 0) {
     $action = 'help';
@@ -204,6 +209,8 @@ if ($action eq 'fetch') {
     action_rebuild();
 } elsif ($action eq 'self-install') {
     action_self_install();
+} elsif ($action eq 'parse') {
+    action_parse();
 } else {
     action_help();
 }
