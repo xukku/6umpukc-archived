@@ -7,7 +7,7 @@
 
 ## Установка
 
-`git clone https://github.com/6umpukc-uHKBu3umop/6umpukc.git && cd 6umpukc && chmod +x bx && ./bx self-install`
+`git clone https://github.com/6umpukc-uHKBu3umop/6umpukc.git ~/bin/6umpukc/ && cd ~/bin/6umpukc/ && chmod +x bx && ./bx self-install`
 
 для Windows запускать в командной строке Git Bash https://gitforwindows.org/ или http://www.msys2.org/
 
