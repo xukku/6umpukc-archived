@@ -177,6 +177,7 @@ sub action_rebuild {
 }
 
 sub action_self_install {
+	# if ($OSTYPE eq 'msys') { add path to ~/bin/6umpukc/}
     my $homeBin = $ENV{'HOME'} . '/bin';
     if (-d $homeBin) {
         my $homeScript = $homeBin . '/' . $Script;
