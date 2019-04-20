@@ -6,6 +6,11 @@ use FindBin qw($RealBin $Bin $Script);
 use lib "$Bin/vendor/lib/perl5";
 use Text::CSV;
 
+# TODO конвертер в haxe
+# - чтение полных конструкций в буфер
+# - автоматическое определение переменных - убрать /*var*/
+# - автоматическое определение переопределяемых методов - убрать /*override*/
+
 sub request_useragent {
     return 'Mozilla/5.0 (X11; Linux x86_64; rv:66.0) Gecko/20100101 Firefox/66.0';
 }
