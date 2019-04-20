@@ -3,7 +3,7 @@ use 5.016;
 use warnings;
 use File::Basename;
 use FindBin qw($RealBin $Bin $Script);
-use lib "$Bin/vendor/lib/perl5";
+use lib "$RealBin/vendor/lib/perl5";
 use Text::CSV;
 
 # TODO конвертер в haxe
