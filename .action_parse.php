@@ -7,7 +7,7 @@ $fname = $_SERVER['argv'][1];
 if (!file_exists($fname)) {
 	exit(2);
 }
-$fdestname = $fname.'.tokenstmp';
+$fdestname = $fname.'.log';
 if (file_exists($fdestname)) {
 	unlink($fdestname);
 }
