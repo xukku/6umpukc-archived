@@ -1,0 +1,23 @@
+
+-cmd bx haxe src/tutorials/examples/Main.php
+
+--next
+
+-D php7
+-cp src
+-php bin
+-main tutorials.examples.Main
+
+--next
+
+-D no-compilation
+-cp src
+-java binjava
+-main tutorials.examples.Main
+
+--next
+
+-D no-compilation
+-cp src
+-cs bincs
+-main tutorials.examples.Main
