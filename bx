@@ -1,7 +1,11 @@
 #!/usr/bin/env perl
 use 5.016;
 use warnings;
+use Cwd qw(cwd getcwd);
 use File::Basename;
+use File::Path qw(make_path remove_tree);
+use Config;
+
 use FindBin qw($RealBin $Bin $Script);
 use lib "$RealBin/vendor/lib/perl5";
 use Text::CSV;
@@ -285,6 +289,171 @@ sub action_self_install {
     }
 }
 
+sub ftp_conn_str {
+    return $ENV{'DEPLOY_METHOD'} . '://'
+        . $ENV{'DEPLOY_USER'} . ':' . $ENV{'DEPLOY_PASSWORD'}
+        . '@' . $ENV{'DEPLOY_SERVER'} . $ENV{'DEPLOY_PORT'} . $ENV{'DEPLOY_PATH'};
+}
+
+sub ssh_exec_remote {
+    my $cmd = shift;
+    if (!$cmd || $cmd eq '') {
+        $cmd = 'bash --login'
+    }
+    my $result = 'sshpass -p "' . $ENV{'DEPLOY_PASSWORD'} . '" ssh '
+        . $ENV{'DEPLOY_USER'} . '@' . $ENV{'DEPLOY_SERVER'} . $ENV{'DEPLOY_PORT'}
+        . ' -t "cd ' . $ENV{'DEPLOY_PATH'} . '; ' . $cmd . ';"';
+    return $result;
+}
+
+sub action_env {
+    our %config;
+    our $site_root;
+
+    if ($site_root eq '') {
+        die "Site root not found.\n";
+    }
+    say "Site root:\n\t$site_root\n";
+    say 'Env config:';
+    for my $k (keys %config) {
+        say "    $k -> " . $ENV{$k};
+    }
+    say '';
+    say "Ftp connection:\n\t" . ftp_conn_str();
+    say '';
+    say 'Ssh connection command:';
+    say "\t" . ssh_exec_remote();
+    say '';
+}
+
+sub action_ftp {
+    our $site_root;
+
+    if ($site_root eq '') {
+        die "Site root not found.\n";
+    }
+    my $basePath = shift;
+    my $conn_str = ftp_conn_str();
+    my $path;
+    if ($Config{'osname'} eq 'MSWin32') {
+        #TODO!!!
+        #    $path = $_SERVER["USERPROFILE"] . "/PortableApps/FileZillaPortable/FileZillaPortable.exe";
+        #    pclose(popen("start /B " . $path . ' "' . $connStr . '" --local="' . $basePath . '"', "r"));
+    } else {
+        if (`which screen`) {
+            # ubuntu
+            $path = 'screen -d -m filezilla';
+            system $path . ' "' . $conn_str . '" --local="' . $basePath . '"';
+        } else {
+            # arch
+            system '(filezilla "' . $conn_str . '" --local="' . $basePath . '"  &> /dev/null &)';
+        }
+    }
+}
+
+sub action_ssh {
+    our $site_root;
+
+    if ($site_root eq '') {
+        die "Site root not found.\n";
+    }
+    my $basePath = shift;
+    system ssh_exec_remote();
+}
+
+sub confirm_continue {
+    my $title = shift;
+    print $title . " Type 'yes' to continue: ";
+    my $line = <STDIN>;
+    chomp $line;
+    return trim($line) eq 'yes';
+}
+
+sub git_clone {
+    my $pathModules = shift;
+    my $moduleId = shift;
+    my $urlRepo = shift;
+
+    my $pathModule = $pathModules . $moduleId;
+    if (-d $pathModule) {
+        remove_tree $pathModule;
+    }
+    chdir $pathModules;
+    system 'git clone "' . $urlRepo . '" ' . $moduleId;
+    if (-d $pathModule) {
+        chdir $pathModule;
+        system 'git config core.fileMode false';
+        system 'git checkout master';
+    }
+}
+
+sub git_repos {
+    my @solutionRepos = map { trim $_; } split("\n", trim($ENV{'SOLUTION_GIT_REPOS'}));
+    return @solutionRepos;
+}
+
+sub module_names_from_repos {
+    my @result = map { basename($_, '.git'); } git_repos();
+    return @result;
+}
+
+sub fetch_repos {
+    my $basePath = shift;
+    my $pathModules = $basePath . '/bitrix/modules/';
+    if (! -d $pathModules) {
+        mkdir $basePath . '/bitrix';
+        mkdir $pathModules;
+    }
+    my @solutionRepos = git_repos();
+    if (scalar @solutionRepos == 0) {
+        return;
+    }
+    say 'Repositories:';
+    for my $u (@solutionRepos) {
+        say "\t$u";
+    }
+    if (!confirm_continue('Warning! Modules will be removed.')) {
+        exit;
+    }
+    for my $urlRepo (@solutionRepos) {
+        git_clone($pathModules, basename($urlRepo, '.git'), $urlRepo);
+    }
+}
+
+sub action_status {
+    my $basePath = shift;
+    my $pathModules = $basePath . '/bitrix/modules/';
+    my @solutionRepos = git_repos();
+    if (scalar @solutionRepos == 0) {
+        return;
+    }
+    for my $urlRepo (@solutionRepos) {
+        chdir $pathModules . basename($urlRepo, '.git');
+        system 'pwd';
+        system 'git status';
+        system 'git branch';
+    }
+}
+
+sub action_checkout {
+    my $basePath = shift;
+    my $branch = $ARGV[1]? $ARGV[1] : 'master';
+    my $pathModules = $basePath . '/bitrix/modules/';
+    if (! -d $pathModules) {
+        mkdir $basePath . '/bitrix';
+        mkdir $pathModules;
+    }
+    my @solutionRepos = git_repos();
+    if (scalar @solutionRepos == 0) {
+        return;
+    }
+    for my $urlRepo (@solutionRepos) {
+        chdir $pathModules . basename($urlRepo, '.git');
+        system 'pwd';
+        system 'git checkout ' . $branch;
+    }
+}
+
 sub action_parse {
     system "php '$RealBin/.action_parse.php' "
         . ($ARGV[1]? $ARGV[1] : 'index.php');
@@ -495,25 +664,34 @@ sub action_haxe {
 
 # main
 
+our $site_root = detect_site_root('');
+our %config = load_env($site_root . '/.env');
+
+my %actions = (
+    'help' => \&action_help,
+    'self-install' => \&action_self_install,
+    'fetch' => \&action_fetch,
+
+    'env' => \&action_env,
+    'ftp' => \&action_ftp,
+    'ssh' => \&action_ssh,
+
+    'status' => \&action_status,
+    'checkout' => \&action_checkout,
+
+    'build' => \&action_build,
+    'rebuild' => \&action_rebuild,
+
+    'parse' => \&action_parse,
+    'haxe' => \&action_haxe,
+);
 my $action = '';
 if (scalar @ARGV == 0) {
     $action = 'help';
 } else {
     $action = $ARGV[0];
 }
-
-if ($action eq 'fetch') {
-    action_fetch();
-} elsif ($action eq 'build') {
-    action_build();
-} elsif ($action eq 'rebuild') {
-    action_rebuild();
-} elsif ($action eq 'self-install') {
-    action_self_install();
-} elsif ($action eq 'parse') {
-    action_parse();
-} elsif ($action eq 'haxe') {
-    action_haxe();
-} else {
-    action_help();
+if (!exists $actions{$action}) {
+    $action = 'help';
 }
+$actions{$action}->();
