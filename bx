@@ -307,13 +307,12 @@ sub ssh_exec_remote {
 }
 
 sub action_env {
-    our %config;
-    our $site_root;
-
-    if ($site_root eq '') {
+    my $basePath = shift;
+    if ($basePath eq '') {
         die "Site root not found.\n";
     }
-    say "Site root:\n\t$site_root\n";
+    our %config;
+    say "Site root:\n\t$basePath\n";
     say 'Env config:';
     for my $k (keys %config) {
         say "    $k -> " . $ENV{$k};
@@ -327,14 +326,12 @@ sub action_env {
 }
 
 sub action_ftp {
-    our $site_root;
-
-    if ($site_root eq '') {
+    my $basePath = shift;
+    if ($basePath eq '') {
         die "Site root not found.\n";
     }
-    my $basePath = shift;
-    my $conn_str = ftp_conn_str();
     my $path;
+    my $conn_str = ftp_conn_str();
     if ($Config{'osname'} eq 'MSWin32') {
         #TODO!!!
         #    $path = $_SERVER["USERPROFILE"] . "/PortableApps/FileZillaPortable/FileZillaPortable.exe";
@@ -352,12 +349,10 @@ sub action_ftp {
 }
 
 sub action_ssh {
-    our $site_root;
-
-    if ($site_root eq '') {
+    my $basePath = shift;
+    if ($basePath eq '') {
         die "Site root not found.\n";
     }
-    my $basePath = shift;
     system ssh_exec_remote();
 }
 
@@ -422,6 +417,9 @@ sub fetch_repos {
 
 sub action_status {
     my $basePath = shift;
+    if ($basePath eq '') {
+        die "Site root not found.\n";
+    }
     my $pathModules = $basePath . '/bitrix/modules/';
     my @solutionRepos = git_repos();
     if (scalar @solutionRepos == 0) {
@@ -437,6 +435,9 @@ sub action_status {
 
 sub action_checkout {
     my $basePath = shift;
+    if ($basePath eq '') {
+        die "Site root not found.\n";
+    }
     my $branch = $ARGV[1]? $ARGV[1] : 'master';
     my $pathModules = $basePath . '/bitrix/modules/';
     if (! -d $pathModules) {
@@ -452,6 +453,14 @@ sub action_checkout {
         system 'pwd';
         system 'git checkout ' . $branch;
     }
+}
+
+sub action_solution_init {
+    my $basePath = shift;
+    if ($basePath eq '') {
+        die "Site root not found.\n";
+    }
+    fetch_repos $basePath;
 }
 
 sub action_parse {
@@ -678,6 +687,7 @@ my %actions = (
 
     'status' => \&action_status,
     'checkout' => \&action_checkout,
+    'solution-init' => \&action_solution_init,
 
     'build' => \&action_build,
     'rebuild' => \&action_rebuild,
@@ -694,4 +704,4 @@ if (scalar @ARGV == 0) {
 if (!exists $actions{$action}) {
     $action = 'help';
 }
-$actions{$action}->();
+$actions{$action}->($site_root);
