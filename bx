@@ -455,6 +455,19 @@ sub action_checkout {
     }
 }
 
+sub action_fixdir {
+    my $basePath = shift;
+    if ($basePath eq '') {
+        die "Site root not found.\n";
+    }
+    if (exists $ENV{'SITE_DIR_USER'}) {
+        system 'sudo chown -R ' . $ENV{'SITE_DIR_USER'} . ' ' . $basePath;
+    }
+    if (exists $ENV{'SITE_DIR_RIGHTS'}) {
+        system 'sudo chmod -R ' . $ENV{'SITE_DIR_RIGHTS'} . ' ' . $basePath;
+    }
+}
+
 sub action_solution_init {
     my $basePath = shift;
     if ($basePath eq '') {
@@ -687,6 +700,7 @@ my %actions = (
 
     'status' => \&action_status,
     'checkout' => \&action_checkout,
+    'fixdir' => \&action_fixdir,
     'solution-init' => \&action_solution_init,
 
     'build' => \&action_build,
