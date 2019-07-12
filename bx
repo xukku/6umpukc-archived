@@ -254,10 +254,11 @@ sub action_fetch {
     unlink($outputFile);
 
 	if ($edition eq 'landing') {
-    	say 'Minimize...';
+    	say 'Minimize for landing...';
         bitrix_minimize();
+        #TODO!!! remove iblock?
     } elsif ($edition eq 'core') {
-    	say 'Minimize...';
+    	say 'Minimize for core...';
         bitrix_minimize();
         bitrix_minimize2();
     } elsif ($edition eq 'micro') {
