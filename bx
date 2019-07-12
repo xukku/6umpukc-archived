@@ -132,12 +132,24 @@ sub bitrix_minimize {
         'bitrix/modules/bitrixcloud',
         'bitrix/modules/translate',
         'bitrix/modules/compression',
-        'bitrix/modules/landing',
         'bitrix/modules/seo',
         'bitrix/modules/search',
         # ненужные демо решения
         'bitrix/modules/bitrix.sitecorporate',
         'bitrix/wizards/bitrix/demo',
+    );
+    for my $dir (@removeDirs) {
+		if (-d $dir) {
+			my $cmd = "rm -Rf '$dir'";
+			qx{$cmd};
+		}
+    }
+}
+
+sub bitrix_minimize2 {
+    my @removeDirs = (
+        # ненужные модули
+        'bitrix/modules/landing',
     );
     for my $dir (@removeDirs) {
 		if (-d $dir) {
@@ -241,12 +253,17 @@ sub action_fetch {
     archive_extract($outputFile, $extractOptions);
     unlink($outputFile);
 
-    if ($edition eq 'core') {
+	if ($edition eq 'landing') {
     	say 'Minimize...';
         bitrix_minimize();
+    } elsif ($edition eq 'core') {
+    	say 'Minimize...';
+        bitrix_minimize();
+        bitrix_minimize2();
     } elsif ($edition eq 'micro') {
     	say 'Micromize...';
         bitrix_minimize();
+        bitrix_minimize2();
     	bitrix_micromize();
     }
 }
