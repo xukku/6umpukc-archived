@@ -127,6 +127,7 @@ sub bitrix_minimize {
         'bitrix/modules/iblock/install/components/bitrix',
         'bitrix/modules/fileman/install/components/bitrix',
         # ненужные модули
+        'bitrix/modules/landing', # слишком много файлов в модуле
         'bitrix/modules/highloadblock',
         'bitrix/modules/perfmon',
         'bitrix/modules/bitrixcloud',
@@ -137,19 +138,6 @@ sub bitrix_minimize {
         # ненужные демо решения
         'bitrix/modules/bitrix.sitecorporate',
         'bitrix/wizards/bitrix/demo',
-    );
-    for my $dir (@removeDirs) {
-		if (-d $dir) {
-			my $cmd = "rm -Rf '$dir'";
-			qx{$cmd};
-		}
-    }
-}
-
-sub bitrix_minimize2 {
-    my @removeDirs = (
-        # ненужные модули
-        'bitrix/modules/landing',
     );
     for my $dir (@removeDirs) {
 		if (-d $dir) {
@@ -220,7 +208,6 @@ sub action_fetch {
     my %urlEditions = (
     	'micro'    => 'https://www.1c-bitrix.ru/download/start_encode_php5.tar.gz',
         'core'     => 'https://www.1c-bitrix.ru/download/start_encode_php5.tar.gz',
-        'landing'  => 'https://www.1c-bitrix.ru/download/start_encode_php5.tar.gz',
         'start'    => 'https://www.1c-bitrix.ru/download/start_encode_php5.tar.gz',
         'business' => 'https://www.1c-bitrix.ru/download/business_encode_php5.tar.gz',
         'crm'      => 'https://www.1c-bitrix.ru/download/portal/bitrix24_encode_php5.tar.gz',
@@ -254,18 +241,12 @@ sub action_fetch {
     archive_extract($outputFile, $extractOptions);
     unlink($outputFile);
 
-	if ($edition eq 'landing') {
-    	say 'Minimize for landing...';
-        bitrix_minimize();
-        #TODO!!! remove iblock?
-    } elsif ($edition eq 'core') {
+	if ($edition eq 'core') {
     	say 'Minimize for core...';
         bitrix_minimize();
-        bitrix_minimize2();
     } elsif ($edition eq 'micro') {
     	say 'Micromize...';
         bitrix_minimize();
-        bitrix_minimize2();
     	bitrix_micromize();
     }
 }
