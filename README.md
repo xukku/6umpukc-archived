@@ -58,7 +58,7 @@ bx build onefile
 
 ### Пример структуры проекта
 
-https://github.com/rivetweb/6umpukc/tree/master/example-project
+https://github.com/6umpukc-uHKBu3umop/6umpukc/tree/master/example-project
 
 В папке проекта должен существовать файл `vendor/.deps.log` - который содержит список полных названий классов, достаточный для запуска приложения.
 
