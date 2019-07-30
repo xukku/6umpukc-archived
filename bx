@@ -152,7 +152,7 @@ sub bitrix_micromize {
 		'cache' => 1,
 		'managed_cache' => 1,
 		'modules' => 1,
-		#'php_interface' => 1,
+		'php_interface' => 1,
 	);
 	my %bitrixExcludeFiles = (
 		'.settings.php' => 1,
