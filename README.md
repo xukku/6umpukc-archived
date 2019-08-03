@@ -35,9 +35,11 @@
 
 ## "Микроядро"
 
-Оставлены только классы модулей - чтобы пилить свой микрофреймворк, переиспользуя кодовую базу Bitrix.
+Оставлены только классы модулей - чтобы пилить свой микрофреймворк, переиспользуя кодовую базу Bitrix D7.
 
 `bx fetch micro`
+
+Скачать готовую сборку можно тут - https://bitbucket.org/6umpukc-uHKBu3umop/bitrix-microframework/get/master.zip
 
 ### Cборка на основе полученного списка классов и файлов
 
@@ -58,19 +60,4 @@ bx build onefile
 
 ### Пример структуры проекта
 
-https://github.com/6umpukc-uHKBu3umop/6umpukc/tree/master/example-project
-
-В папке проекта должен существовать файл `vendor/.deps.log` - который содержит список полных названий классов, достаточный для запуска приложения.
-
-```
-Bitrix\Main\Application
-Bitrix\Main\ArgumentException
-Bitrix\Main\ArgumentNullException
-Bitrix\Main\Config\Configuration
-Bitrix\Main\Context
-HelloWorld\App
-HelloWorld\Config
-HelloWorld\GreetingsService
-```
-
-`vendor/.replaces.log` - набор строк для замены кода
+https://bitbucket.org/6umpukc-uHKBu3umop/bitrix-microframework/
