@@ -31,7 +31,7 @@
 
 `bx fetch core`
 
-Скачать готовую сборку можно тут - https://bitbucket.org/6umpukc-uHKBu3umop/6umpukc/get/master.zip
+Скачать готовую сборку можно тут - https://bitbucket.org/6umpukc/6umpukc/get/master.zip
 
 ## "Микроядро"
 
@@ -39,7 +39,7 @@
 
 `bx fetch micro`
 
-Скачать готовую сборку можно тут - https://bitbucket.org/6umpukc-uHKBu3umop/bitrix-microframework/get/master.zip
+Скачать готовую сборку можно тут - https://bitbucket.org/6umpukc/microframework/get/master.zip
 
 ### Cборка на основе полученного списка классов и файлов
 
@@ -60,4 +60,4 @@ bx build onefile
 
 ### Пример структуры проекта
 
-https://bitbucket.org/6umpukc-uHKBu3umop/bitrix-microframework/
+https://bitbucket.org/6umpukc/microframework/
