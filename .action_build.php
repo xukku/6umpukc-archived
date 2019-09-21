@@ -173,6 +173,7 @@ function ProcessFile($srcClassFile, $destClassFile, $isClassFile = false, $class
 	file_put_contents($destClassFile, $content);
 }
 
+//TODO!!! `bx obfuscate`, OBFUSCATION_REPLACES="..." from .env
 $replacesFrom = [];
 $replacesTo = [];
 if (file_exists(REPLACES_FILE)) {
@@ -189,6 +190,7 @@ if (file_exists(REPLACES_FILE)) {
 		$replacesTo[] = $tmp[1];
 	}
 }
+// -----
 
 $srcDir = dirname(SRC_FILE_DEPS);
 $classMapFile = $srcDir.'/composer/autoload_classmap.php';
