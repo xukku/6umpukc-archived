@@ -17,6 +17,10 @@
 
 `bx conv-win`
 
+## Создать полную версию модуля .last_version.tar.gz
+
+`bx mod-pack`
+
 ## Скачать скрипт инсталятора bitrixsetup.php
 
 `bx fetch setup`

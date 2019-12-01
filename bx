@@ -484,6 +484,10 @@ sub action_conv_win {
     system "php '$RealBin/.action_conv.php' win";
 }
 
+sub action_mod_pack {
+    system "php '$RealBin/.action_conv.php' modpack";
+}
+
 sub action_parse {
     system "php '$RealBin/.action_parse.php' "
         . ($ARGV[1]? $ARGV[1] : 'index.php');
@@ -713,6 +717,7 @@ my %actions = (
 
     'conv-utf' => \&action_conv_utf,
     'conv-win' => \&action_conv_win,
+    'mod-pack' => \&action_mod_pack,
 
     'build' => \&action_build,
     'rebuild' => \&action_rebuild,
