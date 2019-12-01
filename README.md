@@ -1,15 +1,21 @@
 
-# Как скачать редакцию Bitrix автоматически и собрать любой PHP-проект в 1 файл без использования PHAR
+# Тулинг для разработчиков решений на Bitrix
 
-*Для сборки поддерживается не только лишь Bitrix, но и любые современные PHP-фреймворки или проекты использующие автозагрузку классов через composer.*
-
-*По аналогии с тулингом dotnet - команды запускаются в рабочей директории проекта.*
-
-## Установка
+## Как установить
 
 `git clone https://github.com/6umpukc-uHKBu3umop/6umpukc.git ~/bin/6umpukc/ && cd ~/bin/6umpukc/ && chmod +x bx && ./bx self-install`
 
 для Windows запускать в командной строке Git Bash https://gitforwindows.org/ или http://www.msys2.org/
+
+## Конвертация кодирировки
+
+В utf-8
+
+`bx conv-utf`
+
+В windows-1251
+
+`bx conv-win`
 
 ## Скачать скрипт инсталятора bitrixsetup.php
 
@@ -51,7 +57,7 @@ bx build
 ```
 или `bx rebuild`
 
-Создать одно-файловое приложение [если хочешь удивить коллег или друзей bitrix-кодом или sympony в одном файле]
+### Создать одно-файловое приложение [если хочешь удивить коллег или друзей bitrix-кодом или sympony в одном файле]
 ```
 composer -o dump-autoload
 bx build onefile

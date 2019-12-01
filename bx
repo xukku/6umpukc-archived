@@ -476,6 +476,14 @@ sub action_solution_init {
     fetch_repos $basePath;
 }
 
+sub action_conv_utf {
+    system "php '$RealBin/.action_conv.php' utf";
+}
+
+sub action_conv_win {
+    system "php '$RealBin/.action_conv.php' win";
+}
+
 sub action_parse {
     system "php '$RealBin/.action_parse.php' "
         . ($ARGV[1]? $ARGV[1] : 'index.php');
@@ -702,6 +710,9 @@ my %actions = (
     'checkout' => \&action_checkout,
     'fixdir' => \&action_fixdir,
     'solution-init' => \&action_solution_init,
+
+    'conv-utf' => \&action_conv_utf,
+    'conv-win' => \&action_conv_win,
 
     'build' => \&action_build,
     'rebuild' => \&action_rebuild,
