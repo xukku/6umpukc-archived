@@ -7,7 +7,7 @@
 
 для Windows запускать в командной строке Git Bash https://gitforwindows.org/ или http://www.msys2.org/
 
-## Конвертация кодирировки
+## Конвертация кодировки
 
 В utf-8
 
