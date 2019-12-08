@@ -4,6 +4,7 @@ use warnings;
 use Cwd qw(cwd getcwd);
 use File::Basename;
 use File::Path qw(make_path remove_tree);
+use File::Copy;
 use Config;
 
 use FindBin qw($RealBin $Bin $Script);
@@ -44,6 +45,17 @@ sub archive_extract {
     my ($src, $dest) = @_;
     my $result = '';
     my $cmd = "tar -xvzf '$src' '$dest'";
+    $result = qx{$cmd};
+    return $result;
+}
+
+sub ziparchive_extract {
+    if (qx{which unzip} eq '') {
+        return undef;
+    }
+    my ($src, $dest) = @_;
+    my $result = '';
+    my $cmd = "unzip -o '$src' -d '$dest'";
     $result = qx{$cmd};
     return $result;
 }
@@ -696,6 +708,42 @@ sub action_haxe {
     close $fout;
 }
 
+sub action_es6_install {
+    my $srcUrl = 'https://dl.google.com/closure-compiler/compiler-latest.zip';
+    my $homeBin = $ENV{'HOME'} . '/bin';
+    if (-d $homeBin) {
+        my $destPath = $homeBin . '/closure-compiler';
+        my $outputFile = $destPath . '/compiler-latest.zip';
+        mkdir $destPath;
+        request_get($srcUrl, $outputFile);
+        ziparchive_extract($outputFile, $destPath);
+        my $destFile = $destPath . '/closure-compiler.jar';
+        if (!-f $destFile) {
+            my @jarFiles = glob "$destPath/*.jar";
+            if (scalar @jarFiles > 0) {
+                move($jarFiles[0], $destFile);
+            }
+        }
+        unlink($outputFile);
+
+    }
+    else {
+        die('$HOME/bin/ not exists');
+    }
+}
+
+sub action_es6 {
+    my $homeBin = $ENV{'HOME'} . '/bin';
+    my $compilerPath = $homeBin . '/closure-compiler/closure-compiler.jar';
+    my @es6Files = glob "*.es6.js";
+    for my $f (@es6Files) {
+        say "processing $f ...";
+        my $destFile = $f;
+        $destFile =~ s/\.es6\.js/\.min.js/gi;
+        system "java -jar $compilerPath --js '$f' --js_output_file '$destFile' --language_in ECMASCRIPT_2018 --language_out ECMASCRIPT5_STRICT";
+    }
+}
+
 # main
 
 our $site_root = detect_site_root('');
@@ -724,6 +772,9 @@ my %actions = (
 
     'parse' => \&action_parse,
     'haxe' => \&action_haxe,
+
+    'es6-install' => \&action_es6_install,
+    'es6' => \&action_es6,
 );
 my $action = '';
 if (scalar @ARGV == 0) {
