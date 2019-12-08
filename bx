@@ -725,7 +725,6 @@ sub action_es6_install {
             }
         }
         unlink($outputFile);
-
     }
     else {
         die('$HOME/bin/ not exists');

@@ -21,6 +21,16 @@
 
 `bx mod-pack`
 
+## Транспиляция/минификация javascript-файлов
+
+Установить google-closure-compiler (https://github.com/google/closure-compiler)
+
+`bx es6-install`
+
+Преобразовать все `*.es6.js` файлы в `*.min.js`
+
+`bx es6`
+
 ## Скачать скрипт инсталятора bitrixsetup.php
 
 `bx fetch setup`
