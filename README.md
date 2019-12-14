@@ -25,11 +25,11 @@
 
 Установить google-closure-compiler (https://github.com/google/closure-compiler)
 
-`bx es6-install`
+`bx es9-install`
 
-Преобразовать `*.es6.js` файлы в `*.min.js`
+Преобразовать `*.es9.js` файлы в `*.min.js`
 
-`bx es6`
+`bx es9`
 
 ## Скачать скрипт инсталятора bitrixsetup.php
 
