@@ -737,9 +737,6 @@ sub action_es9 {
     if ((scalar @ARGV != 2) || !($ARGV[1] eq 'all')) {
         $basePath = getcwd();
     }
-    say $basePath;
-    return;
-
     my $homeBin = $ENV{'HOME'} . '/bin';
     my $compilerPath = $homeBin . '/closure-compiler/closure-compiler.jar';
     finddepth(sub {
