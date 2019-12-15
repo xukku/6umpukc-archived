@@ -5,6 +5,7 @@ use Cwd qw(cwd getcwd);
 use File::Basename;
 use File::Path qw(make_path remove_tree);
 use File::Copy;
+use File::Find qw(finddepth);
 use Config;
 
 use FindBin qw($RealBin $Bin $Script);
@@ -732,15 +733,28 @@ sub action_es9_install {
 }
 
 sub action_es9 {
+    my $basePath = shift;
+    if ((scalar @ARGV != 2) || !($ARGV[1] eq 'all')) {
+        $basePath = getcwd();
+    }
+    say $basePath;
+    return;
+
     my $homeBin = $ENV{'HOME'} . '/bin';
     my $compilerPath = $homeBin . '/closure-compiler/closure-compiler.jar';
-    my @es9Files = glob "*.es9.js";
-    for my $f (@es9Files) {
-        say "processing $f ...";
+    finddepth(sub {
+        if (($_ eq '.') || ($_ eq '..')) {
+            return;
+        }
+        if (!(substr($_, -7) eq '.es9.js')) {
+            return;
+        }
+        my $f = $File::Find::name;
         my $destFile = $f;
         $destFile =~ s/\.es9\.js/\.min.js/gi;
+        say "processing $f -> $destFile ...";
         system "java -jar $compilerPath --js '$f' --js_output_file '$destFile' --language_in ECMASCRIPT_2018 --language_out ECMASCRIPT5_STRICT";
-    }
+    }, $basePath);
 }
 
 # main
