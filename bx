@@ -489,6 +489,17 @@ sub action_solution_init {
     fetch_repos $basePath;
 }
 
+sub action_solution_reset {
+    my $basePath = shift;
+    if ($basePath eq '') {
+        die "Site root not found.\n";
+    }
+    if (!confirm_continue('Warning! Site public data will be removed.')) {
+        exit;
+    }
+    system "php '$RealBin/.action_solution_reset.php' '" . $basePath .  "'";
+}
+
 sub action_conv_utf {
     system "php '$RealBin/.action_conv.php' utf";
 }
@@ -772,6 +783,7 @@ my %actions = (
     'checkout' => \&action_checkout,
     'fixdir' => \&action_fixdir,
     'solution-init' => \&action_solution_init,
+    'solution-reset' => \&action_solution_reset,
 
     'conv-utf' => \&action_conv_utf,
     'conv-win' => \&action_conv_win,
