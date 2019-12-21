@@ -1,5 +1,7 @@
 <?php
 
+define('BX_BUFFER_USED', true);
+
 $_SERVER['DOCUMENT_ROOT'] = $_SERVER['argv'][1];
 
 require $_SERVER['DOCUMENT_ROOT'] . '/bitrix/modules/main/cli/bootstrap.php';
@@ -184,7 +186,7 @@ if (!empty($_SERVER['SOLUTION_DB_PREFIX']))
 	$dbTablePrefixes = array_filter(array_map('trim', explode("\n", trim($_SERVER['SOLUTION_DB_PREFIX']))));
 	echo "Remove database tables\n";
 	$connection = \Bitrix\Main\Application::getConnection();
-	$sqlHelper = $connection->getSqlHelperp();
+	$sqlHelper = $connection->getSqlHelper();
 	foreach ($connection->query('show tables from ' . $sqlHelper->forSql($connection->getDatabase())) as $row)
 	{
 		$tableName = current($row);
