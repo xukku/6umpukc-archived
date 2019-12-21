@@ -21,6 +21,14 @@
 
 `bx mod-pack`
 
+## Скачать модули решения из указанных репозитариев в .env
+
+`bx solution-init`
+
+## Сбросить данные установленного решения указанного в .env
+
+`bx solution-reset`
+
 ## Транспиляция/минификация javascript-файлов
 
 Установить google-closure-compiler (https://github.com/google/closure-compiler)
