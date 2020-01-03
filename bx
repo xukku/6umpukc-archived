@@ -754,12 +754,13 @@ sub action_es9 {
         if (($_ eq '.') || ($_ eq '..')) {
             return;
         }
-        if (!(substr($_, -7) eq '.es9.js')) {
+        my $type = substr($_, -7);
+        if (($type ne '.es9.js') && ($type ne '.es6.js')) {
             return;
         }
         my $f = $File::Find::name;
         my $destFile = $f;
-        $destFile =~ s/\.es9\.js/\.min.js/gi;
+        $destFile =~ s/\.es\d+\.js/\.min.js/gi;
         say "processing $f -> $destFile ...";
         system "java -jar $compilerPath --js '$f' --js_output_file '$destFile' --language_in ECMASCRIPT_2018 --language_out ECMASCRIPT5_STRICT";
     }, $basePath);
