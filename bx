@@ -425,6 +425,7 @@ sub fetch_repos {
     }
     for my $urlRepo (@solutionRepos) {
         git_clone($pathModules, basename($urlRepo, '.git'), $urlRepo);
+        say "";
     }
 }
 
