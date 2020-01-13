@@ -443,6 +443,7 @@ sub action_status {
         system 'pwd';
         system 'git status';
         system 'git branch';
+        say "";
     }
 }
 
@@ -460,6 +461,7 @@ sub action_pull {
         chdir $pathModules . basename($urlRepo, '.git');
         system 'pwd';
         system 'git pull';
+        say "";
     }
 }
 
@@ -482,6 +484,7 @@ sub action_checkout {
         chdir $pathModules . basename($urlRepo, '.git');
         system 'pwd';
         system 'git checkout ' . $branch;
+        say "";
     }
 }
 
@@ -800,6 +803,7 @@ my %actions = (
     'status' => \&action_status,
     'pull' => \&action_pull,
     'checkout' => \&action_checkout,
+
     'fixdir' => \&action_fixdir,
     'solution-init' => \&action_solution_init,
     'solution-reset' => \&action_solution_reset,
