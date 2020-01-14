@@ -466,6 +466,27 @@ sub action_pull {
     }
 }
 
+sub action_reset {
+    my $basePath = shift;
+    if ($basePath eq '') {
+        die "Site root not found.\n";
+    }
+    my $pathModules = $basePath . '/bitrix/modules/';
+    my @solutionRepos = git_repos();
+    if (scalar @solutionRepos == 0) {
+        return;
+    }
+    if (!confirm_continue('Warning! All file changes will be removed.')) {
+        exit;
+    }
+    for my $urlRepo (@solutionRepos) {
+        chdir $pathModules . basename($urlRepo, '.git');
+        system 'pwd';
+        system 'git reset --hard HEAD';
+        say "";
+    }
+}
+
 sub action_checkout {
     my $basePath = shift;
     if ($basePath eq '') {
@@ -803,6 +824,8 @@ my %actions = (
 
     'status' => \&action_status,
     'pull' => \&action_pull,
+    'reset' => \&action_reset,
+
     'checkout' => \&action_checkout,
 
     'fixdir' => \&action_fixdir,
