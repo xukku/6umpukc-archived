@@ -808,6 +808,30 @@ sub action_es9 {
     }, $basePath);
 }
 
+sub action_services_start {
+    my $os = $Config{'myuname'};
+    if (index($os, 'debian') > 0 || index($os, 'ubuntu') >= 0 || index($os, 'Ubuntu') >= 0) {
+        # ubutnu / debian
+        system 'sudo systemctl start apache2 mysql';
+        system 'sudo service rinetd restart';
+    } else {
+        # arch
+        system 'sudo systemctl start httpd.service mysqld.service';
+    }
+}
+
+sub action_services_stop {
+    my $os = $Config{'myuname'};
+    if (index($os, 'debian') > 0 || index($os, 'ubuntu') >= 0 || index($os, 'Ubuntu') >= 0) {
+        # ubutnu
+        system 'sudo systemctl stop apache2 mysql';
+        system 'sudo service rinetd stop';
+    } else {
+        # arch
+        system 'sudo systemctl stop httpd.service mysqld.service';
+    }
+}
+
 # main
 
 our $site_root = detect_site_root('');
@@ -844,6 +868,9 @@ my %actions = (
 
     'es9-install' => \&action_es9_install,
     'es9' => \&action_es9,
+
+    'services-start' => \&action_services_start,
+    'services-stop' => \&action_services_stop,
 );
 my $action = '';
 if (scalar @ARGV == 0) {
