@@ -808,7 +808,7 @@ sub action_es9 {
     }, $basePath);
 }
 
-sub action_services_start {
+sub action_start {
     my $os = $Config{'myuname'};
     if (index($os, 'debian') > 0 || index($os, 'ubuntu') >= 0 || index($os, 'Ubuntu') >= 0) {
         # ubutnu / debian
@@ -820,7 +820,7 @@ sub action_services_start {
     }
 }
 
-sub action_services_stop {
+sub action_stop {
     my $os = $Config{'myuname'};
     if (index($os, 'debian') > 0 || index($os, 'ubuntu') >= 0 || index($os, 'Ubuntu') >= 0) {
         # ubutnu
@@ -869,8 +869,8 @@ my %actions = (
     'es9-install' => \&action_es9_install,
     'es9' => \&action_es9,
 
-    'services-start' => \&action_services_start,
-    'services-stop' => \&action_services_stop,
+    'start' => \&action_start,
+    'stop' => \&action_stop,
 );
 my $action = '';
 if (scalar @ARGV == 0) {
