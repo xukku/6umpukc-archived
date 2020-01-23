@@ -813,7 +813,9 @@ sub action_start {
     if (index($os, 'debian') > 0 || index($os, 'ubuntu') >= 0 || index($os, 'Ubuntu') >= 0) {
         # ubutnu / debian
         system 'sudo systemctl start apache2 mysql';
-        system 'sudo service rinetd restart';
+        if (qx{which rinetd} ne '') {
+            system 'sudo service rinetd restart';
+        }
     } else {
         # arch
         system 'sudo systemctl start httpd.service mysqld.service';
@@ -825,7 +827,9 @@ sub action_stop {
     if (index($os, 'debian') > 0 || index($os, 'ubuntu') >= 0 || index($os, 'Ubuntu') >= 0) {
         # ubutnu
         system 'sudo systemctl stop apache2 mysql';
-        system 'sudo service rinetd stop';
+        if (qx{which rinetd} ne '') {
+            system 'sudo service rinetd stop';
+        }
     } else {
         # arch
         system 'sudo systemctl stop httpd.service mysqld.service';
