@@ -837,6 +837,22 @@ sub action_stop {
 	}
 }
 
+sub sudo_patch_file {
+	my $fname = shift;
+	my $content = shift;
+	if (! -f $fname) {
+		return;
+	}
+	my $path = $ENV{'HOME'};
+	my $tmp = $path . '/.patch.' . basename($fname) . '.tmp';
+	my $originalContent = file_get_contents($fname);
+	if (index($originalContent, $content) < 0) {
+		$content = $originalContent . "\n" . $content . "\n";
+		file_put_contents($tmp, $content);
+		system "sudo mv '" . $tmp . "' " . $fname;
+	}
+}
+
 sub action_lamp_install {
 	if (is_ubuntu()) {
 		say '';
@@ -850,6 +866,10 @@ sub action_lamp_install {
 		;
 		system 'sudo a2enmod rewrite';
 		system 'sudo snap install node --channel=13/stable --classic';
+
+		my $phpContent = file_get_contents($RealBin . '/.template/bitrix.php.ini');
+		sudo_patch_file('/etc/php/7.2/apache2/php.ini', $phpContent);
+		sudo_patch_file('/etc/php/7.2/cli/php.ini', $phpContent);
 
 		my $homePath = $ENV{'HOME'};
 		my $extWww = $homePath . '/ext_www';
@@ -884,9 +904,6 @@ sub action_lamp_install {
 			system 'sudo unlink /etc/msmtprc';
 		}
 		system 'sudo ln -s ' . $homePath . '/.msmtprc /etc/msmtprc';
-		#TODO!!!
-		#	Добавить в php.ini
-		#	sendmail_path = msmtp -t -i
 	}
 }
 
