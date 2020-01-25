@@ -841,12 +841,21 @@ sub action_lamp_install {
 	if (is_ubuntu()) {
 		system 'sudo apt install'
 			. ' unzip wget curl dos2unix pwgen'
-			. ' php apache2 libapache2-mod-php mysql-server php-mysql'
+			. ' php apache2 libapache2-mod-php mysql-server mysql-client php-mysql'
 			. ' php-mbstring php-opcache php-zip php-xml php-curl php-gd php-sqlite3 php-imagick'
 			. ' php-xdebug'
 			. ' optipng jpegoptim pngquant'
 		;
+		system 'sudo a2enmod rewrite';
 		system 'sudo snap install node --channel=13/stable --classic';
+
+		my $extWww = $ENV{'HOME'} . '/ext_www';
+		if (! -d $extWww) {
+			mkdir $extWww;
+		}
+		system 'sudo usermod -a -G www-data ' . $ENV{'USER'};
+		system 'sudo mysql_secure_installation';
+		system 'sudo mysqladmin -p -u root version';
 	}
 }
 
