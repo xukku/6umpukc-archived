@@ -839,6 +839,8 @@ sub action_stop {
 
 sub action_lamp_install {
 	if (is_ubuntu()) {
+		say '';
+		say '# Install php, apache2, mysql and tools...';
 		system 'sudo apt install'
 			. ' unzip wget curl dos2unix pwgen'
 			. ' php apache2 libapache2-mod-php mysql-server mysql-client php-mysql'
@@ -849,13 +851,30 @@ sub action_lamp_install {
 		system 'sudo a2enmod rewrite';
 		system 'sudo snap install node --channel=13/stable --classic';
 
-		my $extWww = $ENV{'HOME'} . '/ext_www';
+		my $homePath = $ENV{'HOME'};
+		my $extWww = $homePath . '/ext_www';
 		if (! -d $extWww) {
 			mkdir $extWww;
 		}
 		system 'sudo usermod -a -G www-data ' . $ENV{'USER'};
+
+		say '';
+		say '# Mysql config setup...';
 		system 'sudo mysql_secure_installation';
+		say '';
+		say '# Mysql config check...';
 		system 'sudo mysqladmin -p -u root version';
+
+		say '';
+		say '# Mail sender setup...';
+		system 'sudo apt install msmtp';
+		copy($RealBin . '/.template/.msmtprc', $homePath . '/.msmtprc');
+		system 'sudo chown www-data:www-data ' . $homePath . '/.msmtprc';
+		system 'sudo chmod 0600 ' . $homePath . '/.msmtprc';
+		if (-f '/etc/msmtprc') {
+			system 'sudo unlink /etc/msmtprc';
+		}
+		system 'sudo ln -s ' . $homePath . '/.msmtprc /etc/msmtprc';
 	}
 }
 
