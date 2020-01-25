@@ -839,7 +839,7 @@ sub action_stop {
 
 sub action_lamp_install {
 	if (is_ubuntu()) {
-		system 'sudo apt install unzip wget curl dos2unix unix2dos pwgen';
+		system 'sudo apt install unzip wget curl dos2unix pwgen';
 		system 'sudo apt install php apache2 libapache2-mod-php mysql-server php-mysql';
 		system 'sudo apt install php-mbstring php-opcache php-zip php-xml php-curl php-gd php-sqlite php-imagick';
 		system 'sudo apt install php-xdebug';
