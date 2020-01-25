@@ -857,6 +857,7 @@ sub action_lamp_install {
 			mkdir $extWww;
 		}
 		system 'sudo usermod -a -G www-data ' . $ENV{'USER'};
+		#system 'chmod +x /home/' . $ENV{'USER'};
 
 		say '';
 		say '# Mysql config setup...';
@@ -864,6 +865,14 @@ sub action_lamp_install {
 		say '';
 		say '# Mysql config check...';
 		system 'sudo mysqladmin -p -u root version';
+		# TODO!!!
+		#	Применить правки для /etc/my.cnf.d/server.cnf - в секцию [mysqld] добавить
+		#	sql-mode=""
+    	#	innodb_flush_log_at_trx_commit=2
+    	#	sync_binlog=0
+    	#	innodb_flush_method=O_DIRECT
+    	#	transaction-isolation=READ-COMMITTED
+    	#	innodb_strict_mode=OFF
 
 		say '';
 		say '# Mail sender setup...';
@@ -875,7 +884,62 @@ sub action_lamp_install {
 			system 'sudo unlink /etc/msmtprc';
 		}
 		system 'sudo ln -s ' . $homePath . '/.msmtprc /etc/msmtprc';
+		#TODO!!!
+		#	Добавить в php.ini
+		#	sendmail_path = msmtp -t -i
 	}
+}
+
+sub action_site_init {
+	if (is_ubuntu()) {
+		my $basePath = shift;
+		my $path = getcwd();
+		my $encoding = $ARGV[1]? $ARGV[1] : 'win'; # win or utf
+		my $sitehost = basename($path);
+
+		my $siteconf = '';
+		if ($encoding eq 'win') {
+			$siteconf = 'win1251site.conf';
+		} else {
+			$siteconf = 'utf8site.conf';
+		}
+		$siteconf = $RealBin . '/.template/ubuntu18.04/' . $siteconf;
+		my $content = file_get_contents($siteconf);
+		$content =~ s|/home/user/ext_www/bitrix\-site\.com|$path|g;
+		$content =~ s|bitrix\-site\.com|$sitehost|g;
+		$siteconf = $path . '/.apache2.conf.tmp';
+		file_put_contents($siteconf, $content);
+
+		system 'cat ' . $RealBin . '/.template/.env >> .env';
+		system 'bx fixdir';
+
+		my $destpath = '/etc/apache2/sites-available/' . $sitehost . '.conf';
+		say '';
+		say '# Apache2 site config -> ' . $destpath;
+		say '';
+		say $content;
+		system 'sudo mv ' . $siteconf . ' ' . $destpath;
+		system 'sudo a2ensite ' . $sitehost . '.conf';
+		system 'sudo systemctl reload apache2';
+	}
+}
+
+sub action_site_hosts {
+	my $localIp = '127.0.0.1';
+	my $path = getcwd();
+	my $sitehost = basename($path);
+
+	my @hosts = split("\n", file_get_contents('/etc/hosts'));
+	my @newHosts = ();
+	for my $line (@hosts) {
+		if (index($line, $sitehost) < 0) {
+			push(@newHosts, $line);
+		}
+	}
+	push(@newHosts, $localIp . "\t" . $sitehost);
+	my $tmp = $path . '/.hosts.tmp';
+	file_put_contents($tmp, join("\n", @newHosts) . "\n");
+	system "sudo mv '" . $tmp . "' /etc/hosts";
 }
 
 # main
@@ -889,6 +953,8 @@ my %actions = (
     'fetch' => \&action_fetch,
 
     'lamp-install' => \&action_lamp_install,
+    'site-init' => \&action_site_init,
+    'site-hosts' => \&action_site_hosts,
 
     'env' => \&action_env,
     'ftp' => \&action_ftp,
