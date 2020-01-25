@@ -808,32 +808,44 @@ sub action_es9 {
     }, $basePath);
 }
 
+sub is_ubuntu {
+	my $os = $Config{'myuname'};
+	return (index($os, 'debian') > 0
+		|| index($os, 'ubuntu') >= 0
+		|| index($os, 'Ubuntu') >= 0);
+}
+
 sub action_start {
-    my $os = $Config{'myuname'};
-    if (index($os, 'debian') > 0 || index($os, 'ubuntu') >= 0 || index($os, 'Ubuntu') >= 0) {
-        # ubutnu / debian
-        system 'sudo systemctl start apache2 mysql';
-        if (qx{which rinetd} ne '') {
-            system 'sudo service rinetd restart';
-        }
-    } else {
-        # arch
-        system 'sudo systemctl start httpd.service mysqld.service';
-    }
+	if (is_ubuntu()) {
+		system 'sudo systemctl start apache2 mysql';
+		if (qx{which rinetd} ne '') {
+			system 'sudo service rinetd restart';
+		}
+	} else {
+		system 'sudo systemctl start httpd.service mysqld.service';
+	}
 }
 
 sub action_stop {
-    my $os = $Config{'myuname'};
-    if (index($os, 'debian') > 0 || index($os, 'ubuntu') >= 0 || index($os, 'Ubuntu') >= 0) {
-        # ubutnu
-        system 'sudo systemctl stop apache2 mysql';
-        if (qx{which rinetd} ne '') {
-            system 'sudo service rinetd stop';
-        }
-    } else {
-        # arch
-        system 'sudo systemctl stop httpd.service mysqld.service';
-    }
+	if (is_ubuntu()) {
+		system 'sudo systemctl stop apache2 mysql';
+		if (qx{which rinetd} ne '') {
+			system 'sudo service rinetd stop';
+		}
+	} else {
+		system 'sudo systemctl stop httpd.service mysqld.service';
+	}
+}
+
+sub action_lamp_install {
+	if (is_ubuntu()) {
+		system 'sudo apt install unzip wget curl dos2unix unix2dos pwgen';
+		system 'sudo apt install php apache2 libapache2-mod-php mysql-server php-mysql';
+		system 'sudo apt install php-mbstring php-opcache php-zip php-xml php-curl php-gd php-sqlite php-imagick';
+		system 'sudo apt install php-xdebug';
+		system 'sudo apt install optipng jpegoptim pngquant';
+		system 'sudo snap install node --channel=13/stable --classic';
+	}
 }
 
 # main
@@ -845,6 +857,8 @@ my %actions = (
     'help' => \&action_help,
     'self-install' => \&action_self_install,
     'fetch' => \&action_fetch,
+
+    'lamp-install' => \&action_lamp_install,
 
     'env' => \&action_env,
     'ftp' => \&action_ftp,
