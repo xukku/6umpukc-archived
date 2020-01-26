@@ -885,7 +885,6 @@ sub action_lamp_install {
 		say '';
 		say '# Mysql config check...';
 		system 'sudo mysqladmin -p -u root version';
-		system 'sudo mysql -u root < ' . $RealBin . '/.template/.fix-mysql-root.sql';
 
 		# TODO!!!
 		#	Применить правки для /etc/my.cnf.d/server.cnf - в секцию [mysqld] добавить
