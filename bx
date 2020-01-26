@@ -929,6 +929,13 @@ sub action_site_init {
 		file_put_contents($siteconf, $content);
 
 		system 'cat ' . $RealBin . '/.template/.env >> .env';
+
+		#TODO!!! create db and save to .env
+		# CREATE DATABASE IF NOT EXISTS bitrixdb1 CHARACTER SET cp1251 COLLATE cp1251_general_ci;
+		# CREATE DATABASE IF NOT EXISTS bitrixdb1utf CHARACTER SET utf8 COLLATE utf8_general_ci;
+
+		# GRANT ALL PRIVILEGES ON bitrixdb1.* TO bitrix@localhost IDENTIFIED BY "6umpukc!BitriX24" WITH GRANT OPTION;
+
 		system 'bx fixdir';
 
 		my $destpath = '/etc/apache2/sites-available/' . $sitehost . '.conf';
