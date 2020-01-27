@@ -886,14 +886,8 @@ sub action_lamp_install {
 		say '# Mysql config check...';
 		system 'sudo mysqladmin -p -u root version';
 
-		# TODO!!!
-		#	Применить правки для /etc/my.cnf.d/server.cnf - в секцию [mysqld] добавить
-		#	sql-mode=""
-    	#	innodb_flush_log_at_trx_commit=2
-    	#	sync_binlog=0
-    	#	innodb_flush_method=O_DIRECT
-    	#	transaction-isolation=READ-COMMITTED
-    	#	innodb_strict_mode=OFF
+        my $mysqlContent = file_get_contents($RealBin . '/.template/ubuntu18.04/bitrix.my.cnf');
+        sudo_patch_file('/etc/mysql/my.cnf', $mysqlContent);
 
 		say '';
 		say '# Mail sender setup...';
