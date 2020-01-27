@@ -908,6 +908,22 @@ sub action_lamp_install {
 	}
 }
 
+sub random_password {
+    my $length = 20;
+    my $result = '';
+    my @chars = ('A'..'Z', 'a'..'z', '0'..'9', '!', '_', '-', '.', ',');
+    $result .= $chars[int(rand(@chars))] for 1..$length;
+    return $result;
+}
+
+sub random_name {
+    my $length = 9;
+    my $result = '';
+    my @chars = ('A'..'Z', 'a'..'z', '0'..'9');
+    $result .= $chars[int(rand(@chars))] for 1..$length;
+    return 'usr' . $result;
+}
+
 sub action_site_init {
 	if (is_ubuntu()) {
 		my $basePath = shift;
@@ -915,12 +931,25 @@ sub action_site_init {
 		my $encoding = $ARGV[1]? $ARGV[1] : 'win'; # win or utf
 		my $sitehost = basename($path);
 
+        my $dbpassword = random_password();
+        my $dbname = random_name();
+
+        my $envContent = file_get_contents($RealBin . '/.template/.env');
+        $envContent =~ s/dbname1/$dbname/g;
+        $envContent =~ s/dbuser1/$dbname/g;
+        $envContent =~ s/dbpassword12345/$dbpassword/g;
+        file_put_contents($path . '/.env', $envContent);
+
 		my $siteconf = '';
-		if ($encoding eq 'win') {
+		my $dbconf = '';
+        if ($encoding eq 'win') {
 			$siteconf = 'win1251site.conf';
+            $dbconf = 'win1251dbcreate.sql';
 		} else {
 			$siteconf = 'utf8site.conf';
+            $dbconf = 'utf8dbcreate.sql';
 		}
+
 		$siteconf = $RealBin . '/.template/ubuntu18.04/' . $siteconf;
 		my $content = file_get_contents($siteconf);
 		$content =~ s|/home/user/ext_www/bitrix\-site\.com|$path|g;
@@ -928,13 +957,15 @@ sub action_site_init {
 		$siteconf = $path . '/.apache2.conf.tmp';
 		file_put_contents($siteconf, $content);
 
-		system 'cat ' . $RealBin . '/.template/.env >> .env';
-
-		#TODO!!! create db and save to .env
-		# CREATE DATABASE IF NOT EXISTS bitrixdb1 CHARACTER SET cp1251 COLLATE cp1251_general_ci;
-		# CREATE DATABASE IF NOT EXISTS bitrixdb1utf CHARACTER SET utf8 COLLATE utf8_general_ci;
-
-		# GRANT ALL PRIVILEGES ON bitrixdb1.* TO bitrix@localhost IDENTIFIED BY "6umpukc!BitriX24" WITH GRANT OPTION;
+        $dbconf = $RealBin . '/.template/ubuntu18.04/' . $dbconf;
+        my $sqlContent = file_get_contents($dbconf);
+        $sqlContent =~ s/bitrixdb1/$dbname/g;
+        $sqlContent =~ s/bitrixuser1/$dbname/g;
+        $sqlContent =~ s/bitrixpassword1/$dbpassword/g;
+        $dbconf = $path . '/.dbcreate.tmp.sql';
+        file_put_contents($dbconf, $sqlContent);
+        system 'sudo mysql -u root < ' . $dbconf;
+        unlink($dbconf);
 
 		system 'bx fixdir';
 
