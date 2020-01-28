@@ -906,8 +906,12 @@ sub action_lamp_install {
 sub random_password {
     my $length = 20;
     my $result = '';
-    my @chars = ('A'..'Z', 'a'..'z', '0'..'9', '!', '_', '-', '.', ',');
+    my @chars = ('A'..'Z', 'a'..'z', '0'..'9', '!', '_', '-', '.', ',', '|');
+    my @addchars = ('!', '_', '-', '.', ',', '|');
     $result .= $chars[int(rand(@chars))] for 1..$length;
+    my $k = int(rand(@addchars));
+    $result .= $addchars[$k];
+    $result = $addchars[int(rand(@addchars))] . $result;
     return $result;
 }
 
