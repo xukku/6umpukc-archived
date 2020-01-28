@@ -863,6 +863,8 @@ sub action_lamp_install {
 			. ' php-mbstring php-opcache php-zip php-xml php-curl php-gd php-sqlite3 php-imagick'
 			. ' php-xdebug'
 			. ' optipng jpegoptim pngquant'
+			. ' msmtp'
+			. ' rinetd'
 		;
 		system 'sudo a2enmod rewrite';
 		system 'sudo snap install node --channel=13/stable --classic';
@@ -891,7 +893,6 @@ sub action_lamp_install {
 
 		say '';
 		say '# Mail sender setup...';
-		system 'sudo apt install msmtp';
 		copy($RealBin . '/.template/.msmtprc', $homePath . '/.msmtprc');
 		system 'sudo chown www-data:www-data ' . $homePath . '/.msmtprc';
 		system 'sudo chmod 0600 ' . $homePath . '/.msmtprc';
