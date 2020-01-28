@@ -908,9 +908,11 @@ sub random_password {
     my $result = '';
     my @chars = ('A'..'Z', 'a'..'z', '0'..'9', '!', '_', '-', '.', ',', '|');
     my @addchars = ('!', '_', '-', '.', ',', '|');
+    my @digits = ('0'..'9');
     $result .= $chars[int(rand(@chars))] for 1..$length;
     $result .= $addchars[int(rand(@addchars))];
     $result = $addchars[int(rand(@addchars))] . $result;
+    $result .= $digits[int(rand(@digits))];
     return $result;
 }
 
