@@ -858,7 +858,7 @@ sub action_lamp_install {
 		say '';
 		say '# Install php, apache2, mysql and tools...';
 		system 'sudo apt install'
-			. ' unzip wget curl dos2unix pwgen sshpass'
+			. ' unzip wget curl dos2unix pwgen sshpass screen'
 			. ' php apache2 libapache2-mod-php mysql-server mysql-client php-mysql'
 			. ' php-mbstring php-opcache php-zip php-xml php-curl php-gd php-sqlite3 php-imagick'
 			. ' php-xdebug'
