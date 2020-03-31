@@ -554,6 +554,10 @@ sub action_mod_pack {
     system "php '$RealBin/.action_conv.php' modpack";
 }
 
+sub action_mod_update {
+    system "php '$RealBin/.action_mod_update.php' '" . $ENV{'SOLUTION_DOWNLOAD_PAGE'} . "'";
+}
+
 sub action_parse {
     system "php '$RealBin/.action_parse.php' "
         . ($ARGV[1]? $ARGV[1] : 'index.php');
@@ -1029,6 +1033,7 @@ my %actions = (
     'conv-utf' => \&action_conv_utf,
     'conv-win' => \&action_conv_win,
     'mod-pack' => \&action_mod_pack,
+    'mod-update' => \&action_mod_update,
 
     'build' => \&action_build,
     'rebuild' => \&action_rebuild,
