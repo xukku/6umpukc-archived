@@ -857,6 +857,16 @@ sub sudo_patch_file {
 	}
 }
 
+sub action_mkcert_install {
+	system 'sudo apt install libnss3-tools';
+	system 'sudo snap install go --classic';
+	system 'rm -Rf ~/bin/mkcert-src/';
+	system 'git clone https://github.com/FiloSottile/mkcert ~/bin/mkcert-src';
+	system 'cd ~/bin/mkcert-src/ && go build -ldflags "-X main.Version=$(git describe --tags)" && mv mkcert ~/bin/mkcert';
+	system 'mkcert -install';
+	system 'mkdir ~/.ssl/ && cd ~/.ssl/ && mkcert bx.local "*.bx.local"';
+}
+
 sub action_lamp_install {
 	if (is_ubuntu()) {
 		say '';
@@ -871,7 +881,7 @@ sub action_lamp_install {
 			. ' rinetd'
 		;
 		system 'sudo a2enmod rewrite';
-		system 'sudo snap install node --channel=13/stable --classic';
+		system 'sudo snap install node --channel=12/stable --classic';
 
 		my $phpContent = file_get_contents($RealBin . '/.template/bitrix.php.ini');
 		sudo_patch_file('/etc/php/7.2/apache2/php.ini', $phpContent);
@@ -933,6 +943,7 @@ sub action_site_init {
 		my $basePath = shift;
 		my $path = getcwd();
 		my $encoding = $ARGV[1]? $ARGV[1] : 'win'; # win or utf
+		my $https = $ARGV[2]? $ARGV[2] : ''; # http or https
 		my $sitehost = basename($path);
 
         my $dbpassword = random_password();
@@ -953,11 +964,16 @@ sub action_site_init {
 			$siteconf = 'utf8site.conf';
             $dbconf = 'utf8dbcreate.sql';
 		}
+		if ($https eq 'https') {
+			$siteconf = $https . $siteconf;
+		}
 
 		$siteconf = $RealBin . '/.template/ubuntu18.04/' . $siteconf;
 		my $content = file_get_contents($siteconf);
 		$content =~ s|/home/user/ext_www/bitrix\-site\.com|$path|g;
 		$content =~ s|bitrix\-site\.com|$sitehost|g;
+		my $currentUser = $ENV{'USER'};
+		$content =~ s|/home/user/.ssl/|/home/$currentUser/.ssl/|g;
 		$siteconf = $path . '/.apache2.conf.tmp';
 		file_put_contents($siteconf, $content);
 
@@ -1046,6 +1062,8 @@ my %actions = (
 
     'start' => \&action_start,
     'stop' => \&action_stop,
+
+    'mkcert-install' => \&action_mkcert_install,
 );
 my $action = '';
 if (scalar @ARGV == 0) {
