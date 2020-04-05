@@ -865,6 +865,7 @@ sub action_mkcert_install {
 	system 'cd ~/bin/mkcert-src/ && go build -ldflags "-X main.Version=$(git describe --tags)" && mv mkcert ~/bin/mkcert';
 	system 'mkcert -install';
 	system 'mkdir ~/.ssl/ && cd ~/.ssl/ && mkcert bx.local "*.bx.local"';
+	system 'sudo a2enmod ssl';
 }
 
 sub action_lamp_install {
