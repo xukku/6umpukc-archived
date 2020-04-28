@@ -20,6 +20,7 @@ function HandleConvUtfAction()
 		$name = $f->getPathname();
 		if (strpos($name, '.git') !== false
 				|| strpos($name, '.dev') !== false
+				|| strpos($name, '/xml/ru/') !== false
 				|| strpos($name, 'vendor') !== false)
 		{
 			continue;
@@ -34,7 +35,7 @@ function HandleConvUtfAction()
 			continue;
 		}
 		$ext = $f->getExtension();
-		if ($ext != 'php' && $ext != 'xml')
+		if ($ext != 'php' && $ext != 'xml' && $ext != 'json')
 		{
 			continue;
 		}
@@ -65,6 +66,7 @@ function HandleConvWinAction()
 		$name = $f->getPathname();
 		if (strpos($name, '.git') !== false
 				|| strpos($name, '.dev') !== false
+				|| strpos($name, '/xml/ru/') !== false
 				|| strpos($name, 'vendor') !== false)
 		{
 			continue;
@@ -79,7 +81,7 @@ function HandleConvWinAction()
 			continue;
 		}
 		$ext = $f->getExtension();
-		if ($ext != 'php' && $ext != 'xml')
+		if ($ext != 'php' && $ext != 'xml' && $ext != 'json')
 		{
 			continue;
 		}
