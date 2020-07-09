@@ -37,7 +37,7 @@ return array (
       'log' => array (
           'settings' =>
           array (
-            'file' => '/var/log/php/exceptions.log',
+            'file' => 'bitrix/modules/php-error.log',
             'log_size' => 1000000,
         ),
       ),
