@@ -225,6 +225,7 @@ sub action_fetch {
 		'business' => 'https://www.1c-bitrix.ru/download/business_encode_php5.tar.gz',
 		'crm'      => 'https://www.1c-bitrix.ru/download/portal/bitrix24_encode_php5.tar.gz',
 		'setup'    => 'https://www.1c-bitrix.ru/download/scripts/bitrixsetup.php',
+		'restore'  => 'https://www.1c-bitrix.ru/download/scripts/restore.php',
 	);
 	my $outputFile = '.bitrix.tar.gz';
 	my $extractOptions = './';
@@ -237,6 +238,8 @@ sub action_fetch {
 	}
 	if ($edition eq 'setup') {
 		$outputFile = 'bitrixsetup.php';
+	} elsif ($edition eq 'restore') {
+		$outputFile = 'restore.php';
 	} elsif ($edition eq 'micro') {
 		$extractOptions = './bitrix/modules';
 	}
@@ -247,7 +250,7 @@ sub action_fetch {
 	if (!-f $outputFile) {
 		die('Error on loading bitrix edition ' . $srcUrl);
 	}
-	if ($edition eq 'setup') {
+	if (($edition eq 'setup') || ($edition eq 'restore')) {
 		exit;
 	}
 	say 'Extracting files...';
