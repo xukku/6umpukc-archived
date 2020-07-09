@@ -18,150 +18,150 @@ use Text::CSV;
 # - автоматическое определение переопределяемых методов - убрать /*override*/
 
 sub request_useragent {
-    return 'Mozilla/5.0 (X11; Linux x86_64; rv:66.0) Gecko/20100101 Firefox/66.0';
+	return 'Mozilla/5.0 (X11; Linux x86_64; rv:66.0) Gecko/20100101 Firefox/66.0';
 }
 
 sub request_get {
-    if (qx{which curl} eq '') {
-        return undef;
-    }
-    my ($url, $outfile) = @_;
-    my $result = '';
-    my $cmd = "curl -L '$url'"
-        . " -A '" . request_useragent() . "'";
-    if ($outfile && $outfile ne '') {
-        $cmd .= " -o '$outfile'";
-    }
-    $result = qx{$cmd};
-    return $result;
-    #elsif (qx{which wget} ne '') {
-    #    $result = qx{wget --quiet --output-document=- '$url'};
-    #}
+	if (qx{which curl} eq '') {
+		return undef;
+	}
+	my ($url, $outfile) = @_;
+	my $result = '';
+	my $cmd = "curl -L '$url'"
+		. " -A '" . request_useragent() . "'";
+	if ($outfile && $outfile ne '') {
+		$cmd .= " -o '$outfile'";
+	}
+	$result = qx{$cmd};
+	return $result;
+	#elsif (qx{which wget} ne '') {
+	#    $result = qx{wget --quiet --output-document=- '$url'};
+	#}
 }
 
 sub archive_extract {
-    if (qx{which tar} eq '') {
-        return undef;
-    }
-    my ($src, $dest) = @_;
-    my $result = '';
-    my $cmd = "tar -xvzf '$src' '$dest'";
-    $result = qx{$cmd};
-    return $result;
+	if (qx{which tar} eq '') {
+		return undef;
+	}
+	my ($src, $dest) = @_;
+	my $result = '';
+	my $cmd = "tar -xvzf '$src' '$dest'";
+	$result = qx{$cmd};
+	return $result;
 }
 
 sub ziparchive_extract {
-    if (qx{which unzip} eq '') {
-        return undef;
-    }
-    my ($src, $dest) = @_;
-    my $result = '';
-    my $cmd = "unzip -o '$src' -d '$dest'";
-    $result = qx{$cmd};
-    return $result;
+	if (qx{which unzip} eq '') {
+		return undef;
+	}
+	my ($src, $dest) = @_;
+	my $result = '';
+	my $cmd = "unzip -o '$src' -d '$dest'";
+	$result = qx{$cmd};
+	return $result;
 }
 
 sub file_get_contents {
-    my $filename = shift;
-    my $result = '';
-    if (open(my $fh, '<:encoding(UTF-8)', $filename)) {
-        while (my $line = <$fh>) {
-            $result .= $line;
-        }
-    }
-    return $result;
+	my $filename = shift;
+	my $result = '';
+	if (open(my $fh, '<:encoding(UTF-8)', $filename)) {
+		while (my $line = <$fh>) {
+			$result .= $line;
+		}
+	}
+	return $result;
 }
 
 sub file_put_contents {
-    my $filename = shift;
-    my $content = shift;
-    if (open(my $fh, '>:encoding(UTF-8)', $filename)) {
-        print $fh $content;
-        close $fh;
-        return 1;
-    }
-    return 0;
+	my $filename = shift;
+	my $content = shift;
+	if (open(my $fh, '>:encoding(UTF-8)', $filename)) {
+		print $fh $content;
+		close $fh;
+		return 1;
+	}
+	return 0;
 }
 
 sub trim {
-    my $s = shift;
-    $s =~ s/^\s+|\s+$//g;
-    return $s;
+	my $s = shift;
+	$s =~ s/^\s+|\s+$//g;
+	return $s;
 }
 
 sub load_env {
-    my $path = shift;
-    if (!-f $path) {
-        return;
-    }
-    my %result = ();
-    my $csv = Text::CSV->new({
-        binary    => 1,
-        auto_diag => 1,
-        sep_char  => '='
-    });
-    open(my $data, '<:encoding(utf8)', $path) or die "Could not open '$path' $!\n";
-    while (my $fields = $csv->getline($data)) {
-        my $key = trim($fields->[0]);
-        if ($key eq '') {
-            next;
-        }
-        if (substr($key, 0, 1) eq '#') {
-            next;
-        }
-        my $value = $fields->[1];
-        $result{$key} = $value;
-        $ENV{$key} = $value;
-    }
-    if (not $csv->eof) {
-        $csv->error_diag();
-    }
-    close $data;
-    return %result;
+	my $path = shift;
+	if (!-f $path) {
+		return;
+	}
+	my %result = ();
+	my $csv = Text::CSV->new({
+		binary    => 1,
+		auto_diag => 1,
+		sep_char  => '='
+	});
+	open(my $data, '<:encoding(utf8)', $path) or die "Could not open '$path' $!\n";
+	while (my $fields = $csv->getline($data)) {
+		my $key = trim($fields->[0]);
+		if ($key eq '') {
+			next;
+		}
+		if (substr($key, 0, 1) eq '#') {
+			next;
+		}
+		my $value = $fields->[1];
+		$result{$key} = $value;
+		$ENV{$key} = $value;
+	}
+	if (not $csv->eof) {
+		$csv->error_diag();
+	}
+	close $data;
+	return %result;
 }
 
 sub detect_site_root {
-    my $path = shift;
-    if ($path eq '') {
-        $path = getcwd();
-    }
-    if (-f "$path/.env") {
-        return $path;
-    }
-    if ($path ne '' && ($path ne dirname $path)) {
-        return detect_site_root(dirname $path);
-    }
-    return '';
+	my $path = shift;
+	if ($path eq '') {
+		$path = getcwd();
+	}
+	if (-f "$path/.env") {
+		return $path;
+	}
+	if ($path ne '' && ($path ne dirname $path)) {
+		return detect_site_root(dirname $path);
+	}
+	return '';
 }
 
 sub bitrix_minimize {
-    my @removeDirs = (
-        # ненужные компоненты
-        'bitrix/modules/iblock/install/components/bitrix',
-        'bitrix/modules/fileman/install/components/bitrix',
-        # ненужные модули
-        'bitrix/modules/landing', # слишком много файлов в модуле
-        'bitrix/modules/highloadblock',
-        'bitrix/modules/perfmon',
-        'bitrix/modules/bitrixcloud',
-        'bitrix/modules/translate',
-        'bitrix/modules/compression',
-        'bitrix/modules/seo',
-        'bitrix/modules/search',
-        # ненужные демо решения
-        'bitrix/modules/bitrix.sitecorporate',
-        'bitrix/wizards/bitrix/demo',
-    );
-    for my $dir (@removeDirs) {
+	my @removeDirs = (
+		# ненужные компоненты
+		'bitrix/modules/iblock/install/components/bitrix',
+		'bitrix/modules/fileman/install/components/bitrix',
+		# ненужные модули
+		'bitrix/modules/landing', # слишком много файлов в модуле
+		'bitrix/modules/highloadblock',
+		'bitrix/modules/perfmon',
+		'bitrix/modules/bitrixcloud',
+		'bitrix/modules/translate',
+		'bitrix/modules/compression',
+		'bitrix/modules/seo',
+		'bitrix/modules/search',
+		# ненужные демо решения
+		'bitrix/modules/bitrix.sitecorporate',
+		'bitrix/wizards/bitrix/demo',
+	);
+	for my $dir (@removeDirs) {
 		if (-d $dir) {
 			my $cmd = "rm -Rf '$dir'";
 			qx{$cmd};
 		}
-    }
+	}
 }
 
 sub bitrix_micromize {
-    my %bitrixExcludeDirs = (
+	my %bitrixExcludeDirs = (
 		'cache' => 1,
 		'managed_cache' => 1,
 		'modules' => 1,
@@ -195,7 +195,7 @@ sub bitrix_micromize {
 	closedir $dh;
 
 	my @removeFiles = (
-        '.access.php',
+		'.access.php',
 		#'.htaccess',
 		#'index.php',
 		'install.config',
@@ -205,68 +205,68 @@ sub bitrix_micromize {
 		'readme.php',
 		'web.config',
 		'bitrix/modules/main/classes/mysql/database_mysql.php',
-    );
-    for my $f (@removeFiles) {
+	);
+	for my $f (@removeFiles) {
 		if (-f $f) {
 			unlink($f);
 		}
-    }
+	}
 }
 
 sub action_help {
-    system "cat '$RealBin/README.md'";
+	system "cat '$RealBin/README.md'";
 }
 
 sub action_fetch {
-    my %urlEditions = (
-    	'micro'    => 'https://www.1c-bitrix.ru/download/start_encode_php5.tar.gz',
-        'core'     => 'https://www.1c-bitrix.ru/download/start_encode_php5.tar.gz',
-        'start'    => 'https://www.1c-bitrix.ru/download/start_encode_php5.tar.gz',
-        'business' => 'https://www.1c-bitrix.ru/download/business_encode_php5.tar.gz',
-        'crm'      => 'https://www.1c-bitrix.ru/download/portal/bitrix24_encode_php5.tar.gz',
-    	'setup'    => 'https://www.1c-bitrix.ru/download/scripts/bitrixsetup.php',
-    );
-    my $outputFile = '.bitrix.tar.gz';
-    my $extractOptions = './';
-    my $edition = $ARGV[1]? $ARGV[1] : 'start';
-    if (!exists $urlEditions{$edition}) {
-        $edition = 'start';
-    }
-    if (-f $outputFile) {
-        unlink($outputFile);
-    }
-    if ($edition eq 'setup') {
-    	$outputFile = 'bitrixsetup.php';
-    } elsif ($edition eq 'micro') {
-        $extractOptions = './bitrix/modules';
-    }
+	my %urlEditions = (
+		'micro'    => 'https://www.1c-bitrix.ru/download/start_encode_php5.tar.gz',
+		'core'     => 'https://www.1c-bitrix.ru/download/start_encode_php5.tar.gz',
+		'start'    => 'https://www.1c-bitrix.ru/download/start_encode_php5.tar.gz',
+		'business' => 'https://www.1c-bitrix.ru/download/business_encode_php5.tar.gz',
+		'crm'      => 'https://www.1c-bitrix.ru/download/portal/bitrix24_encode_php5.tar.gz',
+		'setup'    => 'https://www.1c-bitrix.ru/download/scripts/bitrixsetup.php',
+	);
+	my $outputFile = '.bitrix.tar.gz';
+	my $extractOptions = './';
+	my $edition = $ARGV[1]? $ARGV[1] : 'start';
+	if (!exists $urlEditions{$edition}) {
+		$edition = 'start';
+	}
+	if (-f $outputFile) {
+		unlink($outputFile);
+	}
+	if ($edition eq 'setup') {
+		$outputFile = 'bitrixsetup.php';
+	} elsif ($edition eq 'micro') {
+		$extractOptions = './bitrix/modules';
+	}
 
-    my $srcUrl = $urlEditions{$edition};
-    say "Loading $srcUrl...";
-    request_get($srcUrl, $outputFile);
-    if (!-f $outputFile) {
-        die('Error on loading bitrix edition ' . $srcUrl);
-    }
-    if ($edition eq 'setup') {
-    	exit;
-    }
-    say 'Extracting files...';
-    archive_extract($outputFile, $extractOptions);
-    unlink($outputFile);
+	my $srcUrl = $urlEditions{$edition};
+	say "Loading $srcUrl...";
+	request_get($srcUrl, $outputFile);
+	if (!-f $outputFile) {
+		die('Error on loading bitrix edition ' . $srcUrl);
+	}
+	if ($edition eq 'setup') {
+		exit;
+	}
+	say 'Extracting files...';
+	archive_extract($outputFile, $extractOptions);
+	unlink($outputFile);
 
 	if ($edition eq 'core') {
-    	say 'Minimize for core...';
-        bitrix_minimize();
-    } elsif ($edition eq 'micro') {
-    	say 'Micromize...';
-        bitrix_minimize();
-    	bitrix_micromize();
-    }
+		say 'Minimize for core...';
+		bitrix_minimize();
+	} elsif ($edition eq 'micro') {
+		say 'Micromize...';
+		bitrix_minimize();
+		bitrix_micromize();
+	}
 }
 
 sub action_build {
-    system "php '$RealBin/.action_build.php' "
-        . ($ARGV[1]? $ARGV[1] : '');
+	system "php '$RealBin/.action_build.php' "
+		. ($ARGV[1]? $ARGV[1] : '');
 }
 
 sub action_rebuild {
@@ -275,310 +275,310 @@ sub action_rebuild {
 }
 
 sub action_self_install {
-    if (exists $ENV{'MSYSTEM'}) {
-        if (($ENV{'MSYSTEM'} eq 'MINGW64') or ($ENV{'MSYSTEM'} eq 'MINGW32') or ($ENV{'MSYSTEM'} eq 'MSYS')) {
-            my $fname = $ENV{'HOME'} . '/.bash_profile';
-            my $initPath = 'PATH=$PATH:$HOME/bin/6umpukc';
-            if (-f $fname) {
-                my $content = file_get_contents($fname);
-                if (index($content, $initPath) < 0) {
-                    file_put_contents($fname, $content . "\n" . $initPath . "\n");
-                }
-            } else {
-                file_put_contents($fname, "\n" . $initPath . "\n");
-            }
-            return;
-        }
-    }
-    my $homeBin = $ENV{'HOME'} . '/bin';
-    if (-d $homeBin) {
-        my $homeScript = $homeBin . '/' . $Script;
-        if (-l $homeScript) {
-            unlink($homeScript);
-        }
-        symlink($Bin . '/' . $Script, $homeScript);
-    } else {
-        die('$HOME/bin/ not exists');
-    }
+	if (exists $ENV{'MSYSTEM'}) {
+		if (($ENV{'MSYSTEM'} eq 'MINGW64') or ($ENV{'MSYSTEM'} eq 'MINGW32') or ($ENV{'MSYSTEM'} eq 'MSYS')) {
+			my $fname = $ENV{'HOME'} . '/.bash_profile';
+			my $initPath = 'PATH=$PATH:$HOME/bin/6umpukc';
+			if (-f $fname) {
+				my $content = file_get_contents($fname);
+				if (index($content, $initPath) < 0) {
+					file_put_contents($fname, $content . "\n" . $initPath . "\n");
+				}
+			} else {
+				file_put_contents($fname, "\n" . $initPath . "\n");
+			}
+			return;
+		}
+	}
+	my $homeBin = $ENV{'HOME'} . '/bin';
+	if (-d $homeBin) {
+		my $homeScript = $homeBin . '/' . $Script;
+		if (-l $homeScript) {
+			unlink($homeScript);
+		}
+		symlink($Bin . '/' . $Script, $homeScript);
+	} else {
+		die('$HOME/bin/ not exists');
+	}
 }
 
 sub ftp_conn_str {
-    return $ENV{'DEPLOY_METHOD'} . '://'
-        . $ENV{'DEPLOY_USER'} . ':' . $ENV{'DEPLOY_PASSWORD'}
-        . '@' . $ENV{'DEPLOY_SERVER'} . $ENV{'DEPLOY_PORT'} . $ENV{'DEPLOY_PATH'};
+	return $ENV{'DEPLOY_METHOD'} . '://'
+		. $ENV{'DEPLOY_USER'} . ':' . $ENV{'DEPLOY_PASSWORD'}
+		. '@' . $ENV{'DEPLOY_SERVER'} . $ENV{'DEPLOY_PORT'} . $ENV{'DEPLOY_PATH'};
 }
 
 sub ssh_exec_remote {
-    my $cmd = shift;
-    if (!$cmd || $cmd eq '') {
-        $cmd = 'bash --login'
-    }
-    my $result = 'sshpass -p "' . $ENV{'DEPLOY_PASSWORD'} . '" ssh '
-        . $ENV{'DEPLOY_USER'} . '@' . $ENV{'DEPLOY_SERVER'} . $ENV{'DEPLOY_PORT'}
-        . ' -t "cd ' . $ENV{'DEPLOY_PATH'} . '; ' . $cmd . ';"';
-    return $result;
+	my $cmd = shift;
+	if (!$cmd || $cmd eq '') {
+		$cmd = 'bash --login'
+	}
+	my $result = 'sshpass -p "' . $ENV{'DEPLOY_PASSWORD'} . '" ssh '
+		. $ENV{'DEPLOY_USER'} . '@' . $ENV{'DEPLOY_SERVER'} . $ENV{'DEPLOY_PORT'}
+		. ' -t "cd ' . $ENV{'DEPLOY_PATH'} . '; ' . $cmd . ';"';
+	return $result;
 }
 
 sub action_env {
-    my $basePath = shift;
-    if ($basePath eq '') {
-        die "Site root not found.\n";
-    }
-    our %config;
-    say "Site root:\n\t$basePath\n";
-    say 'Env config:';
-    for my $k (keys %config) {
-        say "    $k -> " . $ENV{$k};
-    }
-    say '';
-    say "Ftp connection:\n\t" . ftp_conn_str();
-    say '';
-    say 'Ssh connection command:';
-    say "\t" . ssh_exec_remote();
-    say '';
+	my $basePath = shift;
+	if ($basePath eq '') {
+		die "Site root not found.\n";
+	}
+	our %config;
+	say "Site root:\n\t$basePath\n";
+	say 'Env config:';
+	for my $k (keys %config) {
+		say "    $k -> " . $ENV{$k};
+	}
+	say '';
+	say "Ftp connection:\n\t" . ftp_conn_str();
+	say '';
+	say 'Ssh connection command:';
+	say "\t" . ssh_exec_remote();
+	say '';
 }
 
 sub action_ftp {
-    my $basePath = shift;
-    if ($basePath eq '') {
-        die "Site root not found.\n";
-    }
-    my $path;
-    my $conn_str = ftp_conn_str();
-    if ($Config{'osname'} eq 'MSWin32') {
-        #TODO!!!
-        #    $path = $_SERVER["USERPROFILE"] . "/PortableApps/FileZillaPortable/FileZillaPortable.exe";
-        #    pclose(popen("start /B " . $path . ' "' . $connStr . '" --local="' . $basePath . '"', "r"));
-    } else {
-        if (`which screen`) {
-            # ubuntu
-            $path = 'screen -d -m filezilla';
-            system $path . ' "' . $conn_str . '" --local="' . $basePath . '"';
-        } else {
-            # arch
-            system '(filezilla "' . $conn_str . '" --local="' . $basePath . '"  &> /dev/null &)';
-        }
-    }
+	my $basePath = shift;
+	if ($basePath eq '') {
+		die "Site root not found.\n";
+	}
+	my $path;
+	my $conn_str = ftp_conn_str();
+	if ($Config{'osname'} eq 'MSWin32') {
+		#TODO!!!
+		#    $path = $_SERVER["USERPROFILE"] . "/PortableApps/FileZillaPortable/FileZillaPortable.exe";
+		#    pclose(popen("start /B " . $path . ' "' . $connStr . '" --local="' . $basePath . '"', "r"));
+	} else {
+		if (`which screen`) {
+			# ubuntu
+			$path = 'screen -d -m filezilla';
+			system $path . ' "' . $conn_str . '" --local="' . $basePath . '"';
+		} else {
+			# arch
+			system '(filezilla "' . $conn_str . '" --local="' . $basePath . '"  &> /dev/null &)';
+		}
+	}
 }
 
 sub action_ssh {
-    my $basePath = shift;
-    if ($basePath eq '') {
-        die "Site root not found.\n";
-    }
-    system ssh_exec_remote();
+	my $basePath = shift;
+	if ($basePath eq '') {
+		die "Site root not found.\n";
+	}
+	system ssh_exec_remote();
 }
 
 sub confirm_continue {
-    my $title = shift;
-    print $title . " Type 'yes' to continue: ";
-    my $line = <STDIN>;
-    chomp $line;
-    return trim($line) eq 'yes';
+	my $title = shift;
+	print $title . " Type 'yes' to continue: ";
+	my $line = <STDIN>;
+	chomp $line;
+	return trim($line) eq 'yes';
 }
 
 sub git_clone {
-    my $pathModules = shift;
-    my $moduleId = shift;
-    my $urlRepo = shift;
+	my $pathModules = shift;
+	my $moduleId = shift;
+	my $urlRepo = shift;
 
-    my $pathModule = $pathModules . $moduleId;
-    if (-d $pathModule) {
-        remove_tree $pathModule;
-    }
-    chdir $pathModules;
-    system 'git clone "' . $urlRepo . '" ' . $moduleId;
-    if (-d $pathModule) {
-        chdir $pathModule;
-        system 'git config core.fileMode false';
-        system 'git checkout master';
-    }
+	my $pathModule = $pathModules . $moduleId;
+	if (-d $pathModule) {
+		remove_tree $pathModule;
+	}
+	chdir $pathModules;
+	system 'git clone "' . $urlRepo . '" ' . $moduleId;
+	if (-d $pathModule) {
+		chdir $pathModule;
+		system 'git config core.fileMode false';
+		system 'git checkout master';
+	}
 }
 
 sub git_repos {
-    my @solutionRepos = map { trim $_; } split("\n", trim($ENV{'SOLUTION_GIT_REPOS'}));
-    return @solutionRepos;
+	my @solutionRepos = map { trim $_; } split("\n", trim($ENV{'SOLUTION_GIT_REPOS'}));
+	return @solutionRepos;
 }
 
 sub module_names_from_repos {
-    my @result = map { basename($_, '.git'); } git_repos();
-    return @result;
+	my @result = map { basename($_, '.git'); } git_repos();
+	return @result;
 }
 
 sub fetch_repos {
-    my $basePath = shift;
-    my $pathModules = $basePath . '/bitrix/modules/';
-    if (! -d $pathModules) {
-        mkdir $basePath . '/bitrix';
-        mkdir $pathModules;
-    }
-    my @solutionRepos = git_repos();
-    if (scalar @solutionRepos == 0) {
-        return;
-    }
-    say 'Repositories:';
-    for my $u (@solutionRepos) {
-        say "\t$u";
-    }
-    if (!confirm_continue('Warning! Modules will be removed.')) {
-        exit;
-    }
-    for my $urlRepo (@solutionRepos) {
-        git_clone($pathModules, basename($urlRepo, '.git'), $urlRepo);
-        say "";
-    }
+	my $basePath = shift;
+	my $pathModules = $basePath . '/bitrix/modules/';
+	if (! -d $pathModules) {
+		mkdir $basePath . '/bitrix';
+		mkdir $pathModules;
+	}
+	my @solutionRepos = git_repos();
+	if (scalar @solutionRepos == 0) {
+		return;
+	}
+	say 'Repositories:';
+	for my $u (@solutionRepos) {
+		say "\t$u";
+	}
+	if (!confirm_continue('Warning! Modules will be removed.')) {
+		exit;
+	}
+	for my $urlRepo (@solutionRepos) {
+		git_clone($pathModules, basename($urlRepo, '.git'), $urlRepo);
+		say "";
+	}
 }
 
 sub action_status {
-    my $basePath = shift;
-    if ($basePath eq '') {
-        die "Site root not found.\n";
-    }
-    my $pathModules = $basePath . '/bitrix/modules/';
-    my @solutionRepos = git_repos();
-    if (scalar @solutionRepos == 0) {
-        return;
-    }
-    for my $urlRepo (@solutionRepos) {
-        chdir $pathModules . basename($urlRepo, '.git');
-        system 'pwd';
-        system 'git status';
-        system 'git branch';
-        say "";
-    }
+	my $basePath = shift;
+	if ($basePath eq '') {
+		die "Site root not found.\n";
+	}
+	my $pathModules = $basePath . '/bitrix/modules/';
+	my @solutionRepos = git_repos();
+	if (scalar @solutionRepos == 0) {
+		return;
+	}
+	for my $urlRepo (@solutionRepos) {
+		chdir $pathModules . basename($urlRepo, '.git');
+		system 'pwd';
+		system 'git status';
+		system 'git branch';
+		say "";
+	}
 }
 
 sub action_pull {
-    my $basePath = shift;
-    if ($basePath eq '') {
-        die "Site root not found.\n";
-    }
-    my $pathModules = $basePath . '/bitrix/modules/';
-    my @solutionRepos = git_repos();
-    if (scalar @solutionRepos == 0) {
-        return;
-    }
-    for my $urlRepo (@solutionRepos) {
-        chdir $pathModules . basename($urlRepo, '.git');
-        system 'pwd';
-        system 'git pull';
-        say "";
-    }
+	my $basePath = shift;
+	if ($basePath eq '') {
+		die "Site root not found.\n";
+	}
+	my $pathModules = $basePath . '/bitrix/modules/';
+	my @solutionRepos = git_repos();
+	if (scalar @solutionRepos == 0) {
+		return;
+	}
+	for my $urlRepo (@solutionRepos) {
+		chdir $pathModules . basename($urlRepo, '.git');
+		system 'pwd';
+		system 'git pull';
+		say "";
+	}
 }
 
 sub action_reset {
-    my $basePath = shift;
-    if ($basePath eq '') {
-        die "Site root not found.\n";
-    }
-    my $pathModules = $basePath . '/bitrix/modules/';
-    my @solutionRepos = git_repos();
-    if (scalar @solutionRepos == 0) {
-        return;
-    }
-    if (!confirm_continue('Warning! All file changes will be removed.')) {
-        exit;
-    }
-    for my $urlRepo (@solutionRepos) {
-        chdir $pathModules . basename($urlRepo, '.git');
-        system 'pwd';
-        system 'git reset --hard HEAD';
-        say "";
-    }
+	my $basePath = shift;
+	if ($basePath eq '') {
+		die "Site root not found.\n";
+	}
+	my $pathModules = $basePath . '/bitrix/modules/';
+	my @solutionRepos = git_repos();
+	if (scalar @solutionRepos == 0) {
+		return;
+	}
+	if (!confirm_continue('Warning! All file changes will be removed.')) {
+		exit;
+	}
+	for my $urlRepo (@solutionRepos) {
+		chdir $pathModules . basename($urlRepo, '.git');
+		system 'pwd';
+		system 'git reset --hard HEAD';
+		say "";
+	}
 }
 
 sub action_checkout {
-    my $basePath = shift;
-    if ($basePath eq '') {
-        die "Site root not found.\n";
-    }
-    my $branch = $ARGV[1]? $ARGV[1] : 'master';
-    my $pathModules = $basePath . '/bitrix/modules/';
-    if (! -d $pathModules) {
-        mkdir $basePath . '/bitrix';
-        mkdir $pathModules;
-    }
-    my @solutionRepos = git_repos();
-    if (scalar @solutionRepos == 0) {
-        return;
-    }
-    for my $urlRepo (@solutionRepos) {
-        chdir $pathModules . basename($urlRepo, '.git');
-        system 'pwd';
-        system 'git checkout ' . $branch;
-        say "";
-    }
+	my $basePath = shift;
+	if ($basePath eq '') {
+		die "Site root not found.\n";
+	}
+	my $branch = $ARGV[1]? $ARGV[1] : 'master';
+	my $pathModules = $basePath . '/bitrix/modules/';
+	if (! -d $pathModules) {
+		mkdir $basePath . '/bitrix';
+		mkdir $pathModules;
+	}
+	my @solutionRepos = git_repos();
+	if (scalar @solutionRepos == 0) {
+		return;
+	}
+	for my $urlRepo (@solutionRepos) {
+		chdir $pathModules . basename($urlRepo, '.git');
+		system 'pwd';
+		system 'git checkout ' . $branch;
+		say "";
+	}
 }
 
 sub action_fixdir {
-    my $basePath = shift;
-    if ($basePath eq '') {
-        die "Site root not found.\n";
-    }
-    if (exists $ENV{'SITE_DIR_USER'}) {
-        system 'sudo chown -R ' . $ENV{'SITE_DIR_USER'} . ' ' . $basePath;
-    }
-    if (exists $ENV{'SITE_DIR_RIGHTS'}) {
-        system 'sudo chmod -R ' . $ENV{'SITE_DIR_RIGHTS'} . ' ' . $basePath;
-    }
+	my $basePath = shift;
+	if ($basePath eq '') {
+		die "Site root not found.\n";
+	}
+	if (exists $ENV{'SITE_DIR_USER'}) {
+		system 'sudo chown -R ' . $ENV{'SITE_DIR_USER'} . ' ' . $basePath;
+	}
+	if (exists $ENV{'SITE_DIR_RIGHTS'}) {
+		system 'sudo chmod -R ' . $ENV{'SITE_DIR_RIGHTS'} . ' ' . $basePath;
+	}
 }
 
 sub action_solution_init {
-    my $basePath = shift;
-    if ($basePath eq '') {
-        die "Site root not found.\n";
-    }
-    fetch_repos $basePath;
+	my $basePath = shift;
+	if ($basePath eq '') {
+		die "Site root not found.\n";
+	}
+	fetch_repos $basePath;
 }
 
 sub action_solution_reset {
-    my $basePath = shift;
-    if ($basePath eq '') {
-        die "Site root not found.\n";
-    }
-    if (!confirm_continue('Warning! Site public data will be removed.')) {
-        exit;
-    }
-    system "php '$RealBin/.action_solution_reset.php' '" . $basePath .  "'";
+	my $basePath = shift;
+	if ($basePath eq '') {
+		die "Site root not found.\n";
+	}
+	if (!confirm_continue('Warning! Site public data will be removed.')) {
+		exit;
+	}
+	system "php '$RealBin/.action_solution_reset.php' '" . $basePath .  "'";
 }
 
 sub action_conv_utf {
-    system "php '$RealBin/.action_conv.php' utf";
+	system "php '$RealBin/.action_conv.php' utf";
 }
 
 sub action_conv_win {
-    system "php '$RealBin/.action_conv.php' win";
+	system "php '$RealBin/.action_conv.php' win";
 }
 
 sub action_mod_pack {
-    system "php '$RealBin/.action_conv.php' modpack";
+	system "php '$RealBin/.action_conv.php' modpack";
 }
 
 sub action_mod_update {
-    system "php '$RealBin/.action_mod_update.php' '" . $ENV{'SOLUTION_DOWNLOAD_PAGE'} . "'";
+	system "php '$RealBin/.action_mod_update.php' '" . $ENV{'SOLUTION_DOWNLOAD_PAGE'} . "'";
 }
 
 sub action_parse {
-    system "php '$RealBin/.action_parse.php' "
-        . ($ARGV[1]? $ARGV[1] : 'index.php');
+	system "php '$RealBin/.action_parse.php' "
+		. ($ARGV[1]? $ARGV[1] : 'index.php');
 }
 
 # convert to haxe - list of tokens https://www.php.net/manual/ru/tokens.php
 my %lang_replaces = (
-    # types
-    'string' => 'String',
-    'int' => 'Int',
-    'float' => 'Float',
-    # functions
-    '__construct' => 'new',
-    'parent' => 'super',
-    'var_dump' => 'trace',
-    'print_r' => 'trace',
-    'intval' => 'Std.int',
+	# types
+	'string' => 'String',
+	'int' => 'Int',
+	'float' => 'Float',
+	# functions
+	'__construct' => 'new',
+	'parent' => 'super',
+	'var_dump' => 'trace',
+	'print_r' => 'trace',
+	'intval' => 'Std.int',
 );
 my %output_tokens = (
-    '/*override*/' => 'override',
-    '/*var*/' => 'var',
+	'/*override*/' => 'override',
+	'/*var*/' => 'var',
 );
 my $use_var;
 my $var_type;
@@ -587,229 +587,229 @@ my $function_decl;
 my $foreach_ops;
 my $foreach;
 my %token_handlers = (
-    'T_OPEN_TAG' => sub {
-        return '';
-    },
-    'T_CLOSE_TAG' => sub {
-        return '';
-    },
-    'T_DECLARE' => sub {
-        return '// ' . $_[1]; # read while ;
-    },
+	'T_OPEN_TAG' => sub {
+		return '';
+	},
+	'T_CLOSE_TAG' => sub {
+		return '';
+	},
+	'T_DECLARE' => sub {
+		return '// ' . $_[1]; # read while ;
+	},
 
-    'T_NAMESPACE' => sub {
-        return 'package';
-    },
-    'T_USE' => sub {
-        return 'import';
-    },
-    'T_NS_SEPARATOR' => sub {
-        if ($function_decl) {
-            $var_type .= '.';
-            return '';
-        }
-        return '.';
-    },
+	'T_NAMESPACE' => sub {
+		return 'package';
+	},
+	'T_USE' => sub {
+		return 'import';
+	},
+	'T_NS_SEPARATOR' => sub {
+		if ($function_decl) {
+			$var_type .= '.';
+			return '';
+		}
+		return '.';
+	},
 
-    'T_PRIVATE' => sub {
-        $use_var = 1;
-        return $_[1];
-    },
-    'T_PROTECTED' => sub {
-        $use_var = 1;
-        return $_[1];
-    },
-    'T_PUBLIC' => sub {
-        $use_var = 1;
-        return $_[1];
-    },
-    'T_COMMENT' => sub {
-        if (exists $output_tokens{$_[1]}) {
-            return $output_tokens{$_[1]};
-        }
-        return $_[1];
-    },
+	'T_PRIVATE' => sub {
+		$use_var = 1;
+		return $_[1];
+	},
+	'T_PROTECTED' => sub {
+		$use_var = 1;
+		return $_[1];
+	},
+	'T_PUBLIC' => sub {
+		$use_var = 1;
+		return $_[1];
+	},
+	'T_COMMENT' => sub {
+		if (exists $output_tokens{$_[1]}) {
+			return $output_tokens{$_[1]};
+		}
+		return $_[1];
+	},
 
-    'T_VARIABLE' => sub {
-        my $stype = '';
-        if ($function_decl) {
-            if (exists $lang_replaces{$var_type}) {
-                $stype = ': ' . $lang_replaces{$var_type};
-            } else {
-                $stype = ': ' . $var_type;
-            }
-        }
-        my $result = ($use_var? 'var ' : '') . substr($_[1], 1) . $stype;
-        $var_type = '';
-        if ($foreach) {
-            $foreach_ops .= $result;
-            return '';
-        }
-        return $result;
-    },
-    'T_FUNCTION' => sub {
-        $use_var = 0;
-        $function_head = 1;
-        $function_decl = 0;
-        $var_type = '';
-        return $_[1];
-    },
+	'T_VARIABLE' => sub {
+		my $stype = '';
+		if ($function_decl) {
+			if (exists $lang_replaces{$var_type}) {
+				$stype = ': ' . $lang_replaces{$var_type};
+			} else {
+				$stype = ': ' . $var_type;
+			}
+		}
+		my $result = ($use_var? 'var ' : '') . substr($_[1], 1) . $stype;
+		$var_type = '';
+		if ($foreach) {
+			$foreach_ops .= $result;
+			return '';
+		}
+		return $result;
+	},
+	'T_FUNCTION' => sub {
+		$use_var = 0;
+		$function_head = 1;
+		$function_decl = 0;
+		$var_type = '';
+		return $_[1];
+	},
 
-    'T_STRING' => sub {
-        if ($function_decl) {
-            $var_type .= $_[1];
-            return '';
-        }
-        my $result = '';
-        if (exists $lang_replaces{$_[1]}) {
-            $result = $lang_replaces{$_[1]};
-        }
-        else {
-            $result = $_[1];
-        }
-        if ($foreach) {
-            $foreach_ops .= $result;
-            return '';
-        }
-        return $result;
-    },
+	'T_STRING' => sub {
+		if ($function_decl) {
+			$var_type .= $_[1];
+			return '';
+		}
+		my $result = '';
+		if (exists $lang_replaces{$_[1]}) {
+			$result = $lang_replaces{$_[1]};
+		}
+		else {
+			$result = $_[1];
+		}
+		if ($foreach) {
+			$foreach_ops .= $result;
+			return '';
+		}
+		return $result;
+	},
 
-    'T_DOUBLE_COLON' => sub {
-        my $result = '.';
-        if ($foreach) {
-            $foreach_ops .= $result;
-            return '';
-        }
-        return $result;
-    },
-    'T_OBJECT_OPERATOR' => sub {
-        my $result = '.';
-        if ($foreach) {
-            $foreach_ops .= $result;
-            return '';
-        }
-        return $result;
-    },
-    'T_FOREACH' => sub {
-        $foreach_ops = '';
-        $foreach = 1;
-        return 'for';
-    },
-    'T_AS' => sub {
-        if ($foreach) {
-            $foreach_ops .= ' in ';
-            return '';
-        }
-        return $_[1];
-    }
+	'T_DOUBLE_COLON' => sub {
+		my $result = '.';
+		if ($foreach) {
+			$foreach_ops .= $result;
+			return '';
+		}
+		return $result;
+	},
+	'T_OBJECT_OPERATOR' => sub {
+		my $result = '.';
+		if ($foreach) {
+			$foreach_ops .= $result;
+			return '';
+		}
+		return $result;
+	},
+	'T_FOREACH' => sub {
+		$foreach_ops = '';
+		$foreach = 1;
+		return 'for';
+	},
+	'T_AS' => sub {
+		if ($foreach) {
+			$foreach_ops .= ' in ';
+			return '';
+		}
+		return $_[1];
+	}
 );
 
 sub process_token {
-    my ($key, $value, $line) = @_;
-    my $result = '';
-    if (exists $token_handlers{$key}) {
-        return $token_handlers{$key}->($key, $value, $line);
-    }
-    if ($value eq '(') {
-        if ($function_head) {
-            $function_decl = 1;
-        }
-        if ($foreach) {
-            $foreach_ops .= $value;
-            return '';
-        }
-    }
-    if ($value eq ')') {
-        if ($function_head) {
-            $function_decl = 0;
-        }
-        if ($foreach) {
-            $foreach_ops .= $value;
-            return '';
-        }
-    }
-    if ($value eq '{') {
-        $function_head = 0;
-        if ($foreach) {
-            my @ops = split(' in ', substr(trim($foreach_ops), 1, -1));
-            $result = '(' . $ops[1] . ' in ' . $ops[0] . ') ';
-            $foreach_ops = '';
-            $foreach = 0;
-            return $result . $value;
-        }
-    }
-    return $value;
+	my ($key, $value, $line) = @_;
+	my $result = '';
+	if (exists $token_handlers{$key}) {
+		return $token_handlers{$key}->($key, $value, $line);
+	}
+	if ($value eq '(') {
+		if ($function_head) {
+			$function_decl = 1;
+		}
+		if ($foreach) {
+			$foreach_ops .= $value;
+			return '';
+		}
+	}
+	if ($value eq ')') {
+		if ($function_head) {
+			$function_decl = 0;
+		}
+		if ($foreach) {
+			$foreach_ops .= $value;
+			return '';
+		}
+	}
+	if ($value eq '{') {
+		$function_head = 0;
+		if ($foreach) {
+			my @ops = split(' in ', substr(trim($foreach_ops), 1, -1));
+			$result = '(' . $ops[1] . ' in ' . $ops[0] . ') ';
+			$foreach_ops = '';
+			$foreach = 0;
+			return $result . $value;
+		}
+	}
+	return $value;
 }
 
 sub action_haxe {
-    my $srcPath = $ARGV[1]? $ARGV[1] : 'index.php';
-    my $path = $srcPath . '.log';
-    my $dest = dirname($srcPath) . '/' . basename($srcPath,  '.php') . '.hx';
-    if (-f $dest) {
-        unlink($dest);
-    }
-    action_parse();
-    open(my $fout, '>:encoding(UTF-8)', $dest) or die "Could not open '$dest' $!\n";
-    my $csv = Text::CSV->new({
-        binary    => 1,
-        auto_diag => 1,
-        sep_char  => ','
-    });
-    open(my $tokensData, '<:encoding(utf8)', $path) or die "Could not open '$path' $!\n";
-    while (my $fields = $csv->getline($tokensData)) {
-        print $fout process_token($fields->[0], $fields->[1], $fields->[2]);
-    }
-    if (not $csv->eof) {
-        $csv->error_diag();
-    }
-    close $tokensData;
-    close $fout;
+	my $srcPath = $ARGV[1]? $ARGV[1] : 'index.php';
+	my $path = $srcPath . '.log';
+	my $dest = dirname($srcPath) . '/' . basename($srcPath,  '.php') . '.hx';
+	if (-f $dest) {
+		unlink($dest);
+	}
+	action_parse();
+	open(my $fout, '>:encoding(UTF-8)', $dest) or die "Could not open '$dest' $!\n";
+	my $csv = Text::CSV->new({
+		binary    => 1,
+		auto_diag => 1,
+		sep_char  => ','
+	});
+	open(my $tokensData, '<:encoding(utf8)', $path) or die "Could not open '$path' $!\n";
+	while (my $fields = $csv->getline($tokensData)) {
+		print $fout process_token($fields->[0], $fields->[1], $fields->[2]);
+	}
+	if (not $csv->eof) {
+		$csv->error_diag();
+	}
+	close $tokensData;
+	close $fout;
 }
 
 sub action_es9_install {
-    my $srcUrl = 'https://dl.google.com/closure-compiler/compiler-latest.zip';
-    my $homeBin = $ENV{'HOME'} . '/bin';
-    if (-d $homeBin) {
-        my $destPath = $homeBin . '/closure-compiler';
-        my $outputFile = $destPath . '/compiler-latest.zip';
-        mkdir $destPath;
-        request_get($srcUrl, $outputFile);
-        ziparchive_extract($outputFile, $destPath);
-        my $destFile = $destPath . '/closure-compiler.jar';
-        if (!-f $destFile) {
-            my @jarFiles = glob "$destPath/*.jar";
-            if (scalar @jarFiles > 0) {
-                move($jarFiles[0], $destFile);
-            }
-        }
-        unlink($outputFile);
-    }
-    else {
-        die('$HOME/bin/ not exists');
-    }
+	my $srcUrl = 'https://dl.google.com/closure-compiler/compiler-latest.zip';
+	my $homeBin = $ENV{'HOME'} . '/bin';
+	if (-d $homeBin) {
+		my $destPath = $homeBin . '/closure-compiler';
+		my $outputFile = $destPath . '/compiler-latest.zip';
+		mkdir $destPath;
+		request_get($srcUrl, $outputFile);
+		ziparchive_extract($outputFile, $destPath);
+		my $destFile = $destPath . '/closure-compiler.jar';
+		if (!-f $destFile) {
+			my @jarFiles = glob "$destPath/*.jar";
+			if (scalar @jarFiles > 0) {
+				move($jarFiles[0], $destFile);
+			}
+		}
+		unlink($outputFile);
+	}
+	else {
+		die('$HOME/bin/ not exists');
+	}
 }
 
 sub action_es9 {
-    my $basePath = shift;
-    if ((scalar @ARGV != 2) || !($ARGV[1] eq 'all')) {
-        $basePath = getcwd();
-    }
-    my $homeBin = $ENV{'HOME'} . '/bin';
-    my $compilerPath = $homeBin . '/closure-compiler/closure-compiler.jar';
-    finddepth(sub {
-        if (($_ eq '.') || ($_ eq '..')) {
-            return;
-        }
-        my $type = substr($_, -7);
-        if (($type ne '.es9.js') && ($type ne '.es6.js')) {
-            return;
-        }
-        my $f = $File::Find::name;
-        my $destFile = $f;
-        $destFile =~ s/\.es\d+\.js/\.min.js/gi;
-        say "processing $f -> $destFile ...";
-        system "java -jar $compilerPath --js '$f' --js_output_file '$destFile' --language_in ECMASCRIPT_2018 --language_out ECMASCRIPT5_STRICT";
-    }, $basePath);
+	my $basePath = shift;
+	if ((scalar @ARGV != 2) || !($ARGV[1] eq 'all')) {
+		$basePath = getcwd();
+	}
+	my $homeBin = $ENV{'HOME'} . '/bin';
+	my $compilerPath = $homeBin . '/closure-compiler/closure-compiler.jar';
+	finddepth(sub {
+		if (($_ eq '.') || ($_ eq '..')) {
+			return;
+		}
+		my $type = substr($_, -7);
+		if (($type ne '.es9.js') && ($type ne '.es6.js')) {
+			return;
+		}
+		my $f = $File::Find::name;
+		my $destFile = $f;
+		$destFile =~ s/\.es\d+\.js/\.min.js/gi;
+		say "processing $f -> $destFile ...";
+		system "java -jar $compilerPath --js '$f' --js_output_file '$destFile' --language_in ECMASCRIPT_2018 --language_out ECMASCRIPT5_STRICT";
+	}, $basePath);
 }
 
 sub is_ubuntu {
@@ -903,8 +903,8 @@ sub action_lamp_install {
 		say '# Mysql config check...';
 		system 'sudo mysqladmin -p -u root version';
 
-        my $mysqlContent = file_get_contents($RealBin . '/.template/ubuntu18.04/bitrix.my.cnf');
-        sudo_patch_file('/etc/mysql/my.cnf', $mysqlContent);
+		my $mysqlContent = file_get_contents($RealBin . '/.template/ubuntu18.04/bitrix.my.cnf');
+		sudo_patch_file('/etc/mysql/my.cnf', $mysqlContent);
 
 		say '';
 		say '# Mail sender setup...';
@@ -919,24 +919,24 @@ sub action_lamp_install {
 }
 
 sub random_password {
-    my $length = 20;
-    my $result = '';
-    my @chars = ('A'..'Z', 'a'..'z', '0'..'9', '!', '_', '-', '.', ',', '|');
-    my @addchars = ('!', '_', '-', '.', ',', '|');
-    my @digits = ('0'..'9');
-    $result .= $chars[int(rand(@chars))] for 1..$length;
-    $result .= $addchars[int(rand(@addchars))];
-    $result = $addchars[int(rand(@addchars))] . $result;
-    $result .= $digits[int(rand(@digits))];
-    return $result;
+	my $length = 20;
+	my $result = '';
+	my @chars = ('A'..'Z', 'a'..'z', '0'..'9', '!', '_', '-', '.', ',', '|');
+	my @addchars = ('!', '_', '-', '.', ',', '|');
+	my @digits = ('0'..'9');
+	$result .= $chars[int(rand(@chars))] for 1..$length;
+	$result .= $addchars[int(rand(@addchars))];
+	$result = $addchars[int(rand(@addchars))] . $result;
+	$result .= $digits[int(rand(@digits))];
+	return $result;
 }
 
 sub random_name {
-    my $length = 9;
-    my $result = '';
-    my @chars = ('A'..'Z', 'a'..'z', '0'..'9');
-    $result .= $chars[int(rand(@chars))] for 1..$length;
-    return 'usr' . $result;
+	my $length = 9;
+	my $result = '';
+	my @chars = ('A'..'Z', 'a'..'z', '0'..'9');
+	$result .= $chars[int(rand(@chars))] for 1..$length;
+	return 'usr' . $result;
 }
 
 sub action_site_init {
@@ -947,26 +947,42 @@ sub action_site_init {
 		my $https = $ARGV[2]? $ARGV[2] : ''; # http or https
 		my $sitehost = basename($path);
 
-        my $dbpassword = random_password();
-        my $dbname = random_name();
-
-        my $envContent = file_get_contents($RealBin . '/.template/.env');
-        $envContent =~ s/dbname1/$dbname/g;
-        $envContent =~ s/dbuser1/$dbname/g;
-        $envContent =~ s/dbpassword12345/$dbpassword/g;
-        file_put_contents($path . '/.env', $envContent);
-
 		my $siteconf = '';
 		my $dbconf = '';
-        if ($encoding eq 'win') {
+		if ($encoding eq 'win') {
 			$siteconf = 'win1251site.conf';
-            $dbconf = 'win1251dbcreate.sql';
+			$dbconf = 'win1251dbcreate.sql';
 		} else {
 			$siteconf = 'utf8site.conf';
-            $dbconf = 'utf8dbcreate.sql';
+			$dbconf = 'utf8dbcreate.sql';
+			$encoding = 'utf';
 		}
 		if ($https eq 'https') {
 			$siteconf = $https . $siteconf;
+		}
+
+		my $dbpassword = random_password();
+		my $dbname = random_name();
+
+		my %wwwFiles = (
+			'.template/.env' => '.env',
+			'.template/www_' . $encoding . '/bitrix/.settings.php' => 'bitrix/.settings.php',
+			'.template/www_' . $encoding . '/bitrix/php_interface/dbconn.php' => 'bitrix/php_interface/dbconn.php',
+			'.template/www_' . $encoding . '/bitrix/php_interface/after_connect.php' => 'bitrix/php_interface/after_connect.php',
+			'.template/www_' . $encoding . '/bitrix/php_interface/after_connect_d7.php' => 'bitrix/php_interface/after_connect_d7.php',
+		);
+		if (! -d $path . '/bitrix') {
+			mkdir $path . '/bitrix';
+		}
+		if (! -d $path . '/bitrix/php_interface') {
+			mkdir $path . '/bitrix/php_interface';
+		}
+		for my $fname (keys %wwwFiles) {
+			my $envContent = file_get_contents($RealBin . '/' . $fname);
+			$envContent =~ s/dbname1/$dbname/g;
+			$envContent =~ s/dbuser1/$dbname/g;
+			$envContent =~ s/dbpassword12345/$dbpassword/g;
+			file_put_contents($path . '/' . $wwwFiles{$fname}, $envContent);
 		}
 
 		$siteconf = $RealBin . '/.template/ubuntu18.04/' . $siteconf;
@@ -978,15 +994,15 @@ sub action_site_init {
 		$siteconf = $path . '/.apache2.conf.tmp';
 		file_put_contents($siteconf, $content);
 
-        $dbconf = $RealBin . '/.template/ubuntu18.04/' . $dbconf;
-        my $sqlContent = file_get_contents($dbconf);
-        $sqlContent =~ s/bitrixdb1/$dbname/g;
-        $sqlContent =~ s/bitrixuser1/$dbname/g;
-        $sqlContent =~ s/bitrixpassword1/$dbpassword/g;
-        $dbconf = $path . '/.dbcreate.tmp.sql';
-        file_put_contents($dbconf, $sqlContent);
-        system 'sudo mysql -u root < ' . $dbconf;
-        unlink($dbconf);
+		$dbconf = $RealBin . '/.template/ubuntu18.04/' . $dbconf;
+		my $sqlContent = file_get_contents($dbconf);
+		$sqlContent =~ s/bitrixdb1/$dbname/g;
+		$sqlContent =~ s/bitrixuser1/$dbname/g;
+		$sqlContent =~ s/bitrixpassword1/$dbpassword/g;
+		$dbconf = $path . '/.dbcreate.tmp.sql';
+		file_put_contents($dbconf, $sqlContent);
+		system 'sudo mysql -u root < ' . $dbconf;
+		unlink($dbconf);
 
 		system 'bx fixdir';
 
@@ -1025,54 +1041,54 @@ our $site_root = detect_site_root('');
 our %config = load_env($site_root . '/.env');
 
 my %actions = (
-    'help' => \&action_help,
-    'self-install' => \&action_self_install,
-    'fetch' => \&action_fetch,
+	'help' => \&action_help,
+	'self-install' => \&action_self_install,
+	'fetch' => \&action_fetch,
 
-    'lamp-install' => \&action_lamp_install,
-    'site-init' => \&action_site_init,
-    'site-hosts' => \&action_site_hosts,
+	'lamp-install' => \&action_lamp_install,
+	'site-init' => \&action_site_init,
+	'site-hosts' => \&action_site_hosts,
 
-    'env' => \&action_env,
-    'ftp' => \&action_ftp,
-    'ssh' => \&action_ssh,
+	'env' => \&action_env,
+	'ftp' => \&action_ftp,
+	'ssh' => \&action_ssh,
 
-    'status' => \&action_status,
-    'pull' => \&action_pull,
-    'reset' => \&action_reset,
+	'status' => \&action_status,
+	'pull' => \&action_pull,
+	'reset' => \&action_reset,
 
-    'checkout' => \&action_checkout,
+	'checkout' => \&action_checkout,
 
-    'fixdir' => \&action_fixdir,
-    'solution-init' => \&action_solution_init,
-    'solution-reset' => \&action_solution_reset,
+	'fixdir' => \&action_fixdir,
+	'solution-init' => \&action_solution_init,
+	'solution-reset' => \&action_solution_reset,
 
-    'conv-utf' => \&action_conv_utf,
-    'conv-win' => \&action_conv_win,
-    'mod-pack' => \&action_mod_pack,
-    'mod-update' => \&action_mod_update,
+	'conv-utf' => \&action_conv_utf,
+	'conv-win' => \&action_conv_win,
+	'mod-pack' => \&action_mod_pack,
+	'mod-update' => \&action_mod_update,
 
-    'build' => \&action_build,
-    'rebuild' => \&action_rebuild,
+	'build' => \&action_build,
+	'rebuild' => \&action_rebuild,
 
-    'parse' => \&action_parse,
-    'haxe' => \&action_haxe,
+	'parse' => \&action_parse,
+	'haxe' => \&action_haxe,
 
-    'es9-install' => \&action_es9_install,
-    'es9' => \&action_es9,
+	'es9-install' => \&action_es9_install,
+	'es9' => \&action_es9,
 
-    'start' => \&action_start,
-    'stop' => \&action_stop,
+	'start' => \&action_start,
+	'stop' => \&action_stop,
 
-    'mkcert-install' => \&action_mkcert_install,
+	'mkcert-install' => \&action_mkcert_install,
 );
 my $action = '';
 if (scalar @ARGV == 0) {
-    $action = 'help';
+	$action = 'help';
 } else {
-    $action = $ARGV[0];
+	$action = $ARGV[0];
 }
 if (!exists $actions{$action}) {
-    $action = 'help';
+	$action = 'help';
 }
 $actions{$action}->($site_root);
