@@ -888,8 +888,16 @@ sub action_lamp_install {
 		system 'sudo snap install node --channel=12/stable --classic';
 
 		my $phpContent = file_get_contents($RealBin . '/.template/bitrix.php.ini');
-		sudo_patch_file('/etc/php/7.2/apache2/php.ini', $phpContent);
-		sudo_patch_file('/etc/php/7.2/cli/php.ini', $phpContent);
+		my $phpVersion = '7.0';
+		if (-d '/etc/php/7.4/') {
+			$phpVersion = '7.4';
+		} elsif (-d '/etc/php/7.2/') {
+			$phpVersion = '7.2';
+		} elsif (-d '/etc/php/7.1/') {
+			$phpVersion = '7.1';
+		}
+		sudo_patch_file('/etc/php/' . $phpVersion . '/apache2/php.ini', $phpContent);
+		sudo_patch_file('/etc/php/' . $phpVersion . '/cli/php.ini', $phpContent);
 
 		my $homePath = $ENV{'HOME'};
 		my $extWww = $homePath . '/ext_www';
