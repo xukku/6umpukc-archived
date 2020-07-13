@@ -951,29 +951,71 @@ sub random_name {
 }
 
 sub action_site_init {
+	our $site_root;
+	my $site_exists = ($site_root ne '') && (exists $ENV{'SITE_ENCODING'});
+
 	if (is_ubuntu()) {
-		my $basePath = shift;
 		my $path = getcwd();
 		my $encoding = $ARGV[1]? $ARGV[1] : 'win'; # win or utf
-		my $https = $ARGV[2]? $ARGV[2] : ''; # http or https
-		my $sitehost = basename($path);
-
-		my $siteconf = '';
-		my $dbconf = '';
-		if ($encoding eq 'win') {
-			$siteconf = 'win1251site.conf';
-			$dbconf = 'win1251dbcreate.sql';
-		} else {
-			$siteconf = 'utf8site.conf';
-			$dbconf = 'utf8dbcreate.sql';
-			$encoding = 'utf';
-		}
-		if ($https eq 'https') {
-			$siteconf = $https . $siteconf;
-		}
-
 		my $dbpassword = random_password();
 		my $dbname = random_name();
+
+		if ($site_exists) {
+			$encoding = $ENV{'SITE_ENCODING'};
+			$dbpassword = $ENV{'DB_PASSWORD'};
+			$dbname = $ENV{'DB_NAME'};
+			$path = $site_root;
+		} else {
+			my $basePath = shift;
+			my $https = $ARGV[2]? $ARGV[2] : ''; # http or https
+			my $sitehost = basename($path);
+
+			my $siteconf = '';
+			my $dbconf = '';
+			if ($encoding eq 'win') {
+				$siteconf = 'win1251site.conf';
+				$dbconf = 'win1251dbcreate.sql';
+			} else {
+				$siteconf = 'utf8site.conf';
+				$dbconf = 'utf8dbcreate.sql';
+				$encoding = 'utf';
+			}
+			if ($https eq 'https') {
+				$siteconf = $https . $siteconf;
+			}
+
+			# init site cont files
+			$siteconf = $RealBin . '/.template/ubuntu18.04/' . $siteconf;
+			my $content = file_get_contents($siteconf);
+			$content =~ s|/home/user/ext_www/bitrix\-site\.com|$path|g;
+			$content =~ s|bitrix\-site\.com|$sitehost|g;
+			my $currentUser = $ENV{'USER'};
+			$content =~ s|/home/user/.ssl/|/home/$currentUser/.ssl/|g;
+			$siteconf = $path . '/.apache2.conf.tmp';
+			file_put_contents($siteconf, $content);
+
+			# init database
+			$dbconf = $RealBin . '/.template/ubuntu18.04/' . $dbconf;
+			my $sqlContent = file_get_contents($dbconf);
+			$sqlContent =~ s/bitrixdb1/$dbname/g;
+			$sqlContent =~ s/bitrixuser1/$dbname/g;
+			$sqlContent =~ s/bitrixpassword1/$dbpassword/g;
+			$dbconf = $path . '/.dbcreate.tmp.sql';
+			file_put_contents($dbconf, $sqlContent);
+			system 'sudo mysql -u root < ' . $dbconf;
+			unlink($dbconf);
+
+			system 'bx fixdir';
+
+			my $destpath = '/etc/apache2/sites-available/' . $sitehost . '.conf';
+			say '';
+			say '# Apache2 site config -> ' . $destpath;
+			say '';
+			say $content;
+			system 'sudo mv ' . $siteconf . ' ' . $destpath;
+			system 'sudo a2ensite ' . $sitehost . '.conf';
+			system 'sudo systemctl reload apache2';
+		}
 
 		my %wwwFiles = (
 			'.template/.env' => '.env',
@@ -982,6 +1024,11 @@ sub action_site_init {
 			'.template/www_' . $encoding . '/bitrix/php_interface/after_connect.php' => 'bitrix/php_interface/after_connect.php',
 			'.template/www_' . $encoding . '/bitrix/php_interface/after_connect_d7.php' => 'bitrix/php_interface/after_connect_d7.php',
 		);
+		if ($site_exists) {
+			delete $wwwFiles{'.template/.env'};
+		}
+
+		# init bitrix files
 		if (! -d $path . '/bitrix') {
 			mkdir $path . '/bitrix';
 		}
@@ -993,38 +1040,9 @@ sub action_site_init {
 			$envContent =~ s/dbname1/$dbname/g;
 			$envContent =~ s/dbuser1/$dbname/g;
 			$envContent =~ s/dbpassword12345/$dbpassword/g;
+			$envContent =~ s/111encoding111/$encoding/g;
 			file_put_contents($path . '/' . $wwwFiles{$fname}, $envContent);
 		}
-
-		$siteconf = $RealBin . '/.template/ubuntu18.04/' . $siteconf;
-		my $content = file_get_contents($siteconf);
-		$content =~ s|/home/user/ext_www/bitrix\-site\.com|$path|g;
-		$content =~ s|bitrix\-site\.com|$sitehost|g;
-		my $currentUser = $ENV{'USER'};
-		$content =~ s|/home/user/.ssl/|/home/$currentUser/.ssl/|g;
-		$siteconf = $path . '/.apache2.conf.tmp';
-		file_put_contents($siteconf, $content);
-
-		$dbconf = $RealBin . '/.template/ubuntu18.04/' . $dbconf;
-		my $sqlContent = file_get_contents($dbconf);
-		$sqlContent =~ s/bitrixdb1/$dbname/g;
-		$sqlContent =~ s/bitrixuser1/$dbname/g;
-		$sqlContent =~ s/bitrixpassword1/$dbpassword/g;
-		$dbconf = $path . '/.dbcreate.tmp.sql';
-		file_put_contents($dbconf, $sqlContent);
-		system 'sudo mysql -u root < ' . $dbconf;
-		unlink($dbconf);
-
-		system 'bx fixdir';
-
-		my $destpath = '/etc/apache2/sites-available/' . $sitehost . '.conf';
-		say '';
-		say '# Apache2 site config -> ' . $destpath;
-		say '';
-		say $content;
-		system 'sudo mv ' . $siteconf . ' ' . $destpath;
-		system 'sudo a2ensite ' . $sitehost . '.conf';
-		system 'sudo systemctl reload apache2';
 	}
 }
 
