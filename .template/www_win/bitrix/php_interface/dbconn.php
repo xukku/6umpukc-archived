@@ -35,3 +35,5 @@ define("BX_COMPRESSION_DISABLED", true);
 define("BX_USE_MYSQLI", true);
 
 mb_internal_encoding('Windows-1251');
+setlocale(LC_ALL, 'ru_RU.CP1251');
+setlocale(LC_NUMERIC,'C');
