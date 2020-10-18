@@ -226,6 +226,7 @@ sub action_fetch {
 		'crm'      => 'https://www.1c-bitrix.ru/download/portal/bitrix24_encode_php5.tar.gz',
 		'setup'    => 'https://www.1c-bitrix.ru/download/scripts/bitrixsetup.php',
 		'restore'  => 'https://www.1c-bitrix.ru/download/scripts/restore.php',
+		'test'     => 'https://dev.1c-bitrix.ru/download/scripts/bitrix_server_test.php',
 	);
 	my $outputFile = '.bitrix.tar.gz';
 	my $extractOptions = './';
@@ -240,6 +241,8 @@ sub action_fetch {
 		$outputFile = 'bitrixsetup.php';
 	} elsif ($edition eq 'restore') {
 		$outputFile = 'restore.php';
+	} elsif ($edition eq 'test') {
+		$outputFile = 'bitrix_server_test.php';
 	} elsif ($edition eq 'micro') {
 		$extractOptions = './bitrix/modules';
 	}
@@ -926,6 +929,17 @@ sub action_lamp_install {
 			system 'sudo unlink /etc/msmtprc';
 		}
 		system 'sudo ln -s ' . $homePath . '/.msmtprc /etc/msmtprc';
+
+		say '';
+		say '# Setup locale for windows-1251...';
+		system 'sudo locale-gen ru_RU.CP1251';
+		system 'sudo dpkg-reconfigure locales';
+
+		# check locale:
+		#	`locale -a | grep ru`
+		#	`less /usr/share/i18n/SUPPORTED | grep ru_RU | grep CP1251`
+		# for centos:
+		#	`localedef -c -i ru_RU -f CP1251 ru_RU.CP1251`
 	}
 }
 
@@ -1018,6 +1032,11 @@ sub action_site_init {
 		}
 
 		my %wwwFiles = (
+			# bitrix scripts
+			'.template/bitrixsetup.php' => 'bitrixsetup.php',
+			'.template/restore.php' => 'restore.php',
+			'.template/bitrix_server_test.php' => 'bitrix_server_test.php.php',
+
 			'.template/.env' => '.env',
 			'.template/www_' . $encoding . '/bitrix/.settings.php' => 'bitrix/.settings.php',
 			'.template/www_' . $encoding . '/bitrix/php_interface/dbconn.php' => 'bitrix/php_interface/dbconn.php',
