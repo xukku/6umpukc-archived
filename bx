@@ -1035,7 +1035,7 @@ sub action_site_init {
 			# bitrix scripts
 			'.template/bitrixsetup.php' => 'bitrixsetup.php',
 			'.template/restore.php' => 'restore.php',
-			'.template/bitrix_server_test.php' => 'bitrix_server_test.php.php',
+			'.template/bitrix_server_test.php' => 'bitrix_server_test.php',
 
 			'.template/.env' => '.env',
 			'.template/www_' . $encoding . '/bitrix/.settings.php' => 'bitrix/.settings.php',
