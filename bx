@@ -905,6 +905,8 @@ sub action_lamp_install {
 			. ' rinetd'
 		;
 		system 'sudo a2enmod rewrite';
+		system 'sudo a2enmod proxy';
+		system 'sudo a2enmod proxy_http';
 		system 'sudo snap install node --channel=12/stable --classic';
 
 		my $phpContent = file_get_contents($RealBin . '/.template/bitrix.php.ini');
@@ -1100,6 +1102,36 @@ sub action_site_hosts {
 	system "sudo mv '" . $tmp . "' /etc/hosts";
 }
 
+sub action_site_proxy {
+	if (is_ubuntu()) {
+		my $path = getcwd();
+		my $sitehost = basename($path);
+		my $destpath = '/etc/apache2/sites-available/' . $sitehost . '.conf';
+		if (!-f $destpath) {
+			die "Config for site $sitehost not exists.\n";
+		}
+		my $ip = $ARGV[1]? $ARGV[1] : 'remove';
+		my $originalContent = file_get_contents($destpath);
+		my $content = "\n";
+		if (($ip ne '') && ($ip ne 'remove')) {
+			$content = "
+ProxyPreserveHost On
+ProxyPass        /  http://$ip/
+ProxyPassReverse /  http://$ip/
+";
+		}
+		$originalContent =~ s|\#bx\-proxy\s+start.+?\#bx\-proxy\s+end|\#bx\-proxy start$content\#bx\-proxy end|gis;
+		say '';
+		say '# Apache2 site config -> ' . $destpath;
+		say '';
+		say $originalContent;
+		my $tmp = $path . '/.newsiteconfig.tmp';
+		file_put_contents($tmp, $originalContent);
+		system 'sudo mv ' . $tmp . ' ' . $destpath;
+		system 'sudo systemctl reload apache2';
+	}
+}
+
 # main
 
 our $site_root = detect_site_root('');
@@ -1113,6 +1145,7 @@ my %actions = (
 	'lamp-install' => \&action_lamp_install,
 	'site-init' => \&action_site_init,
 	'site-hosts' => \&action_site_hosts,
+	'site-proxy' => \&action_site_proxy,
 
 	'env' => \&action_env,
 	'ftp' => \&action_ftp,
