@@ -11,8 +11,6 @@ function Action_clear_site_and_bitrix($basePath)
 		'.idea' => 1,
 	];
 	$excludedFiles = [
-		'.access.php' => 1,
-		'.htaccess' => 1,
 		'.env' => 1,
 		'deploy.sh' => 1,
 		'deploydb.sh' => 1,
