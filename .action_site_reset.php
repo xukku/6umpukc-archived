@@ -6,7 +6,6 @@ function Action_clear_site_and_bitrix($basePath)
 {
 	$excludedDirs = [
 		'local' => 1,
-		'upload' => 1,
 		'.vscode' => 1,
 		'.idea' => 1,
 	];
