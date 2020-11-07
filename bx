@@ -1120,7 +1120,11 @@ ProxyPass        /  http://$ip/
 ProxyPassReverse /  http://$ip/
 ";
 		}
-		$originalContent =~ s|\#bx\-proxy\s+start.+?\#bx\-proxy\s+end|\#bx\-proxy start$content\#bx\-proxy end|gis;
+		if ($originalContent =~ m|\#bx\-proxy\s+start.+?\#bx\-proxy\s+end|gis) {
+			$originalContent =~ s|\#bx\-proxy\s+start.+?\#bx\-proxy\s+end|\#bx\-proxy start$content\#bx\-proxy end|gis;
+		} else {
+			$originalContent =~ s|\<\/VirtualHost\>|\#bx\-proxy start$content\#bx\-proxy end\n\n</VirtualHost>|gis;
+		}
 		say '';
 		say '# Apache2 site config -> ' . $destpath;
 		say '';
