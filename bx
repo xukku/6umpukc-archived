@@ -1136,6 +1136,17 @@ ProxyPassReverse /  http://$ip/
 	}
 }
 
+sub action_site_reset {
+	my $basePath = shift;
+	if ($basePath eq '') {
+		die "Site root not found.\n";
+	}
+	if (!confirm_continue('Warning! Site db tables and files will be removed.')) {
+		exit;
+	}
+	system "php '$RealBin/.action_site_reset.php' '" . $basePath .  "'";
+}
+
 # main
 
 our $site_root = detect_site_root('');
@@ -1150,6 +1161,7 @@ my %actions = (
 	'site-init' => \&action_site_init,
 	'site-hosts' => \&action_site_hosts,
 	'site-proxy' => \&action_site_proxy,
+	'site-reset' => \&action_site_reset,
 
 	'env' => \&action_env,
 	'ftp' => \&action_ftp,
