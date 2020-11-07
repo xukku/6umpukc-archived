@@ -534,6 +534,23 @@ sub action_solution_init {
 	if ($basePath eq '') {
 		die "Site root not found.\n";
 	}
+
+	my $solution = $ARGV[1]? $ARGV[1] : '';
+	my $solutionConfigPath = $RealBin . '/.dev/solution.env.settings/' . $solution . '/example.env';
+	if ($solution ne '') {
+		if (!-f $solutionConfigPath) {
+			die "Config for solution $solution not defined.\n";
+		}
+		my $siteConfig = $basePath . '/.env';
+		my $originalContent = file_get_contents($siteConfig);
+		my $content = file_get_contents($solutionConfigPath);
+		if (index($originalContent, $content) < 0) {
+			$content = $originalContent . "\n" . $content . "\n";
+			file_put_contents($siteConfig, $content);
+		}
+		system 'bx solution-init';
+		exit;
+	}
 	fetch_repos $basePath;
 }
 
