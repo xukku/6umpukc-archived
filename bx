@@ -521,11 +521,13 @@ sub action_fixdir {
 	if ($basePath eq '') {
 		die "Site root not found.\n";
 	}
-	if (exists $ENV{'SITE_DIR_USER'}) {
-		system 'sudo chown -R ' . $ENV{'SITE_DIR_USER'} . ' ' . $basePath;
-	}
-	if (exists $ENV{'SITE_DIR_RIGHTS'}) {
-		system 'sudo chmod -R ' . $ENV{'SITE_DIR_RIGHTS'} . ' ' . $basePath;
+	if (is_ubuntu()) {
+		if (exists $ENV{'SITE_DIR_USER'}) {
+			system 'sudo chown -R ' . $ENV{'SITE_DIR_USER'} . ' ' . $basePath;
+		}
+		if (exists $ENV{'SITE_DIR_RIGHTS'}) {
+			system 'sudo chmod -R ' . $ENV{'SITE_DIR_RIGHTS'} . ' ' . $basePath;
+		}
 	}
 }
 
@@ -562,7 +564,8 @@ sub action_solution_reset {
 	if (!confirm_continue('Warning! Site public data will be removed.')) {
 		exit;
 	}
-	system "php '$RealBin/.action_solution_reset.php' '" . $basePath .  "'";
+	action_fixdir();
+	system "php '$RealBin/.action_solution_reset.php' '" . $basePath . "'";
 }
 
 sub action_conv_utf {
@@ -1144,7 +1147,8 @@ sub action_site_reset {
 	if (!confirm_continue('Warning! Site db tables and files will be removed.')) {
 		exit;
 	}
-	system "php '$RealBin/.action_site_reset.php' '" . $basePath .  "'";
+	action_fixdir();
+	system "php '$RealBin/.action_site_reset.php' '" . $basePath . "'";
 }
 
 # main
