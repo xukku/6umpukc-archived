@@ -86,5 +86,5 @@ function Action_clear_db_tables($basePath)
 
 $basePath = $_SERVER['DOCUMENT_ROOT'];
 
-Action_clear_db_tables($basePath);
 Action_clear_site_and_bitrix($basePath);
+Action_clear_db_tables($basePath);
