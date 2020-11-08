@@ -564,7 +564,7 @@ sub action_solution_reset {
 	if (!confirm_continue('Warning! Site public data will be removed.')) {
 		exit;
 	}
-	action_fixdir();
+	action_fixdir($basePath);
 	system "php '$RealBin/.action_solution_reset.php' '" . $basePath . "'";
 }
 
@@ -1147,7 +1147,7 @@ sub action_site_reset {
 	if (!confirm_continue('Warning! Site db tables and files will be removed.')) {
 		exit;
 	}
-	action_fixdir();
+	action_fixdir($basePath);
 	system "php '$RealBin/.action_site_reset.php' '" . $basePath . "'";
 }
 
