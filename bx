@@ -991,6 +991,8 @@ sub action_site_init {
 	my $site_exists = ($site_root ne '') && (exists $ENV{'SITE_ENCODING'});
 
 	if (is_ubuntu()) {
+		system 'bx fixdir';
+
 		my $path = getcwd();
 		my $encoding = $ARGV[1]? $ARGV[1] : 'win'; # win or utf
 		my $dbpassword = random_password();
@@ -1040,8 +1042,6 @@ sub action_site_init {
 			file_put_contents($dbconf, $sqlContent);
 			system 'sudo mysql -u root < ' . $dbconf;
 			unlink($dbconf);
-
-			system 'bx fixdir';
 
 			my $destpath = '/etc/apache2/sites-available/' . $sitehost . '.conf';
 			say '';
@@ -1151,6 +1151,36 @@ sub action_site_reset {
 	system "php '$RealBin/.action_site_reset.php' '" . $basePath . "'";
 }
 
+sub action_site_remove {
+	my $basePath = shift;
+	if ($basePath eq '') {
+		die "Site root not found.\n";
+	}
+	action_site_reset($basePath);
+
+	if (is_ubuntu()) {
+		my $path = getcwd();
+		# remove site
+		my $sitehost = basename($path);
+		my $destpath = '/etc/apache2/sites-available/' . $sitehost . '.conf';
+		system 'sudo a2dissite ' . $sitehost . '.conf';
+		system 'sudo rm ' . $destpath;
+		system 'sudo systemctl reload apache2';
+		# remove db
+		my $dbpassword = $ENV{'DB_PASSWORD'};
+		my $dbname = $ENV{'DB_NAME'};
+		my $dbconf = $RealBin . '/.template/ubuntu18.04/dbdrop.sql';
+		my $sqlContent = file_get_contents($dbconf);
+		$sqlContent =~ s/bitrixdb1/$dbname/g;
+		$sqlContent =~ s/bitrixuser1/$dbname/g;
+		$sqlContent =~ s/bitrixpassword1/$dbpassword/g;
+		$dbconf = $path . '/.dbdrop.tmp.sql';
+		file_put_contents($dbconf, $sqlContent);
+		system 'sudo mysql -u root < ' . $dbconf;
+		unlink($dbconf);
+	}
+}
+
 # main
 
 our $site_root = detect_site_root('');
@@ -1166,6 +1196,7 @@ my %actions = (
 	'site-hosts' => \&action_site_hosts,
 	'site-proxy' => \&action_site_proxy,
 	'site-reset' => \&action_site_reset,
+	'site-remove' => \&action_site_remove,
 
 	'env' => \&action_env,
 	'ftp' => \&action_ftp,
