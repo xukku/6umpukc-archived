@@ -1,5 +1,7 @@
 <?php
 
+// see example in "C:\Program Files (x86)\Local\resources\extraResources\adminer" ( localwp.com )
+
 header( 'Cache-Control: no-cache' );
 
 function delete_cookie( $name ) {
