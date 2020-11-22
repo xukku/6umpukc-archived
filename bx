@@ -375,6 +375,24 @@ sub action_ssh {
 	system ssh_exec_remote();
 }
 
+sub action_db {
+	my $basePath = shift;
+	if ($basePath eq '') {
+		die "Site root not found.\n";
+	}
+	my $url = '';
+	if ($ENV{'SITE_URL'} ne '') {
+		$url = $ENV{'SITE_URL'};
+	} else {
+		$url = 'http://' . basename($basePath) . '/';
+	}
+	$url .= 'adminer/?username=' . $ENV{'DB_USER'}
+		. '&db=' . $ENV{'DB_NAME'}
+		. '&password=' . $ENV{'DB_PASSWORD'};
+
+	system 'xdg-open "' . $url . '"';
+}
+
 sub confirm_continue {
 	my $title = shift;
 	print $title . " Type 'yes' to continue: ";
@@ -1201,6 +1219,7 @@ my %actions = (
 	'env' => \&action_env,
 	'ftp' => \&action_ftp,
 	'ssh' => \&action_ssh,
+	'db' => \&action_db,
 
 	'status' => \&action_status,
 	'pull' => \&action_pull,
