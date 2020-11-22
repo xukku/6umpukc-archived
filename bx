@@ -1015,16 +1015,17 @@ sub action_site_init {
 		my $encoding = $ARGV[1]? $ARGV[1] : 'win'; # win or utf
 		my $dbpassword = random_password();
 		my $dbname = random_name();
+		my $sitehost = basename($path);
 
 		if ($site_exists) {
 			$encoding = $ENV{'SITE_ENCODING'};
 			$dbpassword = $ENV{'DB_PASSWORD'};
 			$dbname = $ENV{'DB_NAME'};
 			$path = $site_root;
+			$sitehost = basename($path);
 		} else {
 			my $basePath = shift;
 			my $https = $ARGV[2]? $ARGV[2] : ''; # http or https
-			my $sitehost = basename($path);
 
 			my $siteconf = '';
 			my $dbconf = '';
@@ -1072,6 +1073,10 @@ sub action_site_init {
 		}
 
 		my %wwwFiles = (
+			# adminer
+			'.template/adminer/index.php' => 'adminer/index.php',
+			'.template/adminer/adminer.php' => 'adminer/adminer.php',
+
 			# bitrix scripts
 			'.template/bitrixsetup.php' => 'bitrixsetup.php',
 			'.template/restore.php' => 'restore.php',
@@ -1083,11 +1088,17 @@ sub action_site_init {
 			'.template/www_' . $encoding . '/bitrix/php_interface/after_connect.php' => 'bitrix/php_interface/after_connect.php',
 			'.template/www_' . $encoding . '/bitrix/php_interface/after_connect_d7.php' => 'bitrix/php_interface/after_connect_d7.php',
 		);
+		my %replaceIgnoredFiles = (
+			'adminer.php' => 1,
+		);
 		if ($site_exists) {
 			delete $wwwFiles{'.template/.env'};
 		}
 
-		# init bitrix files
+		# init folders and files from template
+		if (! -d $path . '/adminer') {
+			mkdir $path . '/adminer';
+		}
 		if (! -d $path . '/bitrix') {
 			mkdir $path . '/bitrix';
 		}
@@ -1095,12 +1106,17 @@ sub action_site_init {
 			mkdir $path . '/bitrix/php_interface';
 		}
 		for my $fname (keys %wwwFiles) {
-			my $envContent = file_get_contents($RealBin . '/' . $fname);
-			$envContent =~ s/dbname1/$dbname/g;
-			$envContent =~ s/dbuser1/$dbname/g;
-			$envContent =~ s/dbpassword12345/$dbpassword/g;
-			$envContent =~ s/111encoding111/$encoding/g;
-			file_put_contents($path . '/' . $wwwFiles{$fname}, $envContent);
+			if (exists $replaceIgnoredFiles{basename($fname)}) {
+				copy($RealBin . '/' . $fname, $path . '/' . $wwwFiles{$fname});
+			} else {
+				my $envContent = file_get_contents($RealBin . '/' . $fname);
+				$envContent =~ s/dbname1/$dbname/g;
+				$envContent =~ s/dbuser1/$dbname/g;
+				$envContent =~ s/dbpassword12345/$dbpassword/g;
+				$envContent =~ s/111encoding111/$encoding/g;
+				$envContent =~ s/http\:\/\/bitrixsolution01\.example\.org\//https\:\/\/$sitehost\//g;
+				file_put_contents($path . '/' . $wwwFiles{$fname}, $envContent);
+			}
 		}
 	}
 }
