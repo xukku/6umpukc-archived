@@ -1012,7 +1012,7 @@ sub action_site_init {
 		system 'bx fixdir';
 
 		my $path = getcwd();
-		my $encoding = $ARGV[1]? $ARGV[1] : 'win'; # win or utf
+		my $encoding = $ARGV[1]? $ARGV[1] : 'win'; # win / utf / utflegacy
 		my $dbpassword = random_password();
 		my $dbname = random_name();
 		my $sitehost = basename($path);
@@ -1032,6 +1032,10 @@ sub action_site_init {
 			if ($encoding eq 'win') {
 				$siteconf = 'win1251site.conf';
 				$dbconf = 'win1251dbcreate.sql';
+			} elsif ($encoding eq 'utflegacy') {
+				$siteconf = 'utf8legacysite.conf';
+				$dbconf = 'utf8dbcreate.sql';
+				$encoding = 'utf';
 			} else {
 				$siteconf = 'utf8site.conf';
 				$dbconf = 'utf8dbcreate.sql';
