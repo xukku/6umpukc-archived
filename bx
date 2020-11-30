@@ -1122,6 +1122,8 @@ sub action_site_init {
 				file_put_contents($path . '/' . $wwwFiles{$fname}, $envContent);
 			}
 		}
+
+		system 'bx fixdir';
 	}
 }
 
