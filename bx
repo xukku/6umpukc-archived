@@ -1222,20 +1222,18 @@ sub action_site_remove {
 }
 
 sub action_bitrixcli_install {
-	say 'TODO!!! install docker and build bitrixcli image'
-
-	# install docker:
-	#	sudo snap install docker
-	#	usermod -aG docker "${USER}"
-	#	newgrp docker
-
-	# build:
-	#	docker build -t bitrixcli .
+	say 'sudo snap install docker';
+	say 'usermod -aG docker "${USER}"'; # check group exists
+	say 'newgrp docker';
+	chdir $RealBin . '/.template/bitrixcli/';
+	system 'pwd';
+	system 'docker rmi bitrixcli --force';
+	system 'docker build -t bitrixcli .';
 }
 
 sub action_bitrixcli {
 	#TODO!!! передавать все параметры
-	system 'docker run bitrixcli /home/node/node_modules/.bin/bitrix ' . ($ARGV[1]? $ARGV[1] : '--help');
+	system 'docker run --volume="$PWD:/home/node/work" bitrixcli bitrix ' . ($ARGV[1]? ($ARGV[1] . ' --path /home/node/work') : '--help');
 }
 
 # main
