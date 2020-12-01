@@ -1221,6 +1221,23 @@ sub action_site_remove {
 	}
 }
 
+sub action_bitrixcli_install {
+	say 'TODO!!! install docker and build bitrixcli image'
+
+	# install docker:
+	#	sudo snap install docker
+	#	usermod -aG docker "${USER}"
+	#	newgrp docker
+
+	# build:
+	#	docker build -t bitrixcli .
+}
+
+sub action_bitrixcli {
+	#TODO!!! передавать все параметры
+	system 'docker run bitrixcli /home/node/node_modules/.bin/bitrix ' . ($ARGV[1]? $ARGV[1] : '--help');
+}
+
 # main
 
 our $site_root = detect_site_root('');
@@ -1271,6 +1288,9 @@ my %actions = (
 	'stop' => \&action_stop,
 
 	'mkcert-install' => \&action_mkcert_install,
+
+	'bitrixcli' =>  \&action_bitrixcli,
+	'bitrixcli-install' =>  \&action_bitrixcli_install,
 );
 my $action = '';
 if (scalar @ARGV == 0) {
