@@ -46,8 +46,8 @@ sub is_ubuntu {
 
 sub is_mingw() {
 	if (exists $ENV{'MSYSTEM'}) {
-		if (($ENV{'MSYSTEM'} eq 'MINGW64') 
-				or ($ENV{'MSYSTEM'} eq 'MINGW32') 
+		if (($ENV{'MSYSTEM'} eq 'MINGW64')
+				or ($ENV{'MSYSTEM'} eq 'MINGW32')
 				or ($ENV{'MSYSTEM'} eq 'MSYS')) {
 			return 1;
 		}
@@ -272,7 +272,7 @@ sub bitrix_micromize {
 }
 
 sub action_help {
-	run("cat '$RealBin/README.md'", '', 0);	
+	run("cat '$RealBin/README.md'", '', 0);
 }
 
 sub action_fetch {
@@ -339,7 +339,7 @@ sub action_rebuild {
 }
 
 sub action_self_install {
-	if (is_mingw()) {		
+	if (is_mingw()) {
 		my $fname = $ENV{'HOME'} . '/.bash_profile';
 		my $initPath = 'PATH=$PATH:$HOME/bin/6umpukc';
 		if (-f $fname) {
@@ -350,7 +350,7 @@ sub action_self_install {
 		} else {
 			file_put_contents($fname, "\n" . $initPath . "\n");
 		}
-		return;		
+		return;
 	}
 	my $homeBin = $ENV{'HOME'} . '/bin';
 	if (-d $homeBin) {
@@ -370,7 +370,7 @@ sub ftp_conn_str {
 		. '@' . $ENV{'DEPLOY_SERVER'} . $ENV{'DEPLOY_PORT'} . $ENV{'DEPLOY_PATH'};
 }
 
-sub ssh_exec_remote {	
+sub ssh_exec_remote {
 	require_command('ssh');
 	require_command('sshpass');
 
@@ -406,7 +406,7 @@ sub action_ftp {
 	my $basePath = shift;
 	require_site_root($basePath);
 	require_command('filezilla');
-	
+
 	my $path;
 	my $conn_str = ftp_conn_str();
 	if ($Config{'osname'} eq 'MSWin32') {
@@ -435,7 +435,7 @@ sub action_ssh {
 sub action_db {
 	my $basePath = shift;
 	require_site_root($basePath);
-	require_command('xdg-open');	
+	require_command('xdg-open');
 
 	my $url = '';
 	if ($ENV{'SITE_URL'} ne '') {
@@ -637,7 +637,7 @@ sub action_solution_reset {
 
 sub action_conv_utf {
 	my $path = shift;
-	run "php '$RealBin/.action_conv.php' utf " 
+	run "php '$RealBin/.action_conv.php' utf "
 		. ((defined($path) && ($path ne ''))? (" '" . $path . "'") : '');
 }
 
@@ -872,7 +872,7 @@ sub action_es9_install {
 
     sudo_run('npm install -g google-closure-compiler');
     sudo_run('npm install -g minify');
-    #TODO!!! протестировать https://esbuild.github.io/api/#minify 
+    #TODO!!! протестировать https://esbuild.github.io/api/#minify
 }
 
 sub action_minify {
@@ -887,7 +887,7 @@ sub action_minify {
     finddepth(sub {
 		if (($_ eq '.') || ($_ eq '..')) {
 			return;
-		}		
+		}
 		my $f = $File::Find::name;
 		my $destFile = $f;
 		if ((substr($_, -3) eq '.js') && (substr($_, -7) ne '.min.js')) {
@@ -898,13 +898,13 @@ sub action_minify {
 			return;
 		}
 		if (!is_bx_debug()) {
-			say "processing $f -> $destFile ...";	
+			say "processing $f -> $destFile ...";
 		}
 		run("$compilerPath '$f' > '$destFile'");
-	}, $basePath);	
+	}, $basePath);
 }
 
-sub action_es9 {	
+sub action_es9 {
 	require_command('google-closure-compiler');
 	require_command('php');
 
@@ -932,7 +932,7 @@ sub action_es9 {
 			$destFile =~ s/\.js/\.min.js/gi;
 		} else {
 			return;
-		}		
+		}
 		if (!is_bx_debug()) {
 			say "processing $f -> $destFile ...";
 		}
@@ -990,7 +990,7 @@ sub sudo_patch_file {
 }
 
 sub action_mkcert_install {
-    if (is_ubuntu()) {    	
+    if (is_ubuntu()) {
     	sudo_run('apt install libnss3-tools');
     	sudo_run('snap install go --classic');
     	run('rm -Rf ~/bin/mkcert-src/');
