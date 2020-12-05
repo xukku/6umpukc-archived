@@ -620,7 +620,9 @@ sub action_solution_reset {
 }
 
 sub action_conv_utf {
-	run "php '$RealBin/.action_conv.php' utf";
+	my $path = shift;
+	run "php '$RealBin/.action_conv.php' utf " 
+		. ((defined($path) && ($path ne ''))? (" '" . $path . "'") : '');
 }
 
 sub action_conv_win {
@@ -851,6 +853,7 @@ sub action_haxe {
 sub action_es9_install {
     sudo_run('npm install -g google-closure-compiler');
     sudo_run('npm install -g minify');
+    #TODO!!! протестировать https://esbuild.github.io/api/#minify 
 }
 
 sub action_minify {
@@ -907,6 +910,7 @@ sub action_es9 {
 			return;
 		}		
 		say "processing $f -> $destFile ...";
+		action_conv_utf($f);
 		run("$compilerPath --js '$f' --js_output_file '$destFile'" . $extraParams);
 		if ($es9)
 		{

@@ -5,6 +5,17 @@ if (empty($_SERVER['argv'][1]))
 	exit(1);
 }
 
+function HandleConvUtfFileAction($name)
+{
+	$content = file_get_contents($name);
+	if (mb_detect_encoding($content, 'UTF-8', true))
+	{
+		return;
+	}	
+	$content = mb_convert_encoding($content, 'utf-8', 'windows-1251');
+	file_put_contents($name, $content);
+}
+
 function HandleConvUtfAction()
 {
 	$basePath = getcwd();
@@ -186,7 +197,8 @@ function HandleModPackAction()
 switch ($_SERVER['argv'][1])
 {
 	case 'utf':
-		HandleConvUtfAction();
+		(empty($_SERVER['argv'][2]) || !file_exists($_SERVER['argv'][2]))?
+			HandleConvUtfAction() : HandleConvUtfFileAction($_SERVER['argv'][2]);
 		break;
 	case 'win':
 		HandleConvWinAction();
