@@ -899,7 +899,7 @@ sub action_minify {
 		}
 		if (!is_bx_debug()) {
 			say "processing $f -> $destFile ...";	
-		}	
+		}
 		run("$compilerPath '$f' > '$destFile'");
 	}, $basePath);	
 }
@@ -933,7 +933,9 @@ sub action_es9 {
 		} else {
 			return;
 		}		
-		say "processing $f -> $destFile ...";
+		if (!is_bx_debug()) {
+			say "processing $f -> $destFile ...";
+		}
 		action_conv_utf($f);
 		run("$compilerPath --js '$f' --js_output_file '$destFile'" . $extraParams);
 		if ($es9)
