@@ -887,8 +887,9 @@ sub action_minify {
 	my $minify = (exists $ENV{'BX_MINIFY'} && ($ENV{'BX_MINIFY'} ne ''))?
 		$ENV{'BX_MINIFY'} : 'esbuild';
 	if ($minify eq 'esbuild') {
-		#...
+		# https://esbuild.github.io/api/#minify
 	} elsif ($minify eq 'minify') {
+		# https://www.npmjs.com/package/minify#how-to-use
 		require_command('minify');
 	} else {
 		say 'Minifier not implemented.';
