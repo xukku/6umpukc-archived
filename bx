@@ -18,6 +18,13 @@ sub trim {
     return $s;
 }
 
+sub require_site_root {
+	my $basePath = shift;
+	if ($basePath eq '') {
+		die "Site root not found.\n";
+	}
+}
+
 sub require_command {
     my $cmd = shift;
     my $test = 'which ' . $cmd;
@@ -28,6 +35,24 @@ sub require_command {
 
 sub is_bx_debug() {
 	return (!exists $ENV{'BX_DEBUG'} || ($ENV{'BX_DEBUG'} eq '1'));
+}
+
+sub is_ubuntu {
+	my $os = $Config{'myuname'};
+	return (index($os, 'debian') > 0
+		|| index($os, 'ubuntu') >= 0
+		|| index($os, 'Ubuntu') >= 0);
+}
+
+sub is_mingw() {
+	if (exists $ENV{'MSYSTEM'}) {
+		if (($ENV{'MSYSTEM'} eq 'MINGW64') 
+				or ($ENV{'MSYSTEM'} eq 'MINGW32') 
+				or ($ENV{'MSYSTEM'} eq 'MSYS')) {
+			return 1;
+		}
+	}
+	return 0;
 }
 
 sub run {
@@ -314,20 +339,18 @@ sub action_rebuild {
 }
 
 sub action_self_install {
-	if (exists $ENV{'MSYSTEM'}) {
-		if (($ENV{'MSYSTEM'} eq 'MINGW64') or ($ENV{'MSYSTEM'} eq 'MINGW32') or ($ENV{'MSYSTEM'} eq 'MSYS')) {
-			my $fname = $ENV{'HOME'} . '/.bash_profile';
-			my $initPath = 'PATH=$PATH:$HOME/bin/6umpukc';
-			if (-f $fname) {
-				my $content = file_get_contents($fname);
-				if (index($content, $initPath) < 0) {
-					file_put_contents($fname, $content . "\n" . $initPath . "\n");
-				}
-			} else {
-				file_put_contents($fname, "\n" . $initPath . "\n");
+	if (is_mingw()) {		
+		my $fname = $ENV{'HOME'} . '/.bash_profile';
+		my $initPath = 'PATH=$PATH:$HOME/bin/6umpukc';
+		if (-f $fname) {
+			my $content = file_get_contents($fname);
+			if (index($content, $initPath) < 0) {
+				file_put_contents($fname, $content . "\n" . $initPath . "\n");
 			}
-			return;
+		} else {
+			file_put_contents($fname, "\n" . $initPath . "\n");
 		}
+		return;		
 	}
 	my $homeBin = $ENV{'HOME'} . '/bin';
 	if (-d $homeBin) {
@@ -347,7 +370,10 @@ sub ftp_conn_str {
 		. '@' . $ENV{'DEPLOY_SERVER'} . $ENV{'DEPLOY_PORT'} . $ENV{'DEPLOY_PATH'};
 }
 
-sub ssh_exec_remote {
+sub ssh_exec_remote {	
+	require_command('ssh');
+	require_command('sshpass');
+
 	my $cmd = shift;
 	if (!$cmd || $cmd eq '') {
 		$cmd = 'bash --login'
@@ -360,9 +386,8 @@ sub ssh_exec_remote {
 
 sub action_env {
 	my $basePath = shift;
-	if ($basePath eq '') {
-		die "Site root not found.\n";
-	}
+	require_site_root($basePath);
+
 	our %config;
 	say "Site root:\n\t$basePath\n";
 	say 'Env config:';
@@ -379,9 +404,9 @@ sub action_env {
 
 sub action_ftp {
 	my $basePath = shift;
-	if ($basePath eq '') {
-		die "Site root not found.\n";
-	}
+	require_site_root($basePath);
+	require_command('filezilla');
+	
 	my $path;
 	my $conn_str = ftp_conn_str();
 	if ($Config{'osname'} eq 'MSWin32') {
@@ -402,17 +427,16 @@ sub action_ftp {
 
 sub action_ssh {
 	my $basePath = shift;
-	if ($basePath eq '') {
-		die "Site root not found.\n";
-	}
+	require_site_root($basePath);
+
 	run ssh_exec_remote();
 }
 
 sub action_db {
 	my $basePath = shift;
-	if ($basePath eq '') {
-		die "Site root not found.\n";
-	}
+	require_site_root($basePath);
+	require_command('xdg-open');	
+
 	my $url = '';
 	if ($ENV{'SITE_URL'} ne '') {
 		$url = $ENV{'SITE_URL'};
@@ -488,9 +512,8 @@ sub fetch_repos {
 
 sub action_status {
 	my $basePath = shift;
-	if ($basePath eq '') {
-		die "Site root not found.\n";
-	}
+	require_site_root($basePath);
+
 	my $pathModules = $basePath . '/bitrix/modules/';
 	my @solutionRepos = git_repos();
 	if (scalar @solutionRepos == 0) {
@@ -507,9 +530,8 @@ sub action_status {
 
 sub action_pull {
 	my $basePath = shift;
-	if ($basePath eq '') {
-		die "Site root not found.\n";
-	}
+	require_site_root($basePath);
+
 	my $pathModules = $basePath . '/bitrix/modules/';
 	my @solutionRepos = git_repos();
 	if (scalar @solutionRepos == 0) {
@@ -525,9 +547,8 @@ sub action_pull {
 
 sub action_reset {
 	my $basePath = shift;
-	if ($basePath eq '') {
-		die "Site root not found.\n";
-	}
+	require_site_root($basePath);
+
 	my $pathModules = $basePath . '/bitrix/modules/';
 	my @solutionRepos = git_repos();
 	if (scalar @solutionRepos == 0) {
@@ -546,9 +567,8 @@ sub action_reset {
 
 sub action_checkout {
 	my $basePath = shift;
-	if ($basePath eq '') {
-		die "Site root not found.\n";
-	}
+	require_site_root($basePath);
+
 	my $branch = $ARGV[1]? $ARGV[1] : 'master';
 	my $pathModules = $basePath . '/bitrix/modules/';
 	if (! -d $pathModules) {
@@ -569,9 +589,8 @@ sub action_checkout {
 
 sub action_fixdir {
 	my $basePath = shift;
-	if ($basePath eq '') {
-		die "Site root not found.\n";
-	}
+	require_site_root($basePath);
+
 	if (is_ubuntu()) {
 		if (exists $ENV{'SITE_DIR_USER'}) {
 			sudo_run('chown -R ' . $ENV{'SITE_DIR_USER'} . ' ' . $basePath);
@@ -584,9 +603,7 @@ sub action_fixdir {
 
 sub action_solution_init {
 	my $basePath = shift;
-	if ($basePath eq '') {
-		die "Site root not found.\n";
-	}
+	require_site_root($basePath);
 
 	my $solution = $ARGV[1]? $ARGV[1] : '';
 	my $solutionConfigPath = $RealBin . '/.dev/solution.env.settings/' . $solution . '/example.env';
@@ -609,9 +626,8 @@ sub action_solution_init {
 
 sub action_solution_reset {
 	my $basePath = shift;
-	if ($basePath eq '') {
-		die "Site root not found.\n";
-	}
+	require_site_root($basePath);
+
 	if (!confirm_continue('Warning! Site public data will be removed.')) {
 		exit;
 	}
@@ -851,12 +867,17 @@ sub action_haxe {
 }
 
 sub action_es9_install {
+	require_command('node');
+	require_command('npm');
+
     sudo_run('npm install -g google-closure-compiler');
     sudo_run('npm install -g minify');
     #TODO!!! протестировать https://esbuild.github.io/api/#minify 
 }
 
 sub action_minify {
+	require_command('minify');
+
 	my $basePath = shift;
     if ((scalar @ARGV != 2) || !($ARGV[1] eq 'all')) {
         $basePath = getcwd();
@@ -883,7 +904,10 @@ sub action_minify {
 	}, $basePath);	
 }
 
-sub action_es9 {
+sub action_es9 {	
+	require_command('google-closure-compiler');
+	require_command('php');
+
     my $basePath = shift;
     if ((scalar @ARGV != 2) || !($ARGV[1] eq 'all')) {
         $basePath = getcwd();
@@ -919,13 +943,6 @@ sub action_es9 {
 			copy($srcFile, $destFile);
 		}
 	}, $basePath);
-}
-
-sub is_ubuntu {
-	my $os = $Config{'myuname'};
-	return (index($os, 'debian') > 0
-		|| index($os, 'ubuntu') >= 0
-		|| index($os, 'Ubuntu') >= 0);
 }
 
 sub action_start {
@@ -971,7 +988,7 @@ sub sudo_patch_file {
 }
 
 sub action_mkcert_install {
-    if (is_ubuntu()) {
+    if (is_ubuntu()) {    	
     	sudo_run('apt install libnss3-tools');
     	sudo_run('snap install go --classic');
     	run('rm -Rf ~/bin/mkcert-src/');
@@ -1256,9 +1273,8 @@ ProxyPassReverse /  http://$ip/
 
 sub action_site_reset {
 	my $basePath = shift;
-	if ($basePath eq '') {
-		die "Site root not found.\n";
-	}
+	require_site_root($basePath);
+
 	if (!confirm_continue('Warning! Site db tables and files will be removed.')) {
 		exit;
 	}
@@ -1268,9 +1284,8 @@ sub action_site_reset {
 
 sub action_site_remove {
 	my $basePath = shift;
-	if ($basePath eq '') {
-		die "Site root not found.\n";
-	}
+	require_site_root($basePath);
+
 	action_site_reset($basePath);
 
 	if (is_ubuntu()) {
@@ -1300,6 +1315,7 @@ sub action_bitrixcli_install {
 	# snap install docker
 	# usermod -aG docker "${USER}"'
 	# newgrp docker
+	require_command('docker');
 
 	chdir $RealBin . '/.template/bitrixcli/';
 	run('pwd');
@@ -1308,6 +1324,8 @@ sub action_bitrixcli_install {
 }
 
 sub action_bitrixcli {
+	require_command('docker');
+
 	#TODO!!! передавать все параметры
 	run(
         'docker run --volume="$PWD:/home/node/work" bitrixcli bitrix '
