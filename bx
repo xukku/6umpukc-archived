@@ -866,41 +866,67 @@ sub action_haxe {
 	close $fout;
 }
 
-sub action_es9_install {
+sub action_js_install {
 	require_command('node');
 	require_command('npm');
 
     sudo_run('npm install -g google-closure-compiler');
+
     sudo_run('npm install -g minify');
-    #TODO!!! протестировать https://esbuild.github.io/api/#minify
+
+	mkdir($RealBin . '/.dev/bin');
+	mkdir($RealBin . '/.dev/bin/esbuild');
+	chdir($RealBin . '/.dev/bin/esbuild');
+	run('npm install esbuild');
 }
 
 sub action_minify {
-	require_command('minify');
+	# BX_MINIFY=minify bx minify
+	# BX_MINIFY=esbuild bx minify
+	# bx minify
+	my $minify = (exists $ENV{'BX_MINIFY'} && ($ENV{'BX_MINIFY'} ne ''))?
+		$ENV{'BX_MINIFY'} : 'esbuild';
+	if ($minify eq 'esbuild') {
+		#...
+	} elsif ($minify eq 'minify') {
+		require_command('minify');
+	} else {
+		say 'Minifier not implemented.';
+		return;
+	}
 
 	my $basePath = shift;
     if ((scalar @ARGV != 2) || !($ARGV[1] eq 'all')) {
         $basePath = getcwd();
     }
-    my $compilerPath = 'minify';
-
     finddepth(sub {
 		if (($_ eq '.') || ($_ eq '..')) {
 			return;
 		}
 		my $f = $File::Find::name;
 		my $destFile = $f;
+		my $is_css = 0;
 		if ((substr($_, -3) eq '.js') && (substr($_, -7) ne '.min.js')) {
 			$destFile =~ s/\.js/\.min.js/gi;
 		} elsif ((substr($_, -4) eq '.css') && (substr($_, -8) ne '.min.css')) {
 			$destFile =~ s/\.css/\.min.css/gi;
+			$is_css = 1;
 		} else {
 			return;
 		}
 		if (!is_bx_debug()) {
 			say "processing $f -> $destFile ...";
 		}
-		run("$compilerPath '$f' > '$destFile'");
+		my $compilerPath = '';
+		if ($minify eq 'minify') {
+			$compilerPath = 'minify';
+			run("$compilerPath '$f' > '$destFile'");
+		} elsif ($minify eq 'esbuild') {
+			$compilerPath = $RealBin . '/.dev/bin/esbuild/node_modules/.bin/esbuild'
+				. ($is_css? ' --loader=css' : '')
+				. ' --minify';
+			run("cat '$f' | $compilerPath > '$destFile'");
+		}
 	}, $basePath);
 }
 
@@ -1378,7 +1404,7 @@ my %actions = (
 	'parse' => \&action_parse,
 	'haxe' => \&action_haxe,
 
-	'es9-install' => \&action_es9_install,
+	'js-install' => \&action_js_install,
 	'es9' => \&action_es9,
 	'minify' => \&action_minify,
 
