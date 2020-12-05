@@ -12,20 +12,54 @@ use FindBin qw($RealBin $Bin $Script);
 use lib "$RealBin/vendor/lib/perl5";
 use Text::CSV;
 
-# TODO конвертер в haxe
-# - чтение полных конструкций в буфер
-# - автоматическое определение переменных - убрать /*var*/
-# - автоматическое определение переопределяемых методов - убрать /*override*/
+sub trim {
+    my $s = shift;
+    $s =~ s/^\s+|\s+$//g;
+    return $s;
+}
+
+sub require_command {
+    my $cmd = shift;
+    my $test = 'which ' . $cmd;
+    if (qx{$test} eq '') {
+        die($cmd . ' - command not found.');
+    }
+}
+
+sub run {
+    my $cmd = shift;
+    my $sudo = shift;
+    if (!defined($sudo) || $sudo ne 'sudo') {
+        $sudo = '';
+    }
+    $cmd = trim($sudo . ' ' . $cmd);
+    if (!exists $ENV{'BX_DEBUG'} || ($ENV{'BX_DEBUG'} eq '1')) {
+        say '';
+        say $cmd;
+    }
+    return system($cmd);
+}
+
+sub sudo_run {
+    my $cmd = shift;
+    my $sudo = '';
+    if (is_ubuntu()) {
+        $sudo = 'sudo';
+    }
+    if (exists $ENV{'BX_ROOT_USER'} && ($ENV{'BX_ROOT_USER'} eq '1')) {
+        $sudo = '';
+    }
+    return run($cmd, $sudo);
+}
 
 sub request_useragent {
 	return 'Mozilla/5.0 (X11; Linux x86_64; rv:66.0) Gecko/20100101 Firefox/66.0';
 }
 
 sub request_get {
-	if (qx{which curl} eq '') {
-		return undef;
-	}
-	my ($url, $outfile) = @_;
+	require_command('curl');
+
+    my ($url, $outfile) = @_;
 	my $result = '';
 	my $cmd = "curl -L '$url'"
 		. " -A '" . request_useragent() . "'";
@@ -40,9 +74,8 @@ sub request_get {
 }
 
 sub archive_extract {
-	if (qx{which tar} eq '') {
-		return undef;
-	}
+	require_command('tar');
+
 	my ($src, $dest) = @_;
 	my $result = '';
 	my $cmd = "tar -xvzf '$src' '$dest'";
@@ -51,9 +84,8 @@ sub archive_extract {
 }
 
 sub ziparchive_extract {
-	if (qx{which unzip} eq '') {
-		return undef;
-	}
+    require_command('unzip');
+
 	my ($src, $dest) = @_;
 	my $result = '';
 	my $cmd = "unzip -o '$src' -d '$dest'";
@@ -81,12 +113,6 @@ sub file_put_contents {
 		return 1;
 	}
 	return 0;
-}
-
-sub trim {
-	my $s = shift;
-	$s =~ s/^\s+|\s+$//g;
-	return $s;
 }
 
 sub load_env {
@@ -214,7 +240,7 @@ sub bitrix_micromize {
 }
 
 sub action_help {
-	system "cat '$RealBin/README.md'";
+	run "cat '$RealBin/README.md'";
 }
 
 sub action_fetch {
@@ -271,12 +297,12 @@ sub action_fetch {
 }
 
 sub action_build {
-	system "php '$RealBin/.action_build.php' "
+	run "php '$RealBin/.action_build.php' "
 		. ($ARGV[1]? $ARGV[1] : '');
 }
 
 sub action_rebuild {
-	system 'composer -o dump-autoload';
+	run 'composer -o dump-autoload';
 	action_build();
 }
 
@@ -359,10 +385,10 @@ sub action_ftp {
 		if (`which screen`) {
 			# ubuntu
 			$path = 'screen -d -m filezilla';
-			system $path . ' "' . $conn_str . '" --local="' . $basePath . '"';
+			run $path . ' "' . $conn_str . '" --local="' . $basePath . '"';
 		} else {
 			# arch
-			system '(filezilla "' . $conn_str . '" --local="' . $basePath . '"  &> /dev/null &)';
+			run '(filezilla "' . $conn_str . '" --local="' . $basePath . '"  &> /dev/null &)';
 		}
 	}
 }
@@ -372,7 +398,7 @@ sub action_ssh {
 	if ($basePath eq '') {
 		die "Site root not found.\n";
 	}
-	system ssh_exec_remote();
+	run ssh_exec_remote();
 }
 
 sub action_db {
@@ -390,7 +416,7 @@ sub action_db {
 		. '&db=' . $ENV{'DB_NAME'}
 		. '&password=' . $ENV{'DB_PASSWORD'};
 
-	system 'xdg-open "' . $url . '"';
+	run 'xdg-open "' . $url . '"';
 }
 
 sub confirm_continue {
@@ -411,11 +437,11 @@ sub git_clone {
 		remove_tree $pathModule;
 	}
 	chdir $pathModules;
-	system 'git clone "' . $urlRepo . '" ' . $moduleId;
+	run 'git clone "' . $urlRepo . '" ' . $moduleId;
 	if (-d $pathModule) {
 		chdir $pathModule;
-		system 'git config core.fileMode false';
-		system 'git checkout master';
+		run 'git config core.fileMode false';
+		run 'git checkout master';
 	}
 }
 
@@ -465,9 +491,9 @@ sub action_status {
 	}
 	for my $urlRepo (@solutionRepos) {
 		chdir $pathModules . basename($urlRepo, '.git');
-		system 'pwd';
-		system 'git status';
-		system 'git branch';
+		run 'pwd';
+		run 'git status';
+		run 'git branch';
 		say "";
 	}
 }
@@ -484,8 +510,8 @@ sub action_pull {
 	}
 	for my $urlRepo (@solutionRepos) {
 		chdir $pathModules . basename($urlRepo, '.git');
-		system 'pwd';
-		system 'git pull';
+		run 'pwd';
+		run 'git pull';
 		say "";
 	}
 }
@@ -505,8 +531,8 @@ sub action_reset {
 	}
 	for my $urlRepo (@solutionRepos) {
 		chdir $pathModules . basename($urlRepo, '.git');
-		system 'pwd';
-		system 'git reset --hard HEAD';
+		run 'pwd';
+		run 'git reset --hard HEAD';
 		say "";
 	}
 }
@@ -528,8 +554,8 @@ sub action_checkout {
 	}
 	for my $urlRepo (@solutionRepos) {
 		chdir $pathModules . basename($urlRepo, '.git');
-		system 'pwd';
-		system 'git checkout ' . $branch;
+		run 'pwd';
+		run 'git checkout ' . $branch;
 		say "";
 	}
 }
@@ -541,10 +567,10 @@ sub action_fixdir {
 	}
 	if (is_ubuntu()) {
 		if (exists $ENV{'SITE_DIR_USER'}) {
-			system 'sudo chown -R ' . $ENV{'SITE_DIR_USER'} . ' ' . $basePath;
+			sudo_run('chown -R ' . $ENV{'SITE_DIR_USER'} . ' ' . $basePath);
 		}
 		if (exists $ENV{'SITE_DIR_RIGHTS'}) {
-			system 'sudo chmod -R ' . $ENV{'SITE_DIR_RIGHTS'} . ' ' . $basePath;
+			sudo_run('chmod -R ' . $ENV{'SITE_DIR_RIGHTS'} . ' ' . $basePath);
 		}
 	}
 }
@@ -568,7 +594,7 @@ sub action_solution_init {
 			$content = $originalContent . "\n" . $content . "\n";
 			file_put_contents($siteConfig, $content);
 		}
-		system 'bx solution-init';
+		run 'bx solution-init';
 		exit;
 	}
 	fetch_repos $basePath;
@@ -583,29 +609,34 @@ sub action_solution_reset {
 		exit;
 	}
 	action_fixdir($basePath);
-	system "php '$RealBin/.action_solution_reset.php' '" . $basePath . "'";
+	run "php '$RealBin/.action_solution_reset.php' '" . $basePath . "'";
 }
 
 sub action_conv_utf {
-	system "php '$RealBin/.action_conv.php' utf";
+	run "php '$RealBin/.action_conv.php' utf";
 }
 
 sub action_conv_win {
-	system "php '$RealBin/.action_conv.php' win";
+	run "php '$RealBin/.action_conv.php' win";
 }
 
 sub action_mod_pack {
-	system "php '$RealBin/.action_conv.php' modpack";
+	run "php '$RealBin/.action_conv.php' modpack";
 }
 
 sub action_mod_update {
-	system "php '$RealBin/.action_mod_update.php' '" . $ENV{'SOLUTION_DOWNLOAD_PAGE'} . "'";
+	run "php '$RealBin/.action_mod_update.php' '" . $ENV{'SOLUTION_DOWNLOAD_PAGE'} . "'";
 }
 
 sub action_parse {
-	system "php '$RealBin/.action_parse.php' "
+	run "php '$RealBin/.action_parse.php' "
 		. ($ARGV[1]? $ARGV[1] : 'index.php');
 }
+
+# TODO конвертер в haxe
+# - чтение полных конструкций в буфер
+# - автоматическое определение переменных - убрать /*var*/
+# - автоматическое определение переопределяемых методов - убрать /*override*/
 
 # convert to haxe - list of tokens https://www.php.net/manual/ru/tokens.php
 my %lang_replaces = (
@@ -811,36 +842,20 @@ sub action_haxe {
 }
 
 sub action_es9_install {
-	my $srcUrl = 'https://dl.google.com/closure-compiler/compiler-latest.zip';
-	my $homeBin = $ENV{'HOME'} . '/bin';
-	if (-d $homeBin) {
-		my $destPath = $homeBin . '/closure-compiler';
-		my $outputFile = $destPath . '/compiler-latest.zip';
-		mkdir $destPath;
-		request_get($srcUrl, $outputFile);
-		ziparchive_extract($outputFile, $destPath);
-		my $destFile = $destPath . '/closure-compiler.jar';
-		if (!-f $destFile) {
-			my @jarFiles = glob "$destPath/*.jar";
-			if (scalar @jarFiles > 0) {
-				move($jarFiles[0], $destFile);
-			}
-		}
-		unlink($outputFile);
-	}
-	else {
-		die('$HOME/bin/ not exists');
-	}
+    sudo_run('npm install -g google-closure-compiler');
+    sudo_run('npm install -g minifyjs');
+    #TODO!!! install minifyjs
 }
 
 sub action_es9 {
-	my $basePath = shift;
-	if ((scalar @ARGV != 2) || !($ARGV[1] eq 'all')) {
-		$basePath = getcwd();
-	}
-	my $homeBin = $ENV{'HOME'} . '/bin';
-	my $compilerPath = $homeBin . '/closure-compiler/closure-compiler.jar';
-	finddepth(sub {
+    my $basePath = shift;
+    if ((scalar @ARGV != 2) || !($ARGV[1] eq 'all')) {
+        $basePath = getcwd();
+    }
+    my $compilerPath = 'google-closure-compiler';
+
+    # example google-closure-compiler --js=script.js --js_output_file=script.min.js
+    finddepth(sub {
 		if (($_ eq '.') || ($_ eq '..')) {
 			return;
 		}
@@ -852,7 +867,9 @@ sub action_es9 {
 		my $destFile = $f;
 		$destFile =~ s/\.es\d+\.js/\.min.js/gi;
 		say "processing $f -> $destFile ...";
-		system "java -jar $compilerPath --js '$f' --js_output_file '$destFile' --language_in ECMASCRIPT_2018 --language_out ECMASCRIPT5_STRICT";
+		run "$compilerPath --js '$f' --js_output_file '$destFile'"
+            . " --language_in ECMASCRIPT_2018"
+            . " --language_out ECMASCRIPT5_STRICT";
 	}, $basePath);
 }
 
@@ -865,23 +882,27 @@ sub is_ubuntu {
 
 sub action_start {
 	if (is_ubuntu()) {
-		system 'sudo systemctl start apache2 mysql';
-		if (qx{which rinetd} ne '') {
-			system 'sudo service rinetd restart';
+		sudo_run('systemctl start apache2 mysql');
+
+        # https://zen.yandex.ru/media/id/5b1a58b8eb269500a877dd6c/kak-bystro-nastroit-dostupy-k-saitam-1sbitriks-vebokrujenie-v-konteinerah-lxd-5b66b363f2aaf000a982faf3
+        if (qx{which rinetd} ne '') {
+            sudo_run('service rinetd restart');
 		}
 	} else {
-		system 'sudo systemctl start httpd.service mysqld.service';
+		sudo_run('systemctl start httpd.service mysqld.service');
 	}
 }
 
 sub action_stop {
 	if (is_ubuntu()) {
-		system 'sudo systemctl stop apache2 mysql';
-		if (qx{which rinetd} ne '') {
-			system 'sudo service rinetd stop';
+		sudo_run('systemctl stop apache2 mysql');
+
+        # https://zen.yandex.ru/media/id/5b1a58b8eb269500a877dd6c/kak-bystro-nastroit-dostupy-k-saitam-1sbitriks-vebokrujenie-v-konteinerah-lxd-5b66b363f2aaf000a982faf3
+        if (qx{which rinetd} ne '') {
+			sudo_run('service rinetd stop');
 		}
 	} else {
-		system 'sudo systemctl stop httpd.service mysqld.service';
+		sudo_run('systemctl stop httpd.service mysqld.service');
 	}
 }
 
@@ -897,39 +918,45 @@ sub sudo_patch_file {
 	if (index($originalContent, $content) < 0) {
 		$content = $originalContent . "\n" . $content . "\n";
 		file_put_contents($tmp, $content);
-		system "sudo mv '" . $tmp . "' " . $fname;
+		sudo_run("mv '" . $tmp . "' " . $fname);
 	}
 }
 
 sub action_mkcert_install {
-	system 'sudo apt install libnss3-tools';
-	system 'sudo snap install go --classic';
-	system 'rm -Rf ~/bin/mkcert-src/';
-	system 'git clone https://github.com/FiloSottile/mkcert ~/bin/mkcert-src';
-	system 'cd ~/bin/mkcert-src/ && go build -ldflags "-X main.Version=$(git describe --tags)" && mv mkcert ~/bin/mkcert';
-	system 'mkcert -install';
-	system 'mkdir ~/.ssl/ && cd ~/.ssl/ && mkcert bx.local "*.bx.local"';
-	system 'sudo a2enmod ssl';
+    if (is_ubuntu()) {
+    	sudo_run('apt install libnss3-tools');
+    	sudo_run('snap install go --classic');
+    	run('rm -Rf ~/bin/mkcert-src/');
+    	run('git clone https://github.com/FiloSottile/mkcert ~/bin/mkcert-src');
+    	run('cd ~/bin/mkcert-src/ && go build -ldflags "-X main.Version=$(git describe --tags)" && mv mkcert ~/bin/mkcert');
+    	run('mkcert -install');
+    	run('mkdir ~/.ssl/ && cd ~/.ssl/ && mkcert bx.local "*.bx.local"');
+    	sudo_run('a2enmod ssl');
+    }
 }
 
 sub action_lamp_install {
 	if (is_ubuntu()) {
 		say '';
 		say '# Install php, apache2, mysql and tools...';
-		system 'sudo apt install'
+		sudo_run(
+            'apt install'
 			. ' unzip wget curl dos2unix pwgen sshpass screen'
 			. ' php apache2 libapache2-mod-php mysql-server mysql-client php-mysql'
 			. ' php-mbstring php-opcache php-zip php-xml php-curl php-gd php-sqlite3 php-imagick'
 			. ' php-xdebug'
-			. ' optipng jpegoptim pngquant'
 			. ' msmtp'
-			. ' rinetd'
-		;
-		system 'sudo a2enmod rewrite';
-		system 'sudo a2enmod proxy';
-		system 'sudo a2enmod proxy_http';
-		system 'sudo snap install node --channel=12/stable --classic';
+        );
+        sudo_run('apt install optipng jpegoptim pngquant');
+        sudo_run('apt install rinetd');
 
+		sudo_run('a2enmod rewrite');
+		sudo_run('a2enmod proxy');
+		sudo_run('a2enmod proxy_http');
+
+		sudo_run('snap install node --classic');
+
+        # patch configs
 		my $phpContent = file_get_contents($RealBin . '/.template/bitrix.php.ini');
 		my $phpVersion = '7.0';
 		if (-d '/etc/php/7.4/') {
@@ -947,15 +974,15 @@ sub action_lamp_install {
 		if (! -d $extWww) {
 			mkdir $extWww;
 		}
-		system 'sudo usermod -a -G www-data ' . $ENV{'USER'};
-		#system 'chmod +x /home/' . $ENV{'USER'};
+		sudo_run('usermod -a -G www-data ' . $ENV{'USER'});
+		#run 'chmod +x /home/' . $ENV{'USER'};
 
 		say '';
 		say '# Mysql config setup...';
-		system 'sudo mysql_secure_installation';
+		sudo_run('mysql_secure_installation');
 		say '';
 		say '# Mysql config check...';
-		system 'sudo mysqladmin -p -u root version';
+		sudo_run('mysqladmin -p -u root version');
 
 		my $mysqlContent = file_get_contents($RealBin . '/.template/ubuntu18.04/bitrix.my.cnf');
 		sudo_patch_file('/etc/mysql/my.cnf', $mysqlContent);
@@ -963,17 +990,17 @@ sub action_lamp_install {
 		say '';
 		say '# Mail sender setup...';
 		copy($RealBin . '/.template/.msmtprc', $homePath . '/.msmtprc');
-		system 'sudo chown www-data:www-data ' . $homePath . '/.msmtprc';
-		system 'sudo chmod 0600 ' . $homePath . '/.msmtprc';
+		sudo_run('chown www-data:www-data ' . $homePath . '/.msmtprc');
+		sudo_run('chmod 0600 ' . $homePath . '/.msmtprc');
 		if (-f '/etc/msmtprc') {
-			system 'sudo unlink /etc/msmtprc';
+			sudo_run('unlink /etc/msmtprc');
 		}
-		system 'sudo ln -s ' . $homePath . '/.msmtprc /etc/msmtprc';
+		sudo_run('ln -s ' . $homePath . '/.msmtprc /etc/msmtprc');
 
 		say '';
 		say '# Setup locale for windows-1251...';
-		system 'sudo locale-gen ru_RU.CP1251';
-		system 'sudo dpkg-reconfigure locales';
+		sudo_run('locale-gen ru_RU.CP1251');
+		sudo_run('dpkg-reconfigure locales');
 
 		# check locale:
 		#	`locale -a | grep ru`
@@ -1009,7 +1036,7 @@ sub action_site_init {
 	my $site_exists = ($site_root ne '') && (exists $ENV{'SITE_ENCODING'});
 
 	if (is_ubuntu()) {
-		system 'bx fixdir';
+		run 'bx fixdir';
 
 		my $path = getcwd();
 		my $encoding = $ARGV[1]? $ARGV[1] : 'win'; # win / utf / utflegacy
@@ -1063,7 +1090,7 @@ sub action_site_init {
 			$sqlContent =~ s/bitrixpassword1/$dbpassword/g;
 			$dbconf = $path . '/.dbcreate.tmp.sql';
 			file_put_contents($dbconf, $sqlContent);
-			system 'sudo mysql -u root < ' . $dbconf;
+			sudo_run('mysql -u root < ' . $dbconf);
 			unlink($dbconf);
 
 			my $destpath = '/etc/apache2/sites-available/' . $sitehost . '.conf';
@@ -1071,9 +1098,9 @@ sub action_site_init {
 			say '# Apache2 site config -> ' . $destpath;
 			say '';
 			say $content;
-			system 'sudo mv ' . $siteconf . ' ' . $destpath;
-			system 'sudo a2ensite ' . $sitehost . '.conf';
-			system 'sudo systemctl reload apache2';
+			sudo_run('mv ' . $siteconf . ' ' . $destpath);
+			sudo_run('a2ensite ' . $sitehost . '.conf');
+			sudo_run('systemctl reload apache2');
 		}
 
 		my %wwwFiles = (
@@ -1123,7 +1150,7 @@ sub action_site_init {
 			}
 		}
 
-		system 'bx fixdir';
+		run 'bx fixdir';
 	}
 }
 
@@ -1142,7 +1169,7 @@ sub action_site_hosts {
 	push(@newHosts, $localIp . "\t" . $sitehost);
 	my $tmp = $path . '/.hosts.tmp';
 	file_put_contents($tmp, join("\n", @newHosts) . "\n");
-	system "sudo mv '" . $tmp . "' /etc/hosts";
+	sudo_run("mv '" . $tmp . "' /etc/hosts");
 }
 
 sub action_site_proxy {
@@ -1174,8 +1201,8 @@ ProxyPassReverse /  http://$ip/
 		say $originalContent;
 		my $tmp = $path . '/.newsiteconfig.tmp';
 		file_put_contents($tmp, $originalContent);
-		system 'sudo mv ' . $tmp . ' ' . $destpath;
-		system 'sudo systemctl reload apache2';
+		sudo_run('mv ' . $tmp . ' ' . $destpath);
+		sudo_run('systemctl reload apache2');
 	}
 }
 
@@ -1188,7 +1215,7 @@ sub action_site_reset {
 		exit;
 	}
 	action_fixdir($basePath);
-	system "php '$RealBin/.action_site_reset.php' '" . $basePath . "'";
+	run "php '$RealBin/.action_site_reset.php' '" . $basePath . "'";
 }
 
 sub action_site_remove {
@@ -1203,9 +1230,9 @@ sub action_site_remove {
 		# remove site
 		my $sitehost = basename($path);
 		my $destpath = '/etc/apache2/sites-available/' . $sitehost . '.conf';
-		system 'sudo a2dissite ' . $sitehost . '.conf';
-		system 'sudo rm ' . $destpath;
-		system 'sudo systemctl reload apache2';
+		sudo_run('a2dissite ' . $sitehost . '.conf');
+		sudo_run('rm ' . $destpath);
+		sudo_run('systemctl reload apache2');
 		# remove db
 		my $dbpassword = $ENV{'DB_PASSWORD'};
 		my $dbname = $ENV{'DB_NAME'};
@@ -1216,24 +1243,28 @@ sub action_site_remove {
 		$sqlContent =~ s/bitrixpassword1/$dbpassword/g;
 		$dbconf = $path . '/.dbdrop.tmp.sql';
 		file_put_contents($dbconf, $sqlContent);
-		system 'sudo mysql -u root < ' . $dbconf;
+		sudo_run('mysql -u root < ' . $dbconf);
 		unlink($dbconf);
 	}
 }
 
 sub action_bitrixcli_install {
-	say 'sudo snap install docker';
-	say 'usermod -aG docker "${USER}"'; # check group exists
-	say 'newgrp docker';
+	# snap install docker
+	# usermod -aG docker "${USER}"'
+	# newgrp docker
+
 	chdir $RealBin . '/.template/bitrixcli/';
-	system 'pwd';
-	system 'docker rmi bitrixcli --force';
-	system 'docker build -t bitrixcli .';
+	run('pwd');
+	run('docker rmi bitrixcli --force');
+	run('docker build -t bitrixcli .');
 }
 
 sub action_bitrixcli {
 	#TODO!!! передавать все параметры
-	system 'docker run --volume="$PWD:/home/node/work" bitrixcli bitrix ' . ($ARGV[1]? ($ARGV[1] . ' --path /home/node/work') : '--help');
+	run(
+        'docker run --volume="$PWD:/home/node/work" bitrixcli bitrix '
+            . ($ARGV[1]? ($ARGV[1] . ' --path /home/node/work') : '--help')
+    );
 }
 
 # main
