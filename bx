@@ -846,8 +846,6 @@ sub action_haxe {
 
 sub action_es9_install {
     sudo_run('npm install -g google-closure-compiler');
-    sudo_run('npm install -g minifyjs');
-    #TODO!!! install minifyjs
 }
 
 sub action_es9 {
