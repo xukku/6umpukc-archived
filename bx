@@ -26,6 +26,10 @@ sub require_command {
     }
 }
 
+sub is_bx_debug() {
+	return (!exists $ENV{'BX_DEBUG'} || ($ENV{'BX_DEBUG'} eq '1'));
+}
+
 sub run {
     my $cmd = shift;
     my $sudo = shift;
@@ -35,7 +39,7 @@ sub run {
     }
     $cmd = trim($sudo . ' ' . $cmd);
     if (!defined $debug || $debug) {
-	    if (!exists $ENV{'BX_DEBUG'} || ($ENV{'BX_DEBUG'} eq '1')) {
+	    if (is_bx_debug()) {
 	        say '';
 	        say $cmd;
 	    }
@@ -846,6 +850,34 @@ sub action_haxe {
 
 sub action_es9_install {
     sudo_run('npm install -g google-closure-compiler');
+    sudo_run('npm install -g minify');
+}
+
+sub action_minify {
+	my $basePath = shift;
+    if ((scalar @ARGV != 2) || !($ARGV[1] eq 'all')) {
+        $basePath = getcwd();
+    }
+    my $compilerPath = 'minify';
+
+    finddepth(sub {
+		if (($_ eq '.') || ($_ eq '..')) {
+			return;
+		}		
+		my $f = $File::Find::name;
+		my $destFile = $f;
+		if ((substr($_, -3) eq '.js') && (substr($_, -7) ne '.min.js')) {
+			$destFile =~ s/\.js/\.min.js/gi;
+		} elsif ((substr($_, -4) eq '.css') && (substr($_, -8) ne '.min.css')) {
+			$destFile =~ s/\.css/\.min.css/gi;
+		} else {
+			return;
+		}
+		if (!is_bx_debug()) {
+			say "processing $f -> $destFile ...";	
+		}	
+		run("$compilerPath '$f' > '$destFile'");
+	}, $basePath);	
 }
 
 sub action_es9 {
@@ -855,22 +887,33 @@ sub action_es9 {
     }
     my $compilerPath = 'google-closure-compiler';
 
-    # example google-closure-compiler --js=script.js --js_output_file=script.min.js
     finddepth(sub {
 		if (($_ eq '.') || ($_ eq '..')) {
 			return;
 		}
-		my $type = substr($_, -7);
-		if (($type ne '.es9.js') && ($type ne '.es6.js')) {
-			return;
-		}
+		my $extraParams = '';
 		my $f = $File::Find::name;
 		my $destFile = $f;
-		$destFile =~ s/\.es\d+\.js/\.min.js/gi;
+		my $type = substr($_, -7);
+		my $es9 = 0;
+		if (($type eq '.es9.js') || ($type eq '.es6.js')) {
+			$destFile =~ s/\.es\d+\.js/\.min.js/gi;
+			$extraParams = ' --language_in ECMASCRIPT_2018'
+            . ' --language_out ECMASCRIPT5_STRICT';
+            $es9 = 1;
+		} elsif ((substr($_, -3) eq '.js') && (substr($_, -7) ne '.min.js')) {
+			$destFile =~ s/\.js/\.min.js/gi;
+		} else {
+			return;
+		}		
 		say "processing $f -> $destFile ...";
-		run "$compilerPath --js '$f' --js_output_file '$destFile'"
-            . " --language_in ECMASCRIPT_2018"
-            . " --language_out ECMASCRIPT5_STRICT";
+		run("$compilerPath --js '$f' --js_output_file '$destFile'" . $extraParams);
+		if ($es9)
+		{
+			my $srcFile = $destFile;
+			$destFile =~ s/\.min.js/\.js/gi;
+			copy($srcFile, $destFile);
+		}
 	}, $basePath);
 }
 
@@ -1313,6 +1356,7 @@ my %actions = (
 
 	'es9-install' => \&action_es9_install,
 	'es9' => \&action_es9,
+	'minify' => \&action_minify,
 
 	'start' => \&action_start,
 	'stop' => \&action_stop,
