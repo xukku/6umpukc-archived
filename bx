@@ -29,14 +29,17 @@ sub require_command {
 sub run {
     my $cmd = shift;
     my $sudo = shift;
+    my $debug = shift;
     if (!defined($sudo) || $sudo ne 'sudo') {
         $sudo = '';
     }
     $cmd = trim($sudo . ' ' . $cmd);
-    if (!exists $ENV{'BX_DEBUG'} || ($ENV{'BX_DEBUG'} eq '1')) {
-        say '';
-        say $cmd;
-    }
+    if (!defined $debug || $debug) {
+	    if (!exists $ENV{'BX_DEBUG'} || ($ENV{'BX_DEBUG'} eq '1')) {
+	        say '';
+	        say $cmd;
+	    }
+	}
     return system($cmd);
 }
 
@@ -240,7 +243,7 @@ sub bitrix_micromize {
 }
 
 sub action_help {
-	run "cat '$RealBin/README.md'";
+	run("cat '$RealBin/README.md'", '', 0);	
 }
 
 sub action_fetch {
