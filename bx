@@ -870,9 +870,7 @@ sub action_js_install {
 	require_command('node');
 	require_command('npm');
 
-    sudo_run('npm install -g google-closure-compiler');
-
-    sudo_run('npm install -g minify');
+	sudo_run('npm install -g google-closure-compiler');
 
 	mkdir($RealBin . '/.dev/bin');
 	mkdir($RealBin . '/.dev/bin/esbuild');
@@ -881,26 +879,11 @@ sub action_js_install {
 }
 
 sub action_minify {
-	# BX_MINIFY=minify bx minify
-	# BX_MINIFY=esbuild bx minify
-	# bx minify
-	my $minify = (exists $ENV{'BX_MINIFY'} && ($ENV{'BX_MINIFY'} ne ''))?
-		$ENV{'BX_MINIFY'} : 'esbuild';
-	if ($minify eq 'esbuild') {
-		# https://esbuild.github.io/api/#minify
-	} elsif ($minify eq 'minify') {
-		# https://www.npmjs.com/package/minify#how-to-use
-		require_command('minify');
-	} else {
-		say 'Minifier not implemented.';
-		return;
-	}
-
 	my $basePath = shift;
-    if ((scalar @ARGV != 2) || !($ARGV[1] eq 'all')) {
-        $basePath = getcwd();
-    }
-    finddepth(sub {
+	if ((scalar @ARGV != 2) || !($ARGV[1] eq 'all')) {
+		$basePath = getcwd();
+	}
+	finddepth(sub {
 		if (($_ eq '.') || ($_ eq '..')) {
 			return;
 		}
@@ -918,16 +901,10 @@ sub action_minify {
 		if (!is_bx_debug()) {
 			say "processing $f -> $destFile ...";
 		}
-		my $compilerPath = '';
-		if ($minify eq 'minify') {
-			$compilerPath = 'minify';
-			run("$compilerPath '$f' > '$destFile'");
-		} elsif ($minify eq 'esbuild') {
-			$compilerPath = $RealBin . '/.dev/bin/esbuild/node_modules/.bin/esbuild'
-				. ($is_css? ' --loader=css' : '')
-				. ' --minify';
-			run("cat '$f' | $compilerPath > '$destFile'");
-		}
+		my $toolPath = $RealBin . '/.dev/bin/esbuild/node_modules/.bin/esbuild'
+			. ($is_css? ' --loader=css' : '')
+			. ' --minify';
+		run("cat '$f' | $toolPath > '$destFile'");
 	}, $basePath);
 }
 
@@ -1340,26 +1317,34 @@ sub action_site_remove {
 	}
 }
 
-sub action_bitrixcli_install {
-	# snap install docker
-	# usermod -aG docker "${USER}"'
-	# newgrp docker
-	require_command('docker');
+sub action_docker_install {
+	sudo_run('snap install docker');
+	sudo_run('addgroup --system docker');
+	sudo_run('adduser $USER docker');
+	sudo_run('newgrp docker');
+	sudo_run('snap enable docker');
+}
 
+sub action_bitrixcli_install {
+	require_command('docker');
 	chdir $RealBin . '/.template/bitrixcli/';
-	run('pwd');
 	run('docker rmi bitrixcli --force');
 	run('docker build -t bitrixcli .');
 }
 
-sub action_bitrixcli {
+sub action_bitrixcli_build {
 	require_command('docker');
+	run('docker run --volume="$PWD:/home/node" bitrixcli');
+}
 
-	#TODO!!! передавать все параметры
-	run(
-        'docker run --volume="$PWD:/home/node/work" bitrixcli bitrix '
-            . ($ARGV[1]? ($ARGV[1] . ' --path /home/node/work') : '--help')
-    );
+sub action_bitrixcli_create {
+	require_command('docker');
+	run('docker run -it --volume="$PWD:/home/node" bitrixcli bitrix create');
+}
+
+sub action_bitrixcli_help {
+	require_command('docker');
+	run('docker run bitrixcli bitrix --help');
 }
 
 # main
@@ -1414,8 +1399,12 @@ my %actions = (
 
 	'mkcert-install' => \&action_mkcert_install,
 
-	'bitrixcli' =>  \&action_bitrixcli,
+	'docker-install' =>  \&action_docker_install,
+
 	'bitrixcli-install' =>  \&action_bitrixcli_install,
+	'bitrixcli-build' =>  \&action_bitrixcli_build,
+	'bitrixcli-create' =>  \&action_bitrixcli_create,
+	'bitrixcli-help' =>  \&action_bitrixcli_help,
 );
 my $action = '';
 if (scalar @ARGV == 0) {
