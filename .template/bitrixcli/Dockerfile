@@ -1,10 +1,10 @@
 
 # install docker (on Unbuntu):
-#	snap install docker
+#	sudo snap install docker
 #	addgroup --system docker
 #	adduser $USER docker
 #	newgrp docker
-#	snap enable docker
+#	sudo snap enable docker
 
 # remove:
 #	docker rmi bitrixcli --force
