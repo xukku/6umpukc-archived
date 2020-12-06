@@ -1,8 +1,8 @@
 
 # install docker (on Unbuntu):
 #	sudo snap install docker
-#	addgroup --system docker
-#	adduser $USER docker
+#	sudo addgroup --system docker
+#	sudo adduser $USER docker
 #	newgrp docker
 #	sudo snap enable docker
 
