@@ -34,7 +34,7 @@ sub require_command {
 }
 
 sub is_bx_debug() {
-	return (!exists $ENV{'BX_DEBUG'} || ($ENV{'BX_DEBUG'} eq '1'));
+	return (exists $ENV{'BX_DEBUG'} && ($ENV{'BX_DEBUG'} eq '1'));
 }
 
 sub is_ubuntu {
@@ -1335,11 +1335,13 @@ sub action_bitrixcli_install {
 sub action_bitrixcli_build {
 	require_command('docker');
 	run('docker run --volume="$PWD:/home/node" bitrixcli');
+	action_fixdir(getcwd());
 }
 
 sub action_bitrixcli_create {
 	require_command('docker');
 	run('docker run -it --volume="$PWD:/home/node" bitrixcli bitrix create');
+	action_fixdir(getcwd());
 }
 
 sub action_bitrixcli_help {
