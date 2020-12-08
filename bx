@@ -904,6 +904,7 @@ sub action_minify {
 		my $toolPath = $RealBin . '/.dev/bin/esbuild/node_modules/.bin/esbuild'
 			. ($is_css? ' --loader=css' : '')
 			. ' --minify';
+		action_conv_utf($f);
 		run("cat '$f' | $toolPath > '$destFile'");
 	}, $basePath);
 }
