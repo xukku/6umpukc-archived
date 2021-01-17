@@ -492,8 +492,22 @@ sub git_clone {
 }
 
 sub git_repos {
-	my @solutionRepos = map { trim $_; } split("\n", trim($ENV{'SOLUTION_GIT_REPOS'}));
+	my @solutionRepos = map {
+		my @repo = split(";", $_);
+		trim shift @repo;
+	} split("\n", trim($ENV{'SOLUTION_GIT_REPOS'}));
 	return @solutionRepos;
+}
+
+sub git_repos_map {
+	my %solutionRepos = map {
+		my @repo = split(";", $_);
+		my $url = defined $repo[0]? trim($repo[0]) : '';
+		my $k = basename($url, '.git');
+		my $v = defined $repo[1]? trim($repo[1]) : '';
+		$k => [$v, $url];
+	} split("\n", trim($ENV{'SOLUTION_GIT_REPOS'}));
+	return %solutionRepos;
 }
 
 sub module_names_from_repos {
@@ -688,10 +702,16 @@ sub action_mod_pack {
 }
 
 sub action_mod_update {
+	my $path = getcwd();
+	my $module = basename($path);
+	my %solutionRepos = git_repos_map();
+	my $solutionUrl = (exists $solutionRepos{$module}
+			&& defined $solutionRepos{$module}[0])?
+		$solutionRepos{$module}[0] : '';
 	my $refresh = ($ARGV[1] && ($ARGV[1] eq 'refresh'))?
 		$ARGV[1] : '';
 	run php "'$RealBin/.action_mod_update.php'"
-		. " '" . $ENV{'SOLUTION_DOWNLOAD_PAGE'} . "'"
+		. " '" . $solutionUrl . "'"
 		. " '" . $refresh . "'";
 }
 
