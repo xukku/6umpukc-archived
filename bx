@@ -688,7 +688,11 @@ sub action_mod_pack {
 }
 
 sub action_mod_update {
-	run php "'$RealBin/.action_mod_update.php' '" . $ENV{'SOLUTION_DOWNLOAD_PAGE'} . "'";
+	my $refresh = ($ARGV[1] && ($ARGV[1] eq 'refresh'))?
+		$ARGV[1] : '';
+	run php "'$RealBin/.action_mod_update.php'"
+		. " '" . $ENV{'SOLUTION_DOWNLOAD_PAGE'} . "'"
+		. " '" . $refresh . "'";
 }
 
 sub action_parse {
