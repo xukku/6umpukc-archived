@@ -378,9 +378,15 @@ sub ssh_exec_remote {
 	if (!$cmd || $cmd eq '') {
 		$cmd = 'bash --login'
 	}
-	my $result = 'sshpass -p "' . $ENV{'DEPLOY_PASSWORD'} . '" ssh '
-		. $ENV{'DEPLOY_USER'} . '@' . $ENV{'DEPLOY_SERVER'} . $ENV{'DEPLOY_PORT'}
-		. ' -t "cd ' . $ENV{'DEPLOY_PATH'} . '; ' . $cmd . ';"';
+	my $result = 'sshpass -p "' . $ENV{'DEPLOY_PASSWORD'}
+		. '" ssh ' . $ENV{'DEPLOY_USER'} . '@' . $ENV{'DEPLOY_SERVER'} . $ENV{'DEPLOY_PORT'}
+		. ' -t "';
+	if (exists $ENV{'DEPLOY_PATH'} && ($ENV{'DEPLOY_PATH'} ne '')) {
+		$result .= 'cd ' . $ENV{'DEPLOY_PATH'} . '; ';
+	}
+	$result .= $cmd . ';';
+	$result .= '"';
+
 	return $result;
 }
 
