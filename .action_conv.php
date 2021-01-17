@@ -11,7 +11,7 @@ function HandleConvUtfFileAction($name)
 	if (mb_detect_encoding($content, 'UTF-8', true))
 	{
 		return;
-	}	
+	}
 	$content = mb_convert_encoding($content, 'utf-8', 'windows-1251');
 	file_put_contents($name, $content);
 }

@@ -84,6 +84,16 @@ sub sudo_run {
     return run($cmd, $sudo);
 }
 
+sub php {
+	my $args = shift;
+	my $result = 'php ';
+	if (exists $ENV{'SOLUTION_PHP_ARGS'} && ($ENV{'SOLUTION_PHP_ARGS'} ne '')) {
+		$result .= $ENV{'SOLUTION_PHP_ARGS'} . ' ';
+	}
+	$result .= $args;
+	return $result;
+}
+
 sub request_useragent {
 	return 'Mozilla/5.0 (X11; Linux x86_64; rv:66.0) Gecko/20100101 Firefox/66.0';
 }
@@ -329,8 +339,7 @@ sub action_fetch {
 }
 
 sub action_build {
-	run "php '$RealBin/.action_build.php' "
-		. ($ARGV[1]? $ARGV[1] : '');
+	run php "'$RealBin/.action_build.php' " . ($ARGV[1]? $ARGV[1] : '');
 }
 
 sub action_rebuild {
@@ -638,7 +647,7 @@ sub action_solution_reset {
 		exit;
 	}
 	action_fixdir($basePath);
-	run "php '$RealBin/.action_solution_reset.php' '" . $basePath . "'";
+	run php "'$RealBin/.action_solution_reset.php' '" . $basePath . "'";
 }
 
 sub action_solution_conv_utf {
@@ -666,25 +675,24 @@ sub action_solution_conv_utf {
 
 sub action_conv_utf {
 	my $path = shift;
-	run "php '$RealBin/.action_conv.php' utf "
+	run php "'$RealBin/.action_conv.php' utf "
 		. ((defined($path) && ($path ne ''))? (" '" . $path . "'") : '');
 }
 
 sub action_conv_win {
-	run "php '$RealBin/.action_conv.php' win";
+	run php "'$RealBin/.action_conv.php' win";
 }
 
 sub action_mod_pack {
-	run "php '$RealBin/.action_conv.php' modpack";
+	run php "'$RealBin/.action_conv.php' modpack";
 }
 
 sub action_mod_update {
-	run "php '$RealBin/.action_mod_update.php' '" . $ENV{'SOLUTION_DOWNLOAD_PAGE'} . "'";
+	run php "'$RealBin/.action_mod_update.php' '" . $ENV{'SOLUTION_DOWNLOAD_PAGE'} . "'";
 }
 
 sub action_parse {
-	run "php '$RealBin/.action_parse.php' "
-		. ($ARGV[1]? $ARGV[1] : 'index.php');
+	run php "'$RealBin/.action_parse.php' " . ($ARGV[1]? $ARGV[1] : 'index.php');
 }
 
 # TODO конвертер в haxe
@@ -1315,7 +1323,7 @@ sub action_site_reset {
 		exit;
 	}
 	action_fixdir($basePath);
-	run "php '$RealBin/.action_site_reset.php' '" . $basePath . "'";
+	run php "'$RealBin/.action_site_reset.php' '" . $basePath . "'";
 }
 
 sub action_site_remove {
