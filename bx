@@ -415,7 +415,7 @@ sub action_ftp {
 
 	my $path;
 	my $conn_str = ftp_conn_str();
-	if ($Config{'osname'} eq 'MSWin32') {
+	if (is_mingw()) {
 		#TODO!!!
 		#    $path = $_SERVER["USERPROFILE"] . "/PortableApps/FileZillaPortable/FileZillaPortable.exe";
 		#    pclose(popen("start /B " . $path . ' "' . $connStr . '" --local="' . $basePath . '"', "r"));
@@ -589,7 +589,7 @@ sub action_checkout {
 		chdir $pathModules . basename($urlRepo, '.git');
 		run 'pwd';
 		run 'git checkout ' . $branch;
-		say "";
+		say '';
 	}
 }
 
@@ -639,6 +639,29 @@ sub action_solution_reset {
 	}
 	action_fixdir($basePath);
 	run "php '$RealBin/.action_solution_reset.php' '" . $basePath . "'";
+}
+
+sub action_solution_conv_utf {
+	my $basePath = shift;
+	require_site_root($basePath);
+
+	my @solutionRepos = git_repos();
+	if (scalar @solutionRepos == 0) {
+		return;
+	}
+	my $pathModules = $basePath . '/bitrix/modules/';
+	if (! -d $pathModules) {
+		return;
+	}
+	for my $urlRepo (@solutionRepos) {
+		my $path = $pathModules . basename($urlRepo, '.git');
+		if (-d $path) {
+			chdir $path;
+			run 'pwd';
+			action_conv_utf();
+			say '';
+		}
+	}
 }
 
 sub action_conv_utf {
@@ -1377,27 +1400,28 @@ my %actions = (
 	'ftp' => \&action_ftp,
 	'ssh' => \&action_ssh,
 	'db' => \&action_db,
+	'fixdir' => \&action_fixdir,
 
 	'status' => \&action_status,
 	'pull' => \&action_pull,
 	'reset' => \&action_reset,
-
 	'checkout' => \&action_checkout,
 
-	'fixdir' => \&action_fixdir,
 	'solution-init' => \&action_solution_init,
 	'solution-reset' => \&action_solution_reset,
+	'solution-conv-utf' => \&action_solution_conv_utf,
 
 	'conv-utf' => \&action_conv_utf,
 	'conv-win' => \&action_conv_win,
 	'mod-pack' => \&action_mod_pack,
 	'mod-update' => \&action_mod_update,
 
+	#TODO убрать ненужное
 	'build' => \&action_build,
 	'rebuild' => \&action_rebuild,
-
 	'parse' => \&action_parse,
 	'haxe' => \&action_haxe,
+	# ---
 
 	'js-install' => \&action_js_install,
 	'es9' => \&action_es9,
