@@ -1248,6 +1248,7 @@ sub action_site_init {
 
 			'.template/.env' => '.env',
 			'.template/www_' . $encoding . '/bitrix/.settings.php' => 'bitrix/.settings.php',
+			'.template/www_' . $encoding . '/bitrix/.settings_extra.php' => 'bitrix/.settings_extra.php',
 			'.template/www_' . $encoding . '/bitrix/php_interface/dbconn.php' => 'bitrix/php_interface/dbconn.php',
 			'.template/www_' . $encoding . '/bitrix/php_interface/after_connect.php' => 'bitrix/php_interface/after_connect.php',
 			'.template/www_' . $encoding . '/bitrix/php_interface/after_connect_d7.php' => 'bitrix/php_interface/after_connect_d7.php',
