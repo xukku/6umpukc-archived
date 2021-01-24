@@ -61,10 +61,19 @@ function Action_clear_site($basePath)
 
 function Action_clear_files($basePath)
 {
+	if (empty($_SERVER['SOLUTION_PREFIX']))
+	{
+		echo "Solution prefix not defined - skip files cleanup\n";
+		return;
+	}
+	$prefix = $_SERVER['SOLUTION_PREFIX'];
 	$dirs = [
 		'bitrix/wizards',
 		'bitrix/components',
 		'bitrix/templates',
+		'bitrix/js',
+		'bitrix/tools',
+		'bitrix/admin',
 	];
 	foreach ($dirs as $dir)
 	{
@@ -74,20 +83,26 @@ function Action_clear_files($basePath)
 			continue;
 		}
 		echo 'Cleanup ' . $path . " ...\n";
+
 		$it = new \DirectoryIterator($path);
 		foreach ($it as $f)
 		{
 			$name = $f->getPathname();
-			if (!$f->isDir() || $f->isDot() || basename($name) == '.default')
+			if (strpos(basename($name), $prefix) === false)
 			{
 				continue;
 			}
-			if (basename($path) != 'wizards' && basename($name) == 'bitrix')
+
+			if ($f->isDir())
 			{
-				continue;
+				echo "\tremove dir " . $name . " ...\n";
+				system('rm -Rf ' . $name);
 			}
-			echo "\tremove " . $name . " ...\n";
-			system('rm -Rf ' . $name);
+			else
+			{
+				echo "\tremove file " . $name . " ...\n";
+				unlink($name);
+			}
 		}
 	}
 }
