@@ -1401,6 +1401,21 @@ sub action_bitrixcli_build {
 	action_fixdir(getcwd());
 }
 
+sub action_bitrixcli_build_deps {
+	require_command('docker');
+	my $basePath = shift;
+	require_site_root($basePath);
+
+	my $path = $ENV{'PWD'};
+	my @tmp = split('/bitrix/js/', $path);
+	my $destPath = $tmp[1];
+	$destPath = '/home/node/local/js/' . $destPath;
+
+	my $bitrixPath = $basePath . '/bitrix';
+	run('docker run --volume="' . $bitrixPath . ':/home/node/local" bitrixcli bitrix build --path ' . $destPath);
+	action_fixdir($path);
+}
+
 sub action_bitrixcli_create {
 	require_command('docker');
 	run('docker run -it --volume="$PWD:/home/node" bitrixcli bitrix create');
@@ -1469,6 +1484,7 @@ my %actions = (
 
 	'bitrixcli-install' =>  \&action_bitrixcli_install,
 	'bitrixcli-build' =>  \&action_bitrixcli_build,
+	'bitrixcli-build-deps' =>  \&action_bitrixcli_build_deps,
 	'bitrixcli-create' =>  \&action_bitrixcli_create,
 	'bitrixcli-help' =>  \&action_bitrixcli_help,
 );
