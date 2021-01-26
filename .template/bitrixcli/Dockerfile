@@ -20,6 +20,11 @@
 #
 #	docker run bitrixcli bitrix --help
 
+# !для сборки с зависимостями должна быть соблюдена структура bitrix-сайта и расположение js-кода в local:
+#	- пробрасываем в контейнер папку bitrix как local
+#	- запускаем сборку в папке local/js/..., а не в папке модуля
+#	docker run --volume="/home/bitrix/ext_www/s01.r.citrus-dev.ru/bitrix:/home/node/local" bitrixcli bitrix build --path /home/node/local/js/citrus/asan24/crmselector
+
 FROM node:9.11.2
 
 WORKDIR /home/node
