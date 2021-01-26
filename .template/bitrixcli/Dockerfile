@@ -12,7 +12,7 @@
 # build:
 #	docker build -t bitrixcli .
 
-# run:
+# run (!если есть зависимости - будет собирать некорректно):
 #	docker run --volume="$PWD:/home/node" bitrixcli
 #	docker run --volume="$PWD:/home/node" bitrixcli bitrix build --path /home/node
 #
