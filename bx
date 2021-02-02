@@ -1406,12 +1406,21 @@ sub action_bitrixcli_build_deps {
 	my $basePath = shift;
 	require_site_root($basePath);
 
+	my $bitrixPath = $basePath . '/bitrix';
 	my $path = $ENV{'PWD'};
 	my @tmp = split('/bitrix/js/', $path);
+	if (scalar @tmp == 1) {
+		@tmp = split('/install/js/', $path);
+	}
+	if (scalar @tmp == 1) {
+		@tmp = split('/local/js/', $path);
+		if (scalar @tmp != 1) {
+			$bitrixPath = $basePath . '/local';
+		}
+	}
 	my $destPath = $tmp[1];
 	$destPath = '/home/node/local/js/' . $destPath;
 
-	my $bitrixPath = $basePath . '/bitrix';
 	run('docker run --volume="' . $bitrixPath . ':/home/node/local" bitrixcli bitrix build --path ' . $destPath);
 	action_fixdir($path);
 }
