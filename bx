@@ -1167,15 +1167,14 @@ sub random_name {
 sub action_site_init {
 	our $site_root;
 	my $site_exists = ($site_root ne '') && (exists $ENV{'SITE_ENCODING'});
+	my $path = getcwd();
+	my $encoding = $ARGV[1]? $ARGV[1] : 'win'; # win / utf / utflegacy
+	my $sitehost = basename($path);
 
 	if (is_ubuntu()) {
 		run 'bx fixdir';
-
-		my $path = getcwd();
-		my $encoding = $ARGV[1]? $ARGV[1] : 'win'; # win / utf / utflegacy
 		my $dbpassword = random_password();
 		my $dbname = random_name();
-		my $sitehost = basename($path);
 
 		if ($site_exists) {
 			$encoding = $ENV{'SITE_ENCODING'};
@@ -1285,6 +1284,12 @@ sub action_site_init {
 		}
 
 		run 'bx fixdir';
+	} elsif (is_mingw()) {
+		my $destPath = $path . '/' . '.env';
+		if (!-f $destPath) {
+			copy($RealBin . '/' . '.template/.env', $destPath);
+			#TODO!!! если настройки bitrix существуют - взять настройку utf/win из .settings.php
+		}
 	}
 }
 
