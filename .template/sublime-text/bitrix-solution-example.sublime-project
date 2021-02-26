@@ -1,0 +1,27 @@
+{
+	"folders":
+	[
+		{
+			"path": ".",
+			"folder_exclude_patterns":
+			[
+				"bitrix/admin",				
+				"bitrix/blocks",
+				"bitrix/components",
+				"bitrix/css",
+				"bitrix/fonts",
+				"bitrix/gadgets",
+				"bitrix/images",
+				"bitrix/image_uploader",
+				"bitrix/js",
+				"bitrix/panel",
+				"bitrix/services",
+				"bitrix/sounds",
+				"bitrix/templates",
+				"bitrix/themes",
+				"bitrix/tools",
+				"bitrix/wizards"
+			]
+		}
+	]
+}
