@@ -1,0 +1,28 @@
+{
+	"bootstrapped": true,
+	"in_process_packages":
+	[
+	],
+	"installed_packages":
+	[
+		"A File Icon",
+		"ayu",
+		"Compare Side-By-Side",
+		"DiffView",
+		"EditorConfig",
+		"Git",
+		"Night Owl",
+		"Package Control",
+		"PHP Completions Kit",
+		"PHP CS Fixer",
+		"Project PHP ClassBrowser",
+		"rainbow_csv",
+		"RawLineEdit",
+		"SublimeLinter",
+		"SublimeLinter-contrib-perl",
+		"SublimeLinter-eslint",
+		"SublimeLinter-php",
+		"Terminus",
+		"Vue Syntax Highlight"
+	]
+}

@@ -1,0 +1,38 @@
+{
+	"color_scheme": "Packages/ayu/ayu-mirage.sublime-color-scheme",
+	"detect_indentation": false,
+	"fallback_encoding": "Cyrillic (Windows 1251)",
+	"folder_exclude_patterns":
+	[
+		".svn", ".git", ".hg", "CVS"
+		,
+		"bitrix/cache",
+		"bitrix/managed_cache",
+		"bitrix/stack_cache",
+		"bitrix/backup",
+		"bitrix/tmp",
+		"bitrix/updates",
+		"bitrix/wizards",
+		"upload"
+	],
+	"file_exclude_patterns": [
+		"*.pyc", "*.pyo", "*.exe", "*.dll", "*.obj","*.o", "*.a", "*.lib", "*.so", "*.dylib", "*.ncb", "*.sdf", "*.suo", "*.pdb", "*.idb", ".DS_Store", "*.class", "*.psd", "*.db", "*.sublime-workspace"
+		,
+		"*.min.js",
+		"*.min.css",
+		"*.map.js",
+		"*.js.map",
+		"*.bundle.js",
+		"*.bundle.css"
+	],
+	"font_size": 12,
+	"ignored_packages":
+	[
+		"Vintage"
+	],
+	"sublime_merge_path": "/snap/bin/sublime-merge",
+	"theme": "ayu-mirage.sublime-theme",
+	"trim_trailing_white_space_on_save": true,
+	"update_check": false
+}
+
