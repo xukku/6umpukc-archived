@@ -1285,10 +1285,16 @@ sub action_site_init {
 
 		run 'bx fixdir';
 	} elsif (is_mingw()) {
-		my $destPath = $path . '/' . '.env';
-		if (!-f $destPath) {
-			copy($RealBin . '/' . '.template/.env', $destPath);
-			#TODO!!! если настройки bitrix существуют - взять настройку utf/win из .settings.php
+		my %wwwFiles = (
+			'.template/.env' => '.env',
+			'.template/sublime-text/bitrix-solution-example.sublime-project' => 'solution.sublime-project',
+		);
+		for my $fname (keys %wwwFiles) {
+			my $destPath = $path . '/' . $wwwFiles{$fname};
+			if (!-f $destPath) {
+				#TODO!!! для .env если настройки bitrix существуют - взять настройку utf/win из .settings.php
+				copy($RealBin . '/' . $fname, $destPath);
+			}
 		}
 	}
 }
