@@ -1,6 +1,0 @@
-"__autoload"	"__autoload__nop"
-'__autoload'	'__autoload__nop'
-__autoload(	__autoload__nop(
-spl_autoload_register(	spl_autoload_register__nop(
-!file_exists($_hx_autload_cache_file)	0 && !file_exists($_hx_autload_cache_file)
-require($_hx_autload_cache_file)	//require($_hx_autload_cache_file)
