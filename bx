@@ -8,59 +8,6 @@ use File::Copy;
 use File::Find qw(finddepth);
 use Config;
 
-sub action_fetch {
-	my %urlEditions = (
-		'micro'    => 'https://www.1c-bitrix.ru/download/start_encode_php5.tar.gz',
-		'core'     => 'https://www.1c-bitrix.ru/download/start_encode_php5.tar.gz',
-		'start'    => 'https://www.1c-bitrix.ru/download/start_encode_php5.tar.gz',
-		'business' => 'https://www.1c-bitrix.ru/download/business_encode_php5.tar.gz',
-		'crm'      => 'https://www.1c-bitrix.ru/download/portal/bitrix24_encode_php5.tar.gz',
-		'setup'    => 'https://www.1c-bitrix.ru/download/scripts/bitrixsetup.php',
-		'restore'  => 'https://www.1c-bitrix.ru/download/scripts/restore.php',
-		'test'     => 'https://dev.1c-bitrix.ru/download/scripts/bitrix_server_test.php',
-	);
-	my $outputFile = '.bitrix.tar.gz';
-	my $extractOptions = './';
-	my $edition = $ARGV[1]? $ARGV[1] : 'start';
-	if (!exists $urlEditions{$edition}) {
-		$edition = 'start';
-	}
-	if (-f $outputFile) {
-		unlink($outputFile);
-	}
-	if ($edition eq 'setup') {
-		$outputFile = 'bitrixsetup.php';
-	} elsif ($edition eq 'restore') {
-		$outputFile = 'restore.php';
-	} elsif ($edition eq 'test') {
-		$outputFile = 'bitrix_server_test.php';
-	} elsif ($edition eq 'micro') {
-		$extractOptions = './bitrix/modules';
-	}
-
-	my $srcUrl = $urlEditions{$edition};
-	say "Loading $srcUrl...";
-	request_get($srcUrl, $outputFile);
-	if (!-f $outputFile) {
-		die('Error on loading bitrix edition ' . $srcUrl);
-	}
-	if (($edition eq 'setup') || ($edition eq 'restore')) {
-		exit;
-	}
-	say 'Extracting files...';
-	archive_extract($outputFile, $extractOptions);
-	unlink($outputFile);
-
-	if ($edition eq 'core') {
-		say 'Minimize for core...';
-		bitrix_minimize();
-	} elsif ($edition eq 'micro') {
-		say 'Micromize...';
-		bitrix_minimize();
-		bitrix_micromize();
-	}
-}
-
 sub action_self_install {
 	if (is_mingw()) {
 		my $fname = $ENV{'HOME'} . '/.bash_profile';
@@ -952,9 +899,7 @@ sub action_bitrixcli_help {
 # main
 
 my %actions = (
-	'help' => \&action_help,
 	'self-install' => \&action_self_install,
-	'fetch' => \&action_fetch,
 
 	'lamp-install' => \&action_lamp_install,
 	'site-init' => \&action_site_init,

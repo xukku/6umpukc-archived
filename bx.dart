@@ -10,6 +10,7 @@ import 'dart:async';
 import 'package:csv/csv.dart';
 import 'package:path/path.dart' as p;
 
+var ARGV;
 var ENV;
 var REAL_BIN = p.dirname(Platform.script.toFilePath());
 
@@ -325,7 +326,67 @@ action_help() async {
 	], true);
 }
 
+action_fetch() async {
+	var urlEditions = {
+		'micro': 'https://www.1c-bitrix.ru/download/start_encode_php5.tar.gz',
+		'core': 'https://www.1c-bitrix.ru/download/start_encode_php5.tar.gz',
+		'start': 'https://www.1c-bitrix.ru/download/start_encode_php5.tar.gz',
+		'business': 'https://www.1c-bitrix.ru/download/business_encode_php5.tar.gz',
+		'crm': 'https://www.1c-bitrix.ru/download/portal/bitrix24_encode_php5.tar.gz',
+		'setup': 'https://www.1c-bitrix.ru/download/scripts/bitrixsetup.php',
+		'restore': 'https://www.1c-bitrix.ru/download/scripts/restore.php',
+		'test': 'https://dev.1c-bitrix.ru/download/scripts/bitrix_server_test.php',
+	};
+	var outputFile = '.bitrix.tar.gz';
+	var extractOptions = './';
+
+	var edition = (ARGV.length > 1)? ARGV[1] : 'start';
+	if (!urlEditions.containsKey(edition)) {
+		edition = 'start';
+	}
+
+	if (File(outputFile).existsSync()) {
+		File(outputFile).deleteSync();
+	}
+
+	if (edition == 'setup') {
+		outputFile = 'bitrixsetup.php';
+	} else if (edition == 'restore') {
+		outputFile = 'restore.php';
+	} else if (edition == 'test') {
+		outputFile = 'bitrix_server_test.php';
+	} else if (edition == 'micro') {
+		extractOptions = './bitrix/modules';
+	}
+	var srcUrl = urlEditions[edition];
+	print("Loading $srcUrl...");
+	await request_get(srcUrl, outputFile);
+
+	if (!File(outputFile).existsSync()) {
+		die('Error on loading bitrix edition ' + srcUrl);
+	}
+
+	if ((edition == 'setup') || (edition == 'restore')) {
+		exit;
+	}
+
+	print('Extracting files...');
+	await archive_extract(outputFile, extractOptions);
+	File(outputFile).deleteSync();
+
+	if (edition == 'core') {
+		print('Minimize for core...');
+		await bitrix_minimize();
+	} else if (edition == 'micro') {
+		print('Micromize...');
+		await bitrix_minimize();
+		await bitrix_micromize();
+	}
+}
+
 void main(List<String> args) async {
+	ARGV = args;
+
 	// test arguments
 	for (final arg in args) {
 		print('[' + arg.trim() + ']');
@@ -354,9 +415,10 @@ void main(List<String> args) async {
 
 	var actions = {
 		'help': action_help,
+		'fetch': action_fetch,
 	};
 
-	//actions['help']();
+	await actions['fetch']();
 
 	print('OK.');
 }
