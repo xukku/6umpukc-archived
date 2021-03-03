@@ -12,6 +12,7 @@ use FindBin qw($RealBin $Bin $Script);
 use lib "$RealBin/vendor/lib/perl5";
 use Text::CSV;
 
+# https://pub.dev/packages/csv
 sub load_env {
 	my $path = shift;
 	if (!-f $path) {
