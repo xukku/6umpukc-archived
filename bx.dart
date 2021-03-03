@@ -234,6 +234,34 @@ detect_site_root(path) {
 	return '';
 }
 
+bitrix_minimize() async {
+	var removeDirs = [
+		// ненужные компоненты
+		'bitrix/modules/iblock/install/components/bitrix',
+		'bitrix/modules/fileman/install/components/bitrix',
+		// ненужные модули
+		'bitrix/modules/landing', // слишком много файлов в модуле
+		'bitrix/modules/highloadblock',
+		'bitrix/modules/perfmon',
+		'bitrix/modules/bitrixcloud',
+		'bitrix/modules/translate',
+		'bitrix/modules/compression',
+		'bitrix/modules/seo',
+		'bitrix/modules/search',
+		// ненужные демо решения
+		'bitrix/modules/bitrix.sitecorporate',
+		'bitrix/wizards/bitrix/demo',
+	];
+	for (final dir in removeDirs) {
+		if (Directory(dir).existsSync()) {
+			await run('rm', [
+				'-Rf',
+				dir
+			]);
+		}
+	}
+}
+
 void main(List<String> args) async {
 	// test arguments
 	for (final arg in args) {
@@ -257,6 +285,8 @@ void main(List<String> args) async {
 
 	print(site_root);
 	print(ENV);
+
+	await bitrix_minimize();
 
 	print('OK.');
 }
