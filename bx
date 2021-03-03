@@ -8,10 +8,6 @@ use File::Copy;
 use File::Find qw(finddepth);
 use Config;
 
-sub action_help {
-	run("cat '$RealBin/README.md'", '', 0);
-}
-
 sub action_fetch {
 	my %urlEditions = (
 		'micro'    => 'https://www.1c-bitrix.ru/download/start_encode_php5.tar.gz',

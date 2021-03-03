@@ -11,6 +11,7 @@ import 'package:csv/csv.dart';
 import 'package:path/path.dart' as p;
 
 var ENV;
+var REAL_BIN = p.dirname(Platform.script.toFilePath());
 
 die(msg) {
 	print(msg);
@@ -91,7 +92,7 @@ quote_args(args) {
 }
 
 // https://api.dart.dev/be/178268/dart-io/dart-io-library.html
-run(cmd, args) async {
+run(cmd, args, [output = false]) async {
 	if (is_bx_debug()) {
         print(cmd + ' ' + quote_args(args));
     }
@@ -101,6 +102,10 @@ run(cmd, args) async {
 	}
 	catch (e) {
 		return -1;
+	}
+
+	if (output) {
+		print(result.stdout);
 	}
 
     return result.exitCode;
@@ -314,6 +319,12 @@ bitrix_micromize() async {
 	}
 }
 
+action_help() async {
+	await run('cat', [
+		REAL_BIN + '/README.md'
+	], true);
+}
+
 void main(List<String> args) async {
 	// test arguments
 	for (final arg in args) {
@@ -340,6 +351,12 @@ void main(List<String> args) async {
 
 	//await bitrix_minimize();
 	//await bitrix_micromize();
+
+	var actions = {
+		'help': action_help,
+	};
+
+	//actions['help']();
 
 	print('OK.');
 }
