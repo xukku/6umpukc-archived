@@ -112,19 +112,9 @@ sudo_run(cmd, args) async {
     if ((ENV['BX_ROOT_USER'] != null) && (ENV['BX_ROOT_USER'] == '1')) {
         return run(cmd, args);
     }
-	if (is_bx_debug()) {
-        print('sudo ' + cmd + ' ' + quote_args(args));
-    }
-	ProcessResult result;
-	try {
-		args.unshift(cmd);
-		result = await Process.run('sudo', args);
-	}
-	catch (e) {
-		return -1;
-	}
+    args.unshift(cmd);
 
-    return result.exitCode;
+    return run('sudo', args);
 }
 
 //TODO!!! rewrite to array
