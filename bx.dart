@@ -262,6 +262,58 @@ bitrix_minimize() async {
 	}
 }
 
+bitrix_micromize() async {
+	var bitrixExcludeDirs = {
+		'cache': 1,
+		'managed_cache': 1,
+		'modules': 1,
+		'php_interface': 1,
+	};
+	var bitrixExcludeFiles = {
+		'.settings.php': 1,
+	};
+	var dirName = './bitrix';
+
+	if (!Directory(dirName).existsSync()) {
+		die('Could not open '  + dirName + ' for reading');
+	}
+
+	var contents = new Directory(dirName).listSync();
+	for (var f in contents) {
+		var name = p.basename(f.path);
+		if (bitrixExcludeDirs.containsKey(name)
+				|| bitrixExcludeFiles.containsKey(name)) {
+			continue;
+		}
+		if (f is Directory) {
+			await run('rm', [
+				'-Rf',
+				f.path
+			]);
+		} else if (f is File) {
+			f.deleteSync();
+		}
+	}
+
+	var removeFiles = {
+		'.access.php',
+		//'.htaccess',
+		//'index.php',
+		'install.config',
+		'license.html',
+		'license.php',
+		'readme.html',
+		'readme.php',
+		'web.config',
+		'bitrix/modules/main/classes/mysql/database_mysql.php',
+	};
+	for (var fname in removeFiles) {
+		if (File(fname).existsSync()) {
+			File(fname).deleteSync();
+		}
+	}
+}
+
 void main(List<String> args) async {
 	// test arguments
 	for (final arg in args) {
@@ -286,7 +338,8 @@ void main(List<String> args) async {
 	print(site_root);
 	print(ENV);
 
-	await bitrix_minimize();
+	//await bitrix_minimize();
+	//await bitrix_micromize();
 
 	print('OK.');
 }

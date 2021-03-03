@@ -8,59 +8,6 @@ use File::Copy;
 use File::Find qw(finddepth);
 use Config;
 
-sub bitrix_micromize {
-	my %bitrixExcludeDirs = (
-		'cache' => 1,
-		'managed_cache' => 1,
-		'modules' => 1,
-		'php_interface' => 1,
-	);
-	my %bitrixExcludeFiles = (
-		'.settings.php' => 1,
-	);
-	my $dirName = './bitrix';
-	my $dh;
-	my $res = opendir $dh, $dirName;
-	if (!$res) {
-		die('Could not open ' . $dirName . ' for reading ' . $! . "\n");
-	}
-	my @files = readdir $dh;
-	for my $f (@files) {
-		if ($f eq '.' or $f eq '..') {
-			next;
-		}
-		if (exists $bitrixExcludeDirs{$f} or exists $bitrixExcludeFiles{$f}) {
-			next;
-		}
-		$f = $dirName . '/' . $f;
-		if (-d $f) {
-			my $cmd = "rm -Rf '$f'";
-			qx{$cmd};
-		} elsif (-f $f) {
-			unlink($f);
-		}
-	}
-	closedir $dh;
-
-	my @removeFiles = (
-		'.access.php',
-		#'.htaccess',
-		#'index.php',
-		'install.config',
-		'license.html',
-		'license.php',
-		'readme.html',
-		'readme.php',
-		'web.config',
-		'bitrix/modules/main/classes/mysql/database_mysql.php',
-	);
-	for my $f (@removeFiles) {
-		if (-f $f) {
-			unlink($f);
-		}
-	}
-}
-
 sub action_help {
 	run("cat '$RealBin/README.md'", '', 0);
 }
