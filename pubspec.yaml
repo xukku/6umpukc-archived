@@ -1,3 +1,4 @@
 name: bx
 dependencies:
   csv: ^4.1.0
+  path: ^1.7.0

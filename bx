@@ -8,20 +8,6 @@ use File::Copy;
 use File::Find qw(finddepth);
 use Config;
 
-sub detect_site_root {
-	my $path = shift;
-	if ($path eq '') {
-		$path = getcwd();
-	}
-	if (-f "$path/.env") {
-		return $path;
-	}
-	if ($path ne '' && ($path ne dirname $path)) {
-		return detect_site_root(dirname $path);
-	}
-	return '';
-}
-
 sub bitrix_minimize {
 	my @removeDirs = (
 		# ненужные компоненты
@@ -1047,9 +1033,6 @@ sub action_bitrixcli_help {
 }
 
 # main
-
-our $site_root = detect_site_root('');
-our %config = load_env($site_root . '/.env');
 
 my %actions = (
 	'help' => \&action_help,

@@ -8,12 +8,18 @@
       "languageVersion": "2.0"
     },
     {
+      "name": "path",
+      "rootUri": "file:///C:/Users/user/AppData/Local/Pub/Cache/hosted/pub.dartlang.org/path-1.7.0",
+      "packageUri": "lib/",
+      "languageVersion": "2.0"
+    },
+    {
       "name": "bx",
       "rootUri": "../",
       "packageUri": "lib/"
     }
   ],
-  "generated": "2021-03-03T15:17:05.414029Z",
+  "generated": "2021-03-03T16:13:07.460782Z",
   "generator": "pub",
   "generatorVersion": "2.10.5"
 }

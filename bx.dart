@@ -8,6 +8,7 @@ import 'dart:io';
 import 'dart:convert';
 import 'dart:async';
 import 'package:csv/csv.dart';
+import 'package:path/path.dart' as p;
 
 var ENV;
 
@@ -188,6 +189,11 @@ file_put_contents(filename, content) {
 }
 
 load_env(path) async {
+	Map<String, String> result = {};
+	if (!File(path).existsSync()) {
+		return result;
+	}
+
 	final input = new File(path).openRead();
 	final fields = await input
 		.transform(utf8.decoder)
@@ -199,7 +205,6 @@ load_env(path) async {
 		))
 		.toList();
 
-	Map<String, String> result = {};
 	for (final row in fields) {
 		var key = row[0].trim();
 		if (key == '') {
@@ -213,6 +218,20 @@ load_env(path) async {
 	}
 
 	return result;
+}
+
+detect_site_root(path) {
+	if (path == '') {
+		path = Directory.current.path;
+	}
+	if (File(path + '/.env').existsSync()) {
+		return path;
+	}
+	if ((path != '') && (path != p.dirname(path))) {
+		return detect_site_root(p.dirname(path));
+	}
+
+	return '';
 }
 
 void main(List<String> args) async {
@@ -233,8 +252,10 @@ void main(List<String> args) async {
 	//await request_get('https://google.com/', '_test.log');
 	//file_put_contents('.test.log', '1'); print(file_get_contents('.test.log'));
 
-	ENV = await load_env('.env');
+	var site_root = detect_site_root('');
+	ENV = await load_env(site_root + '/.env');
 
+	print(site_root);
 	print(ENV);
 
 	print('OK.');
