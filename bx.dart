@@ -72,9 +72,25 @@ is_mingw() async {
 	return false;
 }
 
+quote_args(args) {
+	var result = [];
+	for (final arg in args) {
+		if ((arg.indexOf(' ') >= 0)
+				|| (arg.indexOf('?') >= 0)
+				|| (arg.indexOf('>') >= 0)
+				|| (arg.indexOf('<') >= 0)
+				|| (arg.indexOf('|') >= 0)) {
+			result.add("'" + arg + "'");
+		} else {
+			result.add(arg);
+		}
+	}
+	return result.join(' ');
+}
+
 run(cmd, args) async {
 	if (is_bx_debug()) {
-        print(cmd + ' ' + args.join(' '));
+        print(cmd + ' ' + quote_args(args));
     }
 	ProcessResult result;
 	try {
@@ -90,14 +106,14 @@ run(cmd, args) async {
 //TODO!!! test on ubuntu
 sudo_run(cmd, args) async {
 	if (!await is_ubuntu()) {
-        //return run(cmd, args);
+        return run(cmd, args);
     }
     var ENV = Platform.environment;
     if ((ENV['BX_ROOT_USER'] != null) && (ENV['BX_ROOT_USER'] == '1')) {
         return run(cmd, args);
     }
 	if (is_bx_debug()) {
-        print('sudo ' + cmd + ' ' + args.join(' '));
+        print('sudo ' + cmd + ' ' + quote_args(args));
     }
 	ProcessResult result;
 	try {
@@ -132,14 +148,15 @@ request_get(url, [outfile = '']) async {
 	await require_command('curl');
 
 	var args = [
+		'-s',
 		'-L',
-		"'$url'",
+		url.toString(),
 		'-A',
-		"'" + request_useragent() + "'"
+		request_useragent().toString()
 	];
 	if (outfile != '') {
 		args.add('-o');
-		args.add("'$outfile'");
+		args.add(outfile.toString());
 	}
 
 	return run('curl', args);
@@ -162,7 +179,7 @@ void main(List<String> args) async {
 
 	//print(php('1 2 4'));
 
-	print(await request_get('https://google.com/', '_test.log'));
+	await request_get('https://google.com/', '_test.log');
 
 	print('OK.');
 }
