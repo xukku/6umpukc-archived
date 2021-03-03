@@ -152,6 +152,39 @@ request_get(url, [outfile = '']) async {
 	return run('curl', args);
 }
 
+zip_archive_extract(src, dest) async {
+    await require_command('unzip');
+
+	return run('unzip', [
+		'-o',
+		src.toString(),
+		'-d',
+		dest.toString()
+	]);
+}
+
+archive_extract(src, dest) async {
+	await require_command('tar');
+
+	return run('tar', [
+		'-xvzf',
+		src.toString(),
+		dest.toString()
+	]);
+}
+
+file_get_contents(filename) {
+	final file = new File(filename);
+	return file.readAsStringSync();
+}
+
+file_put_contents(filename, content) {
+	final file = new File(filename);
+	file.writeAsStringSync(content);
+
+	return 1;
+}
+
 void main(List<String> args) async {
 	// test arguments
 	for (final arg in args) {
@@ -166,10 +199,9 @@ void main(List<String> args) async {
 	//print(await is_mingw()? 'is mingw' : 'not mingw');
 	//await run('perl', ['-v']);
 	//await sudo_run('perl', ['-v']);
-
 	//print(php('1 2 4'));
-
-	await request_get('https://google.com/', '_test.log');
+	//await request_get('https://google.com/', '_test.log');
+	//file_put_contents('.test.log', '1'); print(file_get_contents('.test.log'));
 
 	print('OK.');
 }
