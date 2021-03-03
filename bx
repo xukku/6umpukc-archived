@@ -8,42 +8,6 @@ use File::Copy;
 use File::Find qw(finddepth);
 use Config;
 
-use FindBin qw($RealBin $Bin $Script);
-use lib "$RealBin/vendor/lib/perl5";
-use Text::CSV;
-
-# https://pub.dev/packages/csv
-sub load_env {
-	my $path = shift;
-	if (!-f $path) {
-		return;
-	}
-	my %result = ();
-	my $csv = Text::CSV->new({
-		binary    => 1,
-		auto_diag => 1,
-		sep_char  => '='
-	});
-	open(my $data, '<:encoding(utf8)', $path) or die "Could not open '$path' $!\n";
-	while (my $fields = $csv->getline($data)) {
-		my $key = trim($fields->[0]);
-		if ($key eq '') {
-			next;
-		}
-		if (substr($key, 0, 1) eq '#') {
-			next;
-		}
-		my $value = $fields->[1];
-		$result{$key} = $value;
-		$ENV{$key} = $value;
-	}
-	if (not $csv->eof) {
-		$csv->error_diag();
-	}
-	close $data;
-	return %result;
-}
-
 sub detect_site_root {
 	my $path = shift;
 	if ($path eq '') {

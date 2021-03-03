@@ -1,0 +1,3 @@
+name: bx
+dependencies:
+  csv: ^4.1.0

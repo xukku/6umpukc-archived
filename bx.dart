@@ -7,6 +7,9 @@
 import 'dart:io';
 import 'dart:convert';
 import 'dart:async';
+import 'package:csv/csv.dart';
+
+var ENV;
 
 die(msg) {
 	print(msg);
@@ -19,15 +22,13 @@ require_site_root(basePath) {
 	}
 }
 
-// https://api.dart.dev/be/178268/dart-io/dart-io-library.html
 check_command(cmd) async {
 	ProcessResult result = await Process.run('which', [cmd]);
     return result.exitCode == 0;
 }
 
 require_command(cmd) async {
-	ProcessResult result = await Process.run('which', [cmd]);
-    if (result.exitCode != 0) {
+	if (!await check_command(cmd)) {
     	die(cmd + ' - command not found.');
     }
 }
@@ -88,13 +89,14 @@ quote_args(args) {
 	return result.join(' ');
 }
 
+// https://api.dart.dev/be/178268/dart-io/dart-io-library.html
 run(cmd, args) async {
 	if (is_bx_debug()) {
         print(cmd + ' ' + quote_args(args));
     }
 	ProcessResult result;
 	try {
-		result = await Process.run(cmd, args);
+		result = await Process.run(cmd, args, environment: ENV);
 	}
 	catch (e) {
 		return -1;
@@ -185,6 +187,34 @@ file_put_contents(filename, content) {
 	return 1;
 }
 
+load_env(path) async {
+	final input = new File(path).openRead();
+	final fields = await input
+		.transform(utf8.decoder)
+		.transform(new CsvToListConverter(
+			fieldDelimiter: '=',
+			textDelimiter: '"',
+			textEndDelimiter:  '"',
+			eol: "\n"
+		))
+		.toList();
+
+	Map<String, String> result = {};
+	for (final row in fields) {
+		var key = row[0].trim();
+		if (key == '') {
+			continue;
+		}
+		if (key.substring(0, 1) == '#') {
+			continue;
+		}
+		var value = row[1].trim();
+		result[key] = value;
+	}
+
+	return result;
+}
+
 void main(List<String> args) async {
 	// test arguments
 	for (final arg in args) {
@@ -202,6 +232,10 @@ void main(List<String> args) async {
 	//print(php('1 2 4'));
 	//await request_get('https://google.com/', '_test.log');
 	//file_put_contents('.test.log', '1'); print(file_get_contents('.test.log'));
+
+	ENV = await load_env('.env');
+
+	print(ENV);
 
 	print('OK.');
 }
