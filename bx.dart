@@ -116,22 +116,19 @@ quote_args(args) {
 }
 
 // https://api.dart.dev/be/178268/dart-io/dart-io-library.html
-run(cmd, args, [output = false]) async {
+run(cmd, args) async {
   if (is_bx_debug()) {
     print(cmd + ' ' + quote_args(args));
   }
-  ProcessResult result;
   try {
-    result = await Process.run(cmd, new List<String>.from(args), environment: ENV_LOCAL);
+    ProcessResult result = await Process.run(cmd, new List<String>.from(args), environment: ENV_LOCAL);
+    print(result.stdout.trimRight());
+    return result.exitCode;
   } catch (e) {
+    print('Error on running command:');
+    print(e);
     return -1;
   }
-
-  if (output) {
-    print(result.stdout);
-  }
-
-  return result.exitCode;
 }
 
 //TODO!!! test on ubuntu
@@ -314,7 +311,7 @@ bitrix_micromize() async {
 }
 
 action_help([basePath = '']) async {
-  await run('cat', [REAL_BIN + '/README.md'], true);
+  await run('cat', [REAL_BIN + '/README.md']);
 }
 
 action_fetch([basePath = '']) async {
@@ -569,6 +566,22 @@ action_status(basePath) async {
   }
 }
 
+action_pull(basePath) async {
+  require_site_root(basePath);
+
+  var pathModules = basePath + '/bitrix/modules/';
+  var solutionRepos = git_repos();
+  if (solutionRepos.length == 0) {
+    return;
+  }
+  for (final urlRepo in solutionRepos) {
+    chdir(pathModules + p.basenameWithoutExtension(urlRepo));
+    await run('pwd', []);
+    await run('git', ['pull']);
+    print('');
+  }
+}
+
 void main(List<String> args) async {
   ARGV = args;
   var site_root = detect_site_root('');
@@ -601,6 +614,7 @@ void main(List<String> args) async {
 
     // git
     'status': action_status,
+    'pull': action_pull,
   };
 
   var action = '';
@@ -617,8 +631,7 @@ void main(List<String> args) async {
   //print(git_repos());
   //print(git_repos_map());
   //print(module_names_from_repos());
-
-  await fetch_repos(site_root);
+  //await fetch_repos(site_root);
 
   print('OK.');
 }
