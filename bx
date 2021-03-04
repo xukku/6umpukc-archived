@@ -8,20 +8,6 @@ use File::Copy;
 use File::Find qw(finddepth);
 use Config;
 
-sub action_fixdir {
-	my $basePath = shift;
-	require_site_root($basePath);
-
-	if (is_ubuntu()) {
-		if (exists $ENV{'SITE_DIR_USER'}) {
-			sudo_run('chown -R ' . $ENV{'SITE_DIR_USER'} . ' ' . $basePath);
-		}
-		if (exists $ENV{'SITE_DIR_RIGHTS'}) {
-			sudo_run('chmod -R ' . $ENV{'SITE_DIR_RIGHTS'} . ' ' . $basePath);
-		}
-	}
-}
-
 sub action_solution_init {
 	my $basePath = shift;
 	require_site_root($basePath);
@@ -638,9 +624,6 @@ my %actions = (
 	'site-proxy' => \&action_site_proxy,
 	'site-reset' => \&action_site_reset,
 	'site-remove' => \&action_site_remove,
-
-
-	'fixdir' => \&action_fixdir,
 
 	'solution-init' => \&action_solution_init,
 	'solution-reset' => \&action_solution_reset,

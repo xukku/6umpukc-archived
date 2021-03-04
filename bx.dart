@@ -452,7 +452,7 @@ action_ftp(basePath) async {
     //TODO!!!
     //    $path = $_SERVER["USERPROFILE"] . "/PortableApps/FileZillaPortable/FileZillaPortable.exe";
     //    pclose(popen("start /B " . $path . ' "' . $connStr . '" --local="' . $basePath . '"', "r"));
-  } else if (is_ubuntu()) {
+  } else if (await is_ubuntu()) {
     await require_command('screen');
     return run('screen', ['-d', '-m', 'filezilla', connStr, '--local="' + basePath + '"']);
   }
@@ -602,23 +602,38 @@ action_reset(basePath) async {
 }
 
 action_checkout(basePath) async {
-	require_site_root(basePath);
+  require_site_root(basePath);
 
-	var branch = (ARGV.length > 1)? ARGV[1] : 'master';
-	var pathModules = basePath + '/bitrix/modules/';
-	if (!Directory(pathModules).existsSync()) {
+  var branch = (ARGV.length > 1) ? ARGV[1] : 'master';
+  var pathModules = basePath + '/bitrix/modules/';
+  if (!Directory(pathModules).existsSync()) {
     new Directory(pathModules).createSync(recursive: true);
   }
-	var solutionRepos = git_repos();
+  var solutionRepos = git_repos();
   if (solutionRepos.length == 0) {
     return;
   }
-	for (final urlRepo in solutionRepos) {
-		chdir(pathModules + p.basenameWithoutExtension(urlRepo));
-		await run('pwd', []);
-		await run('git', ['checkout', branch]);
-		print('');
-	}
+  for (final urlRepo in solutionRepos) {
+    chdir(pathModules + p.basenameWithoutExtension(urlRepo));
+    await run('pwd', []);
+    await run('git', ['checkout', branch]);
+    print('');
+  }
+}
+
+action_fixdir(basePath) async {
+  require_site_root(basePath);
+
+  if (await is_ubuntu()) {
+    var dirUser = get_env('SITE_DIR_USER');
+    if (dirUser != '') {
+      await sudo_run('chown', ['-R', dirUser, basePath]);
+    }
+    var dirRights = get_env('SITE_DIR_RIGHTS');
+    if (dirRights != '') {
+      await sudo_run('chmod', ['-R', dirRights, basePath]);
+    }
+  }
 }
 
 void main(List<String> args) async {
@@ -650,6 +665,7 @@ void main(List<String> args) async {
     'ftp': action_ftp,
     'ssh': action_ssh,
     'db': action_db,
+    'fixdir': action_fixdir,
 
     // git
     'status': action_status,
