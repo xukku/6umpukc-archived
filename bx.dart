@@ -475,6 +475,23 @@ git_repos() {
   return result;
 }
 
+git_repos_map() {
+  var solutionRepos = get_env('SOLUTION_GIT_REPOS').split("\n");
+  var result = {};
+  for (final line in solutionRepos) {
+    if (line.trim() == '') {
+      continue;
+    }
+    var tmp = line.split(';');
+    var url = tmp[0].trim();
+    var k = p.basenameWithoutExtension(url);
+    var v = (tmp[1] ?? '').trim();
+    result[k] = [v, url];
+  }
+
+  return result;
+}
+
 git_clone(pathModules, moduleId, urlRepo) async {
   var pathModule = pathModules + moduleId;
   if (Directory(pathModule).existsSync()) {
@@ -528,7 +545,8 @@ void main(List<String> args) async {
   }
   await actions[action](site_root);
 
-  print(git_repos());
+  //print(git_repos());
+  print(git_repos_map());
 
   print('OK.');
 }

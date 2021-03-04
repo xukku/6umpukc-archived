@@ -8,16 +8,7 @@ use File::Copy;
 use File::Find qw(finddepth);
 use Config;
 
-sub git_repos_map {
-	my %solutionRepos = map {
-		my @repo = split(";", $_);
-		my $url = defined $repo[0]? trim($repo[0]) : '';
-		my $k = basename($url, '.git');
-		my $v = defined $repo[1]? trim($repo[1]) : '';
-		$k => [$v, $url];
-	} split("\n", trim($ENV{'SOLUTION_GIT_REPOS'}));
-	return %solutionRepos;
-}
+
 
 sub module_names_from_repos {
 	my @result = map { basename($_, '.git'); } git_repos();
