@@ -381,17 +381,6 @@ ProxyPassReverse /  http://$ip/
 	}
 }
 
-sub action_site_reset {
-	my $basePath = shift;
-	require_site_root($basePath);
-
-	if (!confirm_continue('Warning! Site db tables and files will be removed.')) {
-		exit;
-	}
-	action_fixdir($basePath);
-	run php "'$RealBin/.action_site_reset.php' '" . $basePath . "'";
-}
-
 sub action_site_remove {
 	my $basePath = shift;
 	require_site_root($basePath);
@@ -430,7 +419,7 @@ my %actions = (
 	'site-init' => \&action_site_init,
 	'site-hosts' => \&action_site_hosts,
 	'site-proxy' => \&action_site_proxy,
-	'site-reset' => \&action_site_reset,
+
 	'site-remove' => \&action_site_remove,
 
 	'es9' => \&action_es9,

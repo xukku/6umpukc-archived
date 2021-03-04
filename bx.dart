@@ -872,6 +872,17 @@ action_bitrixcli_help([basePath = '']) async {
   await run('docker', ['run', 'bitrixcli', 'bitrix', '--help']);
 }
 
+action_site_reset(basePath) async {
+	require_site_root(basePath);
+
+	if (!confirm_continue('Warning! Site db tables and files will be removed.')) {
+		exit(0);
+	}
+
+	action_fixdir(basePath);
+	await run_php([REAL_BIN +  '/.action_site_reset.php',  basePath]);
+}
+
 void main(List<String> args) async {
   ARGV = args;
   var site_root = detect_site_root('');
@@ -916,6 +927,7 @@ void main(List<String> args) async {
     'conv-utf': action_conv_utf,
     'mod-pack': action_mod_pack,
     'mod-update': action_mod_update,
+    'site-reset': action_site_reset,
 
     // server
     'start': action_start,
