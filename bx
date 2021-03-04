@@ -8,32 +8,6 @@ use File::Copy;
 use File::Find qw(finddepth);
 use Config;
 
-sub action_self_install {
-	if (is_mingw()) {
-		my $fname = $ENV{'HOME'} . '/.bash_profile';
-		my $initPath = 'PATH=$PATH:$HOME/bin/6umpukc';
-		if (-f $fname) {
-			my $content = file_get_contents($fname);
-			if (index($content, $initPath) < 0) {
-				file_put_contents($fname, $content . "\n" . $initPath . "\n");
-			}
-		} else {
-			file_put_contents($fname, "\n" . $initPath . "\n");
-		}
-		return;
-	}
-	my $homeBin = $ENV{'HOME'} . '/bin';
-	if (-d $homeBin) {
-		my $homeScript = $homeBin . '/' . $Script;
-		if (-l $homeScript) {
-			unlink($homeScript);
-		}
-		symlink($Bin . '/' . $Script, $homeScript);
-	} else {
-		die('$HOME/bin/ not exists');
-	}
-}
-
 sub action_ftp {
 	my $basePath = shift;
 	require_site_root($basePath);
