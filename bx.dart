@@ -232,9 +232,13 @@ load_env(path) async {
   return result;
 }
 
+getcwd() {
+  return Directory.current.path;
+}
+
 detect_site_root(path) {
   if (path == '') {
-    path = Directory.current.path;
+    path = getcwd();
   }
   if (File(path + '/.env').existsSync()) {
     return path;
@@ -706,30 +710,39 @@ action_conv_utf([basePath = '']) async {
 }
 
 action_solution_conv_utf(basePath) async {
-	require_site_root(basePath);
+  require_site_root(basePath);
 
-	var solutionRepos = git_repos();
+  var solutionRepos = git_repos();
   if (solutionRepos.length == 0) {
     return;
   }
 
   var pathModules = basePath + '/bitrix/modules/';
-	if (!Directory(pathModules).existsSync()) {
-		return;
-	}
-	for (final urlRepo in solutionRepos) {
-		var path = pathModules + p.basenameWithoutExtension(urlRepo);
-		if (Directory(path).existsSync()) {
-			chdir(path);
-			await run('pwd', []);
-			await action_conv_utf();
-			print('');
-		}
-	}
+  if (!Directory(pathModules).existsSync()) {
+    return;
+  }
+  for (final urlRepo in solutionRepos) {
+    var path = pathModules + p.basenameWithoutExtension(urlRepo);
+    if (Directory(path).existsSync()) {
+      chdir(path);
+      await run('pwd', []);
+      await action_conv_utf();
+      print('');
+    }
+  }
 }
 
 action_mod_pack([basePath = '']) async {
-	return run_php([REAL_BIN + '/.action_conv.php', 'modpack']);
+  return run_php([REAL_BIN + '/.action_conv.php', 'modpack']);
+}
+
+action_mod_update([basePath = '']) async {
+  var path = getcwd();
+  var module = p.basename(path);
+  var solutionRepos = git_repos_map();
+  var solutionUrl = solutionRepos.containsKey(module) ? solutionRepos[module][0] : '';
+  var refresh = ((ARGV.length > 1) && (ARGV[1] == 'refresh')) ? ARGV[1] : '';
+  return run_php([REAL_BIN + '/.action_mod_update.php', solutionUrl, refresh]);
 }
 
 void main(List<String> args) async {
@@ -775,6 +788,7 @@ void main(List<String> args) async {
     'conv-win': action_conv_win,
     'conv-utf': action_conv_utf,
     'mod-pack': action_mod_pack,
+    'mod-update': action_mod_update,
 
     // js
     'js-install': action_js_install,

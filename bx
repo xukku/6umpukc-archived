@@ -8,20 +8,6 @@ use File::Copy;
 use File::Find qw(finddepth);
 use Config;
 
-sub action_mod_update {
-	my $path = getcwd();
-	my $module = basename($path);
-	my %solutionRepos = git_repos_map();
-	my $solutionUrl = (exists $solutionRepos{$module}
-			&& defined $solutionRepos{$module}[0])?
-		$solutionRepos{$module}[0] : '';
-	my $refresh = ($ARGV[1] && ($ARGV[1] eq 'refresh'))?
-		$ARGV[1] : '';
-	run php "'$RealBin/.action_mod_update.php'"
-		. " '" . $solutionUrl . "'"
-		. " '" . $refresh . "'";
-}
-
 sub action_minify {
 	my $basePath = shift;
 	if ((scalar @ARGV != 2) || !($ARGV[1] eq 'all')) {
@@ -541,9 +527,6 @@ my %actions = (
 	'site-proxy' => \&action_site_proxy,
 	'site-reset' => \&action_site_reset,
 	'site-remove' => \&action_site_remove,
-
-
-	'mod-update' => \&action_mod_update,
 
 	'es9' => \&action_es9,
 	'minify' => \&action_minify,
