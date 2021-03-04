@@ -8,17 +8,6 @@ use File::Copy;
 use File::Find qw(finddepth);
 use Config;
 
-sub action_solution_reset {
-	my $basePath = shift;
-	require_site_root($basePath);
-
-	if (!confirm_continue('Warning! Site public data will be removed.')) {
-		exit;
-	}
-	action_fixdir($basePath);
-	run php "'$RealBin/.action_solution_reset.php' '" . $basePath . "'";
-}
-
 sub action_solution_conv_utf {
 	my $basePath = shift;
 	require_site_root($basePath);
@@ -590,8 +579,6 @@ my %actions = (
 	'site-reset' => \&action_site_reset,
 	'site-remove' => \&action_site_remove,
 
-
-	'solution-reset' => \&action_solution_reset,
 	'solution-conv-utf' => \&action_solution_conv_utf,
 
 	'conv-utf' => \&action_conv_utf,

@@ -144,16 +144,25 @@ sudo_run(cmd, args) async {
   return run('sudo', args);
 }
 
-//TODO!!! rewrite to array
-php(args) {
-  var result = 'php ';
+run_php(args) async {
+  var phpBin = get_env('SOLUTION_PHP_BIN');
+  if (phpBin == '') {
+    phpBin = 'php';
+  } else {
+    phpBin += "\\php";
+  }
+  var cmdArgs = [];
   var phpArgs = get_env('SOLUTION_PHP_ARGS');
   if (phpArgs != '') {
-    result += phpArgs + ' ';
+    for (final arg in phpArgs.split(' ')) {
+      cmdArgs.add(arg.trim());
+    }
   }
-  result += args;
+  for (final arg in args) {
+    cmdArgs.add(arg);
+  }
 
-  return result;
+  return run(phpBin, cmdArgs);
 }
 
 request_useragent() {
@@ -651,25 +660,35 @@ action_js_install() async {
 }
 
 action_solution_init(basePath) async {
-	require_site_root(basePath);
+  require_site_root(basePath);
 
-	var solution = (ARGV.length > 1)? ARGV[1] : '';
-	var solutionConfigPath = REAL_BIN + '/.dev/solution.env.settings/'
-      + solution + '/example.env';
-	if (solution != '') {
-		if (!File(solutionConfigPath).existsSync()) {
-			die("Config for solution $solution not defined.");
-		}
-		var siteConfig = basePath + '/.env';
-		var originalContent = file_get_contents(siteConfig);
-		var content = file_get_contents(solutionConfigPath);
-		if (originalContent.indexOf(content) < 0) {
-			content = originalContent + "\n" + content + "\n";
-			file_put_contents(siteConfig, content);
-		}
-		ENV_LOCAL = await load_env(siteConfig);
-	}
-	await fetch_repos(basePath);
+  var solution = (ARGV.length > 1) ? ARGV[1] : '';
+  var solutionConfigPath = REAL_BIN + '/.dev/solution.env.settings/' + solution + '/example.env';
+  if (solution != '') {
+    if (!File(solutionConfigPath).existsSync()) {
+      die("Config for solution $solution not defined.");
+    }
+    var siteConfig = basePath + '/.env';
+    var originalContent = file_get_contents(siteConfig);
+    var content = file_get_contents(solutionConfigPath);
+    if (originalContent.indexOf(content) < 0) {
+      content = originalContent + "\n" + content + "\n";
+      file_put_contents(siteConfig, content);
+    }
+    ENV_LOCAL = await load_env(siteConfig);
+  }
+  await fetch_repos(basePath);
+}
+
+action_solution_reset(basePath) async {
+  require_site_root(basePath);
+
+  if (!confirm_continue('Warning! Site public data will be removed.')) {
+    exit(0);
+  }
+
+  action_fixdir(basePath);
+  await run_php([REAL_BIN + '/.action_solution_reset.php', basePath]);
 }
 
 void main(List<String> args) async {
@@ -685,7 +704,6 @@ void main(List<String> args) async {
   //print(await is_mingw()? 'is mingw' : 'not mingw');
   //await run('perl', ['-v']);
   //await sudo_run('perl', ['-v']);
-  //print(php('1 2 4'));
   //await request_get('https://google.com/', '_test.log');
   //file_put_contents('.test.log', '1'); print(file_get_contents('.test.log'));
   //await bitrix_minimize();
@@ -711,6 +729,7 @@ void main(List<String> args) async {
 
     // solution
     'solution-init': action_solution_init,
+    'solution-reset': action_solution_reset,
 
     // js
     'js-install': action_js_install,
@@ -727,6 +746,7 @@ void main(List<String> args) async {
   }
   await actions[action](site_root);
 
+  //await run_php(['-i']);
   //print(git_repos());
   //print(git_repos_map());
   //print(module_names_from_repos());
