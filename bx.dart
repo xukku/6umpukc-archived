@@ -60,7 +60,7 @@ is_ubuntu() async {
   return (result.stdout.indexOf('Ubuntu') >= 0) || (result.stdout.indexOf('ubuntu') >= 0);
 }
 
-is_mingw() async {
+is_mingw() {
   var ENV = Platform.environment;
   if (ENV['MSYSTEM'] != null) {
     if ((ENV['MSYSTEM'] == 'MINGW64') || (ENV['MSYSTEM'] == 'MINGW32') || (ENV['MSYSTEM'] == 'MSYS')) {
@@ -286,11 +286,11 @@ bitrix_micromize() async {
   }
 }
 
-action_help() async {
+action_help([basePath = '']) async {
   await run('cat', [REAL_BIN + '/README.md'], true);
 }
 
-action_fetch() async {
+action_fetch([basePath = '']) async {
   var urlEditions = {
     'micro': 'https://www.1c-bitrix.ru/download/start_encode_php5.tar.gz',
     'core': 'https://www.1c-bitrix.ru/download/start_encode_php5.tar.gz',
@@ -405,6 +405,25 @@ action_env(basePath) async {
   print('');
 }
 
+action_ftp(basePath) async {
+  await require_site_root(basePath);
+  await require_command('filezilla');
+
+  var connStr = ftp_conn_str();
+  if (is_mingw()) {
+    //TODO!!!
+    //    $path = $_SERVER["USERPROFILE"] . "/PortableApps/FileZillaPortable/FileZillaPortable.exe";
+    //    pclose(popen("start /B " . $path . ' "' . $connStr . '" --local="' . $basePath . '"', "r"));
+  } else if (is_ubuntu()) {
+    await require_command('screen');
+    return run('screen', ['-d', '-m', 'filezilla', connStr, '--local="' + basePath + '"']);
+  }
+  //else {
+  //	# arch - run without `screen` command
+  //	run '(filezilla "' . $conn_str . '" --local="' . $basePath . '"  &> /dev/null &)';
+  //}
+}
+
 void main(List<String> args) async {
   ARGV = args;
 
@@ -433,6 +452,7 @@ void main(List<String> args) async {
     'help': action_help,
     'fetch': action_fetch,
     'env': action_env,
+    'ftp': action_ftp,
   };
 
   var action = '';
