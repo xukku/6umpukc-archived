@@ -582,7 +582,7 @@ action_pull(basePath) async {
   }
 }
 
-action_reset(basePath) {
+action_reset(basePath) async {
   require_site_root(basePath);
 
   var pathModules = basePath + '/bitrix/modules/';
