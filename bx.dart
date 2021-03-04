@@ -819,6 +819,59 @@ action_docker_install([basePath = '']) async {
   }
 }
 
+action_bitrixcli_install([basePath = '']) async {
+  await require_command('docker');
+
+  chdir(REAL_BIN + '/.template/bitrixcli/');
+  await run('docker', ['rmi', 'bitrixcli', '--force']);
+  await run('docker', ['build', '-t', 'bitrixcli', '.']);
+}
+
+action_bitrixcli_build([basePath = '']) async {
+  await require_command('docker');
+
+  var path = getcwd();
+  await run('docker', ['run', '--volume="' + path + ':/home/node"', 'bitrixcli']);
+  action_fixdir(path);
+}
+
+action_bitrixcli_build_deps(basePath) async {
+  require_site_root(basePath);
+  await require_command('docker');
+
+  var bitrixPath = basePath + '/bitrix';
+  var path = getcwd();
+  var tmp = path.split('/bitrix/js/');
+  if (tmp.length == 1) {
+    tmp = path.split('/install/js/');
+  }
+  if (tmp.length == 1) {
+    tmp = path.split('/local/js/');
+    if (tmp.length != 1) {
+      bitrixPath = basePath + '/local';
+    }
+  }
+
+  var destPath = '/home/node/local/js/' + tmp[1];
+  await run('docker',
+      ['run', '--volume="' + bitrixPath + ':/home/node/local"', 'bitrixcli', 'bitrix', 'build', '--path', destPath]);
+  action_fixdir(path);
+}
+
+action_bitrixcli_create([basePath = '']) async {
+  await require_command('docker');
+
+  var path = getcwd();
+  await run('docker', ['run', '-it', '--volume="' + path + ':/home/node"', 'bitrixcli', 'bitrix', 'create']);
+  action_fixdir(path);
+}
+
+action_bitrixcli_help([basePath = '']) async {
+  await require_command('docker');
+
+  await run('docker', ['run', 'bitrixcli', 'bitrix', '--help']);
+}
+
 void main(List<String> args) async {
   ARGV = args;
   var site_root = detect_site_root('');
@@ -872,6 +925,11 @@ void main(List<String> args) async {
     // tools
     'js-install': action_js_install,
     'docker-install': action_docker_install,
+    'bitrixcli-install': action_bitrixcli_install,
+    'bitrixcli-build': action_bitrixcli_build,
+    'bitrixcli-build-deps': action_bitrixcli_build_deps,
+    'bitrixcli-create': action_bitrixcli_create,
+    'bitrixcli-help': action_bitrixcli_help,
   };
 
   var action = '';
