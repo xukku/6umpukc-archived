@@ -688,7 +688,44 @@ action_solution_reset(basePath) async {
   }
 
   action_fixdir(basePath);
-  await run_php([REAL_BIN + '/.action_solution_reset.php', basePath]);
+
+  return run_php([REAL_BIN + '/.action_solution_reset.php', basePath]);
+}
+
+action_conv_win([basePath = '']) async {
+  return run_php([REAL_BIN + '/.action_conv.php', 'win']);
+}
+
+action_conv_utf([basePath = '']) async {
+  var args = [REAL_BIN + '/.action_conv.php', 'utf'];
+  if (basePath != '') {
+    args.add(basePath);
+  }
+
+  return run_php(args);
+}
+
+action_solution_conv_utf(basePath) async {
+	require_site_root(basePath);
+
+	var solutionRepos = git_repos();
+  if (solutionRepos.length == 0) {
+    return;
+  }
+
+  var pathModules = basePath + '/bitrix/modules/';
+	if (!Directory(pathModules).existsSync()) {
+		return;
+	}
+	for (final urlRepo in solutionRepos) {
+		var path = pathModules + p.basenameWithoutExtension(urlRepo);
+		if (Directory(path).existsSync()) {
+			chdir(path);
+			await run('pwd', []);
+			await action_conv_utf();
+			print('');
+		}
+	}
 }
 
 void main(List<String> args) async {
@@ -730,6 +767,9 @@ void main(List<String> args) async {
     // solution
     'solution-init': action_solution_init,
     'solution-reset': action_solution_reset,
+    'solution-conv-utf': action_solution_conv_utf,
+    'conv-win': action_conv_win,
+    'conv-utf': action_conv_utf,
 
     // js
     'js-install': action_js_install,

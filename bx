@@ -8,39 +8,6 @@ use File::Copy;
 use File::Find qw(finddepth);
 use Config;
 
-sub action_solution_conv_utf {
-	my $basePath = shift;
-	require_site_root($basePath);
-
-	my @solutionRepos = git_repos();
-	if (scalar @solutionRepos == 0) {
-		return;
-	}
-	my $pathModules = $basePath . '/bitrix/modules/';
-	if (! -d $pathModules) {
-		return;
-	}
-	for my $urlRepo (@solutionRepos) {
-		my $path = $pathModules . basename($urlRepo, '.git');
-		if (-d $path) {
-			chdir $path;
-			run 'pwd';
-			action_conv_utf();
-			say '';
-		}
-	}
-}
-
-sub action_conv_utf {
-	my $path = shift;
-	run php "'$RealBin/.action_conv.php' utf "
-		. ((defined($path) && ($path ne ''))? (" '" . $path . "'") : '');
-}
-
-sub action_conv_win {
-	run php "'$RealBin/.action_conv.php' win";
-}
-
 sub action_mod_pack {
 	run php "'$RealBin/.action_conv.php' modpack";
 }
@@ -579,10 +546,6 @@ my %actions = (
 	'site-reset' => \&action_site_reset,
 	'site-remove' => \&action_site_remove,
 
-	'solution-conv-utf' => \&action_solution_conv_utf,
-
-	'conv-utf' => \&action_conv_utf,
-	'conv-win' => \&action_conv_win,
 	'mod-pack' => \&action_mod_pack,
 	'mod-update' => \&action_mod_update,
 
