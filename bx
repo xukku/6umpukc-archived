@@ -34,24 +34,6 @@ sub action_self_install {
 	}
 }
 
-sub action_env {
-	my $basePath = shift;
-	require_site_root($basePath);
-
-	our %config;
-	say "Site root:\n\t$basePath\n";
-	say 'Env config:';
-	for my $k (keys %config) {
-		say "    $k -> " . $ENV{$k};
-	}
-	say '';
-	say "Ftp connection:\n\t" . ftp_conn_str();
-	say '';
-	say 'Ssh connection command:';
-	say "\t" . ssh_exec_remote();
-	say '';
-}
-
 sub action_ftp {
 	my $basePath = shift;
 	require_site_root($basePath);
@@ -882,7 +864,7 @@ my %actions = (
 	'site-reset' => \&action_site_reset,
 	'site-remove' => \&action_site_remove,
 
-	'env' => \&action_env,
+
 	'ftp' => \&action_ftp,
 	'ssh' => \&action_ssh,
 	'db' => \&action_db,
@@ -919,13 +901,3 @@ my %actions = (
 	'bitrixcli-create' =>  \&action_bitrixcli_create,
 	'bitrixcli-help' =>  \&action_bitrixcli_help,
 );
-my $action = '';
-if (scalar @ARGV == 0) {
-	$action = 'help';
-} else {
-	$action = $ARGV[0];
-}
-if (!exists $actions{$action}) {
-	$action = 'help';
-}
-$actions{$action}->($site_root);

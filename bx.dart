@@ -362,11 +362,12 @@ ftp_conn_str() {
 }
 
 ssh_exec_remote([cmd = '']) async {
-	await require_command('ssh');
-	await require_command('sshpass');
+  await require_command('ssh');
+  await require_command('sshpass');
 
   var ENV = Platform.environment;
-	var args = [
+  var args = [
+    'sshpass',
     '-p',
     ENV['DEPLOY_PASSWORD'],
     'ssh',
@@ -374,27 +375,38 @@ ssh_exec_remote([cmd = '']) async {
     '-t'
   ];
 
-	if ((ENV['DEPLOY_PATH'] != null) && (ENV['DEPLOY_PATH'] != '')) {
-	  args.add('cd');
-	  args.add(ENV['DEPLOY_PATH']);
-	  args.add(';');
-	}
+  if ((ENV['DEPLOY_PATH'] != null) && (ENV['DEPLOY_PATH'] != '')) {
+    args.add('cd');
+    args.add(ENV['DEPLOY_PATH']);
+    args.add(';');
+  }
 
-	if (cmd == '') {
+  if (cmd == '') {
     args.add('bash --login');
-	  args.add(';');
-	}
+    args.add(';');
+  }
 
-	return run('sshpass', args);
+  return args;
+}
+
+action_env(basePath) async {
+  require_site_root(basePath);
+
+  print("Site root:\n\t$basePath\n");
+  print('Env config:');
+  for (final k in ENV.keys) {
+    print("\t" + k + " -> " + ENV[k]);
+  }
+  print('');
+  print("Ftp connection:\n\t" + ftp_conn_str());
+  print('');
+  print('Ssh connection command:');
+  print("\t" + quote_args(await ssh_exec_remote()));
+  print('');
 }
 
 void main(List<String> args) async {
   ARGV = args;
-
-  // test arguments
-  for (final arg in args) {
-    print('[' + arg.trim() + ']');
-  }
 
   //require_site_root('');
   //await require_command('git');
@@ -420,9 +432,20 @@ void main(List<String> args) async {
   var actions = {
     'help': action_help,
     'fetch': action_fetch,
+    'env': action_env,
   };
 
-  await actions['fetch']();
+  var action = '';
+  if (ARGV.length == 0) {
+    action = 'help';
+  } else {
+    action = ARGV[0];
+  }
+  if (!actions.containsKey(action)) {
+    action = 'help';
+  }
+
+  await actions['env'](site_root);
 
   print('OK.');
 }
