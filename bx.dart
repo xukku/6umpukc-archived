@@ -601,6 +601,26 @@ action_reset(basePath) async {
   }
 }
 
+action_checkout(basePath) async {
+	require_site_root(basePath);
+
+	var branch = (ARGV.length > 1)? ARGV[1] : 'master';
+	var pathModules = basePath + '/bitrix/modules/';
+	if (!Directory(pathModules).existsSync()) {
+    new Directory(pathModules).createSync(recursive: true);
+  }
+	var solutionRepos = git_repos();
+  if (solutionRepos.length == 0) {
+    return;
+  }
+	for (final urlRepo in solutionRepos) {
+		chdir(pathModules + p.basenameWithoutExtension(urlRepo));
+		await run('pwd', []);
+		await run('git', ['checkout', branch]);
+		print('');
+	}
+}
+
 void main(List<String> args) async {
   ARGV = args;
   var site_root = detect_site_root('');
@@ -635,6 +655,7 @@ void main(List<String> args) async {
     'status': action_status,
     'pull': action_pull,
     'reset': action_reset,
+    'checkout': action_checkout,
   };
 
   var action = '';

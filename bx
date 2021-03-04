@@ -8,28 +8,6 @@ use File::Copy;
 use File::Find qw(finddepth);
 use Config;
 
-sub action_checkout {
-	my $basePath = shift;
-	require_site_root($basePath);
-
-	my $branch = $ARGV[1]? $ARGV[1] : 'master';
-	my $pathModules = $basePath . '/bitrix/modules/';
-	if (! -d $pathModules) {
-		mkdir $basePath . '/bitrix';
-		mkdir $pathModules;
-	}
-	my @solutionRepos = git_repos();
-	if (scalar @solutionRepos == 0) {
-		return;
-	}
-	for my $urlRepo (@solutionRepos) {
-		chdir $pathModules . basename($urlRepo, '.git');
-		run 'pwd';
-		run 'git checkout ' . $branch;
-		say '';
-	}
-}
-
 sub action_fixdir {
 	my $basePath = shift;
 	require_site_root($basePath);
@@ -663,10 +641,6 @@ my %actions = (
 
 
 	'fixdir' => \&action_fixdir,
-
-
-
-	'checkout' => \&action_checkout,
 
 	'solution-init' => \&action_solution_init,
 	'solution-reset' => \&action_solution_reset,
