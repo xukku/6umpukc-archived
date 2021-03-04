@@ -873,14 +873,14 @@ action_bitrixcli_help([basePath = '']) async {
 }
 
 action_site_reset(basePath) async {
-	require_site_root(basePath);
+  require_site_root(basePath);
 
-	if (!confirm_continue('Warning! Site db tables and files will be removed.')) {
-		exit(0);
-	}
+  if (!confirm_continue('Warning! Site db tables and files will be removed.')) {
+    exit(0);
+  }
 
-	action_fixdir(basePath);
-	await run_php([REAL_BIN +  '/.action_site_reset.php',  basePath]);
+  action_fixdir(basePath);
+  await run_php([REAL_BIN + '/.action_site_reset.php', basePath]);
 }
 
 void main(List<String> args) async {
