@@ -509,7 +509,7 @@ git_clone(pathModules, moduleId, urlRepo) async {
   if (Directory(pathModule).existsSync()) {
     await run('rm', ['-Rf', pathModule]);
   }
-  chdir(pathModules);
+  chdir(pathModules); //!!!
   await run('git', ['clone', urlRepo, moduleId]);
   if (Directory(pathModule).existsSync()) {
     chdir(pathModule);
@@ -518,21 +518,43 @@ git_clone(pathModules, moduleId, urlRepo) async {
   }
 }
 
-action_status(basePath) async {
-	require_site_root(basePath);
+fetch_repos(basePath) async {
+  var pathModules = basePath + '/bitrix/modules/';
+  if (!Directory(pathModules).existsSync()) {
+    new Directory(pathModules).createSync(recursive: true);
+  }
+  var solutionRepos = git_repos();
+  if (solutionRepos.length == 0) {
+    return;
+  }
+  print('Repositories:');
+  for (final u in solutionRepos) {
+    print("\t$u");
+  }
+  if (!confirm_continue('Warning! Modules will be removed.')) {
+    exit;
+  }
+  for (final urlRepo in solutionRepos) {
+    await git_clone(pathModules, p.basenameWithoutExtension(urlRepo), urlRepo);
+    print('');
+  }
+}
 
-	var pathModules = basePath + '/bitrix/modules/';
-	var solutionRepos = git_repos();
-	if (solutionRepos.length == 0) {
-		return;
-	}
-	for (final urlRepo in solutionRepos) {
-		chdir(pathModules + p.basenameWithoutExtension(urlRepo));
-		await run('pwd', []);
-		await run('git', ['status']);
-		await run('git', ['branch']);
-		print('');
-	}
+action_status(basePath) async {
+  require_site_root(basePath);
+
+  var pathModules = basePath + '/bitrix/modules/';
+  var solutionRepos = git_repos();
+  if (solutionRepos.length == 0) {
+    return;
+  }
+  for (final urlRepo in solutionRepos) {
+    chdir(pathModules + p.basenameWithoutExtension(urlRepo));
+    await run('pwd', []);
+    await run('git', ['status']);
+    await run('git', ['branch']);
+    print('');
+  }
 }
 
 void main(List<String> args) async {
@@ -583,6 +605,8 @@ void main(List<String> args) async {
   //print(git_repos());
   //print(git_repos_map());
   //print(module_names_from_repos());
+
+  await fetch_repos(site_root);
 
   print('OK.');
 }

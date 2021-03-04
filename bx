@@ -8,30 +8,6 @@ use File::Copy;
 use File::Find qw(finddepth);
 use Config;
 
-sub fetch_repos {
-	my $basePath = shift;
-	my $pathModules = $basePath . '/bitrix/modules/';
-	if (! -d $pathModules) {
-		mkdir $basePath . '/bitrix';
-		mkdir $pathModules;
-	}
-	my @solutionRepos = git_repos();
-	if (scalar @solutionRepos == 0) {
-		return;
-	}
-	say 'Repositories:';
-	for my $u (@solutionRepos) {
-		say "\t$u";
-	}
-	if (!confirm_continue('Warning! Modules will be removed.')) {
-		exit;
-	}
-	for my $urlRepo (@solutionRepos) {
-		git_clone($pathModules, basename($urlRepo, '.git'), $urlRepo);
-		say "";
-	}
-}
-
 sub action_pull {
 	my $basePath = shift;
 	require_site_root($basePath);
