@@ -350,34 +350,31 @@ action_fetch([basePath = '']) async {
 
 ftp_conn_str() {
   var ENV = Platform.environment;
-  return ENV['DEPLOY_METHOD'] +
+  return (ENV['DEPLOY_METHOD'] ?? '') +
       '://' +
-      ENV['DEPLOY_USER'] +
+      (ENV['DEPLOY_USER'] ?? '') +
       ':' +
-      ENV['DEPLOY_PASSWORD'] +
+      (ENV['DEPLOY_PASSWORD'] ?? '') +
       '@' +
-      ENV['DEPLOY_SERVER'] +
-      ENV['DEPLOY_PORT'] +
-      ENV['DEPLOY_PATH'];
+      (ENV['DEPLOY_SERVER'] ?? '') +
+      (ENV['DEPLOY_PORT'] ?? '') +
+      (ENV['DEPLOY_PATH'] ?? '');
 }
 
-ssh_exec_remote([cmd = '']) async {
-  await require_command('ssh');
-  await require_command('sshpass');
-
+ssh_exec_remote([cmd = '']) {
   var ENV = Platform.environment;
   var args = [
     'sshpass',
     '-p',
-    ENV['DEPLOY_PASSWORD'],
+    (ENV['DEPLOY_PASSWORD'] ?? ''),
     'ssh',
-    ENV['DEPLOY_USER'] + '@' + ENV['DEPLOY_SERVER'] + ENV['DEPLOY_PORT'],
+    (ENV['DEPLOY_USER'] ?? '') + '@' + (ENV['DEPLOY_SERVER'] ?? '') + (ENV['DEPLOY_PORT'] ?? ''),
     '-t'
   ];
 
   if ((ENV['DEPLOY_PATH'] != null) && (ENV['DEPLOY_PATH'] != '')) {
     args.add('cd');
-    args.add(ENV['DEPLOY_PATH']);
+    args.add(ENV['DEPLOY_PATH'] ?? '');
     args.add(';');
   }
 
@@ -401,7 +398,7 @@ action_env(basePath) async {
   print("Ftp connection:\n\t" + ftp_conn_str());
   print('');
   print('Ssh connection command:');
-  print("\t" + quote_args(await ssh_exec_remote()));
+  print("\t" + quote_args(ssh_exec_remote()));
   print('');
 }
 
@@ -426,8 +423,10 @@ action_ftp(basePath) async {
 
 action_ssh(basePath) async {
 	require_site_root(basePath);
+	await require_command('ssh');
+  await require_command('sshpass');
 
-	var args = await ssh_exec_remote();
+	var args = ssh_exec_remote();
 	var cmd = args.shift();
 
 	return run(cmd, args);
