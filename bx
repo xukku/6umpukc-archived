@@ -34,26 +34,6 @@ sub action_self_install {
 	}
 }
 
-sub ssh_exec_remote {
-	require_command('ssh');
-	require_command('sshpass');
-
-	my $cmd = shift;
-	if (!$cmd || $cmd eq '') {
-		$cmd = 'bash --login'
-	}
-	my $result = 'sshpass -p "' . $ENV{'DEPLOY_PASSWORD'}
-		. '" ssh ' . $ENV{'DEPLOY_USER'} . '@' . $ENV{'DEPLOY_SERVER'} . $ENV{'DEPLOY_PORT'}
-		. ' -t "';
-	if (exists $ENV{'DEPLOY_PATH'} && ($ENV{'DEPLOY_PATH'} ne '')) {
-		$result .= 'cd ' . $ENV{'DEPLOY_PATH'} . '; ';
-	}
-	$result .= $cmd . ';';
-	$result .= '"';
-
-	return $result;
-}
-
 sub action_env {
 	my $basePath = shift;
 	require_site_root($basePath);

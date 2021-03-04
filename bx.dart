@@ -361,6 +361,33 @@ ftp_conn_str() {
       ENV['DEPLOY_PATH'];
 }
 
+ssh_exec_remote([cmd = '']) async {
+	await require_command('ssh');
+	await require_command('sshpass');
+
+  var ENV = Platform.environment;
+	var args = [
+    '-p',
+    ENV['DEPLOY_PASSWORD'],
+    'ssh',
+    ENV['DEPLOY_USER'] + '@' + ENV['DEPLOY_SERVER'] + ENV['DEPLOY_PORT'],
+    '-t'
+  ];
+
+	if ((ENV['DEPLOY_PATH'] != null) && (ENV['DEPLOY_PATH'] != '')) {
+	  args.add('cd');
+	  args.add(ENV['DEPLOY_PATH']);
+	  args.add(';');
+	}
+
+	if (cmd == '') {
+    args.add('bash --login');
+	  args.add(';');
+	}
+
+	return run('sshpass', args);
+}
+
 void main(List<String> args) async {
   ARGV = args;
 
