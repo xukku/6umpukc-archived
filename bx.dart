@@ -636,6 +636,20 @@ action_fixdir(basePath) async {
   }
 }
 
+action_js_install() async {
+  await require_command('node');
+  await require_command('npm');
+
+  await sudo_run('npm', ['install', '-g', 'google-closure-compiler']);
+
+  var path = REAL_BIN + '/.dev/bin/esbuild';
+  if (!Directory(path).existsSync()) {
+    new Directory(path).createSync(recursive: true);
+  }
+  chdir(path);
+  await run('npm', ['install', 'esbuild']);
+}
+
 void main(List<String> args) async {
   ARGV = args;
   var site_root = detect_site_root('');
@@ -672,6 +686,9 @@ void main(List<String> args) async {
     'pull': action_pull,
     'reset': action_reset,
     'checkout': action_checkout,
+
+    // js
+    'js-install': action_js_install,
   };
 
   var action = '';

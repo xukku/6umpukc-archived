@@ -93,18 +93,6 @@ sub action_mod_update {
 		. " '" . $refresh . "'";
 }
 
-sub action_js_install {
-	require_command('node');
-	require_command('npm');
-
-	sudo_run('npm install -g google-closure-compiler');
-
-	mkdir($RealBin . '/.dev/bin');
-	mkdir($RealBin . '/.dev/bin/esbuild');
-	chdir($RealBin . '/.dev/bin/esbuild');
-	run('npm install esbuild');
-}
-
 sub action_minify {
 	my $basePath = shift;
 	if ((scalar @ARGV != 2) || !($ARGV[1] eq 'all')) {
@@ -634,7 +622,6 @@ my %actions = (
 	'mod-pack' => \&action_mod_pack,
 	'mod-update' => \&action_mod_update,
 
-	'js-install' => \&action_js_install,
 	'es9' => \&action_es9,
 	'minify' => \&action_minify,
 
