@@ -8,10 +8,6 @@ use File::Copy;
 use File::Find qw(finddepth);
 use Config;
 
-sub action_mod_pack {
-	run php "'$RealBin/.action_conv.php' modpack";
-}
-
 sub action_mod_update {
 	my $path = getcwd();
 	my $module = basename($path);
@@ -546,7 +542,7 @@ my %actions = (
 	'site-reset' => \&action_site_reset,
 	'site-remove' => \&action_site_remove,
 
-	'mod-pack' => \&action_mod_pack,
+
 	'mod-update' => \&action_mod_update,
 
 	'es9' => \&action_es9,

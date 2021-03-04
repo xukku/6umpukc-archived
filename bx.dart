@@ -360,7 +360,7 @@ action_fetch([basePath = '']) async {
   await request_get(srcUrl, outputFile);
 
   if (!File(outputFile).existsSync()) {
-    die('Error on loading bitrix edition ' + srcUrl);
+    die('Error on loading bitrix edition ' + (srcUrl ?? ''));
   }
 
   if ((edition == 'setup') || (edition == 'restore')) {
@@ -728,6 +728,10 @@ action_solution_conv_utf(basePath) async {
 	}
 }
 
+action_mod_pack([basePath = '']) async {
+	return run_php([REAL_BIN + '/.action_conv.php', 'modpack']);
+}
+
 void main(List<String> args) async {
   ARGV = args;
   var site_root = detect_site_root('');
@@ -770,6 +774,7 @@ void main(List<String> args) async {
     'solution-conv-utf': action_solution_conv_utf,
     'conv-win': action_conv_win,
     'conv-utf': action_conv_utf,
+    'mod-pack': action_mod_pack,
 
     // js
     'js-install': action_js_install,
