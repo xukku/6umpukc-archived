@@ -8,13 +8,6 @@ use File::Copy;
 use File::Find qw(finddepth);
 use Config;
 
-
-
-sub module_names_from_repos {
-	my @result = map { basename($_, '.git'); } git_repos();
-	return @result;
-}
-
 sub fetch_repos {
 	my $basePath = shift;
 	my $pathModules = $basePath . '/bitrix/modules/';

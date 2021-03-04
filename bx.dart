@@ -485,10 +485,18 @@ git_repos_map() {
     var tmp = line.split(';');
     var url = tmp[0].trim();
     var k = p.basenameWithoutExtension(url);
-    var v = (tmp[1] ?? '').trim();
+    var v = (tmp.length > 1) ? tmp[1].trim() : '';
     result[k] = [v, url];
   }
 
+  return result;
+}
+
+module_names_from_repos() {
+  var result = [];
+  for (final url in git_repos()) {
+    result.add(p.basenameWithoutExtension(url));
+  }
   return result;
 }
 
@@ -546,7 +554,8 @@ void main(List<String> args) async {
   await actions[action](site_root);
 
   //print(git_repos());
-  print(git_repos_map());
+  //print(git_repos_map());
+  //print(module_names_from_repos());
 
   print('OK.');
 }
