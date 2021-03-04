@@ -402,6 +402,28 @@ action_env(basePath) async {
   print('');
 }
 
+action_db(basePath) async {
+  require_site_root(basePath);
+  await require_command('xdg-open');
+
+  var ENV = Platform.environment;
+  var url = '';
+  if ((ENV['SITE_URL'] != null) && (ENV['SITE_URL'] != '')) {
+    url = ENV['SITE_URL'] ?? '';
+  } else {
+    //TODO http or https from settings
+    url = 'http://' + p.basename(basePath) + '/';
+  }
+  url += 'adminer/?username=' +
+      (ENV['DB_USER'] ?? '') +
+      '&db=' +
+      (ENV['DB_NAME'] ?? '') +
+      '&password=' +
+      (ENV['DB_PASSWORD'] ?? '');
+
+  return run('xdg-open', [url]);
+}
+
 action_ftp(basePath) async {
   require_site_root(basePath);
   await require_command('filezilla');
@@ -422,14 +444,14 @@ action_ftp(basePath) async {
 }
 
 action_ssh(basePath) async {
-	require_site_root(basePath);
-	await require_command('ssh');
+  require_site_root(basePath);
+  await require_command('ssh');
   await require_command('sshpass');
 
-	var args = ssh_exec_remote();
-	var cmd = args.shift();
+  var args = ssh_exec_remote();
+  var cmd = args.shift();
 
-	return run(cmd, args);
+  return run(cmd, args);
 }
 
 void main(List<String> args) async {
@@ -462,6 +484,7 @@ void main(List<String> args) async {
     'env': action_env,
     'ftp': action_ftp,
     'ssh': action_ssh,
+    'db': action_db,
   };
 
   var action = '';

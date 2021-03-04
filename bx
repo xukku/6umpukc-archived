@@ -8,24 +8,6 @@ use File::Copy;
 use File::Find qw(finddepth);
 use Config;
 
-sub action_db {
-	my $basePath = shift;
-	require_site_root($basePath);
-	require_command('xdg-open');
-
-	my $url = '';
-	if ($ENV{'SITE_URL'} ne '') {
-		$url = $ENV{'SITE_URL'};
-	} else {
-		$url = 'http://' . basename($basePath) . '/';
-	}
-	$url .= 'adminer/?username=' . $ENV{'DB_USER'}
-		. '&db=' . $ENV{'DB_NAME'}
-		. '&password=' . $ENV{'DB_PASSWORD'};
-
-	run 'xdg-open "' . $url . '"';
-}
-
 sub confirm_continue {
 	my $title = shift;
 	print $title . " Type 'yes' to continue: ";
@@ -808,7 +790,7 @@ my %actions = (
 	'site-reset' => \&action_site_reset,
 	'site-remove' => \&action_site_remove,
 
-	'db' => \&action_db,
+
 	'fixdir' => \&action_fixdir,
 
 	'status' => \&action_status,
