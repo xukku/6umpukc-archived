@@ -26,6 +26,10 @@ get_env(name) {
   return (ENV[name] ?? '');
 }
 
+get_user() async {
+  return p.basename(await runReturnContent('whoami'));
+}
+
 die(msg) {
   print(msg);
   exit(0);
@@ -116,6 +120,20 @@ quote_args(args) {
 }
 
 // https://api.dart.dev/be/178268/dart-io/dart-io-library.html
+runReturnContent(cmd, [args = null]) async {
+  if (args == null) {
+    args = [];
+  }
+  try {
+    ProcessResult result = await Process.run(cmd, new List<String>.from(args), environment: ENV_LOCAL);
+    return result.stdout.trimRight();
+  } catch (e) {
+    print('Error on running command:');
+    print(e);
+    return '';
+  }
+}
+
 run(cmd, args) async {
   if (is_bx_debug()) {
     print(cmd + ' ' + quote_args(args));
@@ -791,6 +809,16 @@ action_mkcert_install([basePath = '']) async {
   }
 }
 
+action_docker_install([basePath = '']) async {
+  if (await is_ubuntu()) {
+    await sudo_run('snap', ['install', 'docker']);
+    await sudo_run('addgroup', ['--system', 'docker']);
+    await sudo_run('adduser', [get_user(), 'docker']);
+    await sudo_run('newgrp', ['docker']);
+    await sudo_run('snap', ['enable', 'docker']);
+  }
+}
+
 void main(List<String> args) async {
   ARGV = args;
   var site_root = detect_site_root('');
@@ -841,8 +869,9 @@ void main(List<String> args) async {
     'stop': action_stop,
     'mkcert-install': action_mkcert_install,
 
-    // js
+    // tools
     'js-install': action_js_install,
+    'docker-install': action_docker_install,
   };
 
   var action = '';
@@ -861,6 +890,7 @@ void main(List<String> args) async {
   //print(git_repos_map());
   //print(module_names_from_repos());
   //await fetch_repos(site_root);
+  //print(await get_user());
 
   print('OK.');
 }
