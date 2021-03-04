@@ -34,12 +34,6 @@ sub action_self_install {
 	}
 }
 
-sub ftp_conn_str {
-	return $ENV{'DEPLOY_METHOD'} . '://'
-		. $ENV{'DEPLOY_USER'} . ':' . $ENV{'DEPLOY_PASSWORD'}
-		. '@' . $ENV{'DEPLOY_SERVER'} . $ENV{'DEPLOY_PORT'} . $ENV{'DEPLOY_PATH'};
-}
-
 sub ssh_exec_remote {
 	require_command('ssh');
 	require_command('sshpass');
