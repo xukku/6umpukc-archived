@@ -650,6 +650,28 @@ action_js_install() async {
   await run('npm', ['install', 'esbuild']);
 }
 
+action_solution_init(basePath) async {
+	require_site_root(basePath);
+
+	var solution = (ARGV.length > 1)? ARGV[1] : '';
+	var solutionConfigPath = REAL_BIN + '/.dev/solution.env.settings/'
+      + solution + '/example.env';
+	if (solution != '') {
+		if (!File(solutionConfigPath).existsSync()) {
+			die("Config for solution $solution not defined.");
+		}
+		var siteConfig = basePath + '/.env';
+		var originalContent = file_get_contents(siteConfig);
+		var content = file_get_contents(solutionConfigPath);
+		if (originalContent.indexOf(content) < 0) {
+			content = originalContent + "\n" + content + "\n";
+			file_put_contents(siteConfig, content);
+		}
+		ENV_LOCAL = await load_env(siteConfig);
+	}
+	await fetch_repos(basePath);
+}
+
 void main(List<String> args) async {
   ARGV = args;
   var site_root = detect_site_root('');
@@ -686,6 +708,9 @@ void main(List<String> args) async {
     'pull': action_pull,
     'reset': action_reset,
     'checkout': action_checkout,
+
+    // solution
+    'solution-init': action_solution_init,
 
     // js
     'js-install': action_js_install,

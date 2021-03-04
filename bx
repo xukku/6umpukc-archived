@@ -8,29 +8,6 @@ use File::Copy;
 use File::Find qw(finddepth);
 use Config;
 
-sub action_solution_init {
-	my $basePath = shift;
-	require_site_root($basePath);
-
-	my $solution = $ARGV[1]? $ARGV[1] : '';
-	my $solutionConfigPath = $RealBin . '/.dev/solution.env.settings/' . $solution . '/example.env';
-	if ($solution ne '') {
-		if (!-f $solutionConfigPath) {
-			die "Config for solution $solution not defined.\n";
-		}
-		my $siteConfig = $basePath . '/.env';
-		my $originalContent = file_get_contents($siteConfig);
-		my $content = file_get_contents($solutionConfigPath);
-		if (index($originalContent, $content) < 0) {
-			$content = $originalContent . "\n" . $content . "\n";
-			file_put_contents($siteConfig, $content);
-		}
-		run 'bx solution-init';
-		exit;
-	}
-	fetch_repos $basePath;
-}
-
 sub action_solution_reset {
 	my $basePath = shift;
 	require_site_root($basePath);
@@ -613,7 +590,7 @@ my %actions = (
 	'site-reset' => \&action_site_reset,
 	'site-remove' => \&action_site_remove,
 
-	'solution-init' => \&action_solution_init,
+
 	'solution-reset' => \&action_solution_reset,
 	'solution-conv-utf' => \&action_solution_conv_utf,
 
