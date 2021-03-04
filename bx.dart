@@ -406,7 +406,7 @@ action_env(basePath) async {
 }
 
 action_ftp(basePath) async {
-  await require_site_root(basePath);
+  require_site_root(basePath);
   await require_command('filezilla');
 
   var connStr = ftp_conn_str();
@@ -422,6 +422,15 @@ action_ftp(basePath) async {
   //	# arch - run without `screen` command
   //	run '(filezilla "' . $conn_str . '" --local="' . $basePath . '"  &> /dev/null &)';
   //}
+}
+
+action_ssh(basePath) async {
+	require_site_root(basePath);
+
+	var args = await ssh_exec_remote();
+	var cmd = args.shift();
+
+	return run(cmd, args);
 }
 
 void main(List<String> args) async {
@@ -453,6 +462,7 @@ void main(List<String> args) async {
     'fetch': action_fetch,
     'env': action_env,
     'ftp': action_ftp,
+    'ssh': action_ssh,
   };
 
   var action = '';

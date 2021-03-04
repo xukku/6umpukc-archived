@@ -8,13 +8,6 @@ use File::Copy;
 use File::Find qw(finddepth);
 use Config;
 
-sub action_ssh {
-	my $basePath = shift;
-	require_site_root($basePath);
-
-	run ssh_exec_remote();
-}
-
 sub action_db {
 	my $basePath = shift;
 	require_site_root($basePath);
@@ -815,7 +808,6 @@ my %actions = (
 	'site-reset' => \&action_site_reset,
 	'site-remove' => \&action_site_remove,
 
-	'ssh' => \&action_ssh,
 	'db' => \&action_db,
 	'fixdir' => \&action_fixdir,
 
