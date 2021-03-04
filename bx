@@ -381,35 +381,6 @@ ProxyPassReverse /  http://$ip/
 	}
 }
 
-sub action_site_remove {
-	my $basePath = shift;
-	require_site_root($basePath);
-
-	action_site_reset($basePath);
-
-	if (is_ubuntu()) {
-		my $path = getcwd();
-		# remove site
-		my $sitehost = basename($path);
-		my $destpath = '/etc/apache2/sites-available/' . $sitehost . '.conf';
-		sudo_run('a2dissite ' . $sitehost . '.conf');
-		sudo_run('rm ' . $destpath);
-		sudo_run('systemctl reload apache2');
-		# remove db
-		my $dbpassword = $ENV{'DB_PASSWORD'};
-		my $dbname = $ENV{'DB_NAME'};
-		my $dbconf = $RealBin . '/.template/ubuntu18.04/dbdrop.sql';
-		my $sqlContent = file_get_contents($dbconf);
-		$sqlContent =~ s/bitrixdb1/$dbname/g;
-		$sqlContent =~ s/bitrixuser1/$dbname/g;
-		$sqlContent =~ s/bitrixpassword1/$dbpassword/g;
-		$dbconf = $path . '/.dbdrop.tmp.sql';
-		file_put_contents($dbconf, $sqlContent);
-		sudo_run('mysql -u root < ' . $dbconf);
-		unlink($dbconf);
-	}
-}
-
 # main
 
 my %actions = (
@@ -419,8 +390,6 @@ my %actions = (
 	'site-init' => \&action_site_init,
 	'site-hosts' => \&action_site_hosts,
 	'site-proxy' => \&action_site_proxy,
-
-	'site-remove' => \&action_site_remove,
 
 	'es9' => \&action_es9,
 	'minify' => \&action_minify,

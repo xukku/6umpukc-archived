@@ -883,6 +883,50 @@ action_site_reset(basePath) async {
   await run_php([REAL_BIN + '/.action_site_reset.php', basePath]);
 }
 
+action_site_remove(basePath) async {
+  require_site_root(basePath);
+
+  await action_site_reset(basePath);
+
+  if (await is_ubuntu()) {
+    var path = getcwd();
+
+    // remove site
+    var sitehost = p.basename(path);
+    var destpath = '/etc/apache2/sites-available/' + sitehost + '.conf';
+    await sudo_run('a2dissite', [sitehost + '.conf']);
+    await sudo_run('rm', [destpath]);
+    await sudo_run('systemctl', ['reload', 'apache2']);
+
+    // remove db
+    var dbpassword = get_env('DB_PASSWORD');
+    var dbname = get_env('DB_NAME');
+    var dbconf = REAL_BIN + '/.template/ubuntu18.04/dbdrop.sql';
+    var sqlContent = file_get_contents(dbconf);
+    sqlContent = sqlContent
+        .replaceAll('bitrixdb1', dbname)
+        .replaceAll('bitrixuser1', dbname)
+        .replaceAll('bitrixpassword1', dbpassword);
+    dbconf = path + '/.dbdrop.tmp.sql';
+    file_put_contents(dbconf, sqlContent);
+    // TODO!!! using pipes
+    //await sudo_run('mysql', ['-u', 'root', '<' + dbconf]);
+    await run('perl', [
+      '-e',
+      'system "mysql -u root < ' + dbconf + '";'
+    ]);
+    File(dbconf).deleteSync();
+  }
+}
+
+/*
+runWithInputFromFile(cmd, args, inputFle) async {
+  var process = await Process.start(cmd, new List<String>.from(args));
+  process.stdout.transform(utf8.decoder).forEach(print);
+  //process.stdin.writeln(new File(inputFle).readAsStringSync());
+}
+*/
+
 void main(List<String> args) async {
   ARGV = args;
   var site_root = detect_site_root('');
@@ -928,6 +972,7 @@ void main(List<String> args) async {
     'mod-pack': action_mod_pack,
     'mod-update': action_mod_update,
     'site-reset': action_site_reset,
+    'site-remove': action_site_remove,
 
     // server
     'start': action_start,
@@ -961,6 +1006,8 @@ void main(List<String> args) async {
   //print(module_names_from_repos());
   //await fetch_repos(site_root);
   //print(await get_user());
+
+  //await runWithInputFromFile('perl', [], '_test.pl');
 
   print('OK.');
 }
