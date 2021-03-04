@@ -582,6 +582,25 @@ action_pull(basePath) async {
   }
 }
 
+action_reset(basePath) {
+  require_site_root(basePath);
+
+  var pathModules = basePath + '/bitrix/modules/';
+  var solutionRepos = git_repos();
+  if (solutionRepos.length == 0) {
+    return;
+  }
+  if (!confirm_continue('Warning! All file changes will be removed.')) {
+    exit(0);
+  }
+  for (final urlRepo in solutionRepos) {
+    chdir(pathModules + p.basenameWithoutExtension(urlRepo));
+    await run('pwd', []);
+    await run('git', ['reset', '--hard', 'HEAD']);
+    print('');
+  }
+}
+
 void main(List<String> args) async {
   ARGV = args;
   var site_root = detect_site_root('');
@@ -615,6 +634,7 @@ void main(List<String> args) async {
     // git
     'status': action_status,
     'pull': action_pull,
+    'reset': action_reset,
   };
 
   var action = '';

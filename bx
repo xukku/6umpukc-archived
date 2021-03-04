@@ -8,26 +8,6 @@ use File::Copy;
 use File::Find qw(finddepth);
 use Config;
 
-sub action_reset {
-	my $basePath = shift;
-	require_site_root($basePath);
-
-	my $pathModules = $basePath . '/bitrix/modules/';
-	my @solutionRepos = git_repos();
-	if (scalar @solutionRepos == 0) {
-		return;
-	}
-	if (!confirm_continue('Warning! All file changes will be removed.')) {
-		exit;
-	}
-	for my $urlRepo (@solutionRepos) {
-		chdir $pathModules . basename($urlRepo, '.git');
-		run 'pwd';
-		run 'git reset --hard HEAD';
-		say "";
-	}
-}
-
 sub action_checkout {
 	my $basePath = shift;
 	require_site_root($basePath);
@@ -685,7 +665,7 @@ my %actions = (
 	'fixdir' => \&action_fixdir,
 
 
-	'reset' => \&action_reset,
+
 	'checkout' => \&action_checkout,
 
 	'solution-init' => \&action_solution_init,
