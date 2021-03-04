@@ -745,6 +745,52 @@ action_mod_update([basePath = '']) async {
   return run_php([REAL_BIN + '/.action_mod_update.php', solutionUrl, refresh]);
 }
 
+action_start([basePath = '']) async {
+  if (await is_ubuntu()) {
+    await sudo_run('systemctl', ['start', 'apache2', 'mysql']);
+    if (await check_command('rinetd')) {
+      await sudo_run('service', ['rinetd', 'restart']);
+    }
+  } else {
+    await sudo_run('systemctl', ['start', 'httpd.service', 'mysqld.service']);
+  }
+}
+
+action_stop([basePath = '']) async {
+  if (await is_ubuntu()) {
+    await sudo_run('systemctl', ['stop', 'apache2', 'mysql']);
+    if (await check_command('rinetd')) {
+      await sudo_run('service', ['rinetd', 'stop']);
+    }
+  } else {
+    await sudo_run('systemctl', ['stop', 'httpd.service', 'mysqld.service']);
+  }
+}
+
+action_mkcert_install([basePath = '']) async {
+  if (await is_ubuntu()) {
+    await sudo_run('apt', ['install', 'libnss3-tools']);
+    await sudo_run('snap', ['install', 'go', '--classic']);
+    await run('rm', ['-Rf', '~/bin/mkcert-src/']);
+    await run('git', ['clone', 'https://github.com/FiloSottile/mkcert ~/bin/mkcert-src']);
+    chdir('~/bin/mkcert-src/');
+    await run('go', [
+      'build',
+      '-ldflags',
+      //TODO!!! version
+      '-X main.Version=1.0.0' //"-X main.Version=$(git describe --tags)"
+    ]);
+    await run('mv', ['mkcert', '~/bin/mkcert']);
+    await run('mkcert', ['-install']);
+    if (!Directory('~/.ssl/').existsSync()) {
+      new Directory('~/.ssl/').createSync();
+    }
+    chdir('~/.ssl/');
+    await run('mkcert', ['bx.local', '*.bx.local']);
+    await sudo_run('a2enmod', ['ssl']);
+  }
+}
+
 void main(List<String> args) async {
   ARGV = args;
   var site_root = detect_site_root('');
@@ -789,6 +835,11 @@ void main(List<String> args) async {
     'conv-utf': action_conv_utf,
     'mod-pack': action_mod_pack,
     'mod-update': action_mod_update,
+
+    // server
+    'start': action_start,
+    'stop': action_stop,
+    'mkcert-install': action_mkcert_install,
 
     // js
     'js-install': action_js_install,

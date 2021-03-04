@@ -82,32 +82,6 @@ sub action_es9 {
 	}, $basePath);
 }
 
-sub action_start {
-	if (is_ubuntu()) {
-		sudo_run('systemctl start apache2 mysql');
-
-        # https://zen.yandex.ru/media/id/5b1a58b8eb269500a877dd6c/kak-bystro-nastroit-dostupy-k-saitam-1sbitriks-vebokrujenie-v-konteinerah-lxd-5b66b363f2aaf000a982faf3
-        if (qx{which rinetd} ne '') {
-            sudo_run('service rinetd restart');
-		}
-	} else {
-		sudo_run('systemctl start httpd.service mysqld.service');
-	}
-}
-
-sub action_stop {
-	if (is_ubuntu()) {
-		sudo_run('systemctl stop apache2 mysql');
-
-        # https://zen.yandex.ru/media/id/5b1a58b8eb269500a877dd6c/kak-bystro-nastroit-dostupy-k-saitam-1sbitriks-vebokrujenie-v-konteinerah-lxd-5b66b363f2aaf000a982faf3
-        if (qx{which rinetd} ne '') {
-			sudo_run('service rinetd stop');
-		}
-	} else {
-		sudo_run('systemctl stop httpd.service mysqld.service');
-	}
-}
-
 sub sudo_patch_file {
 	my $fname = shift;
 	my $content = shift;
@@ -122,19 +96,6 @@ sub sudo_patch_file {
 		file_put_contents($tmp, $content);
 		sudo_run("mv '" . $tmp . "' " . $fname);
 	}
-}
-
-sub action_mkcert_install {
-    if (is_ubuntu()) {
-    	sudo_run('apt install libnss3-tools');
-    	sudo_run('snap install go --classic');
-    	run('rm -Rf ~/bin/mkcert-src/');
-    	run('git clone https://github.com/FiloSottile/mkcert ~/bin/mkcert-src');
-    	run('cd ~/bin/mkcert-src/ && go build -ldflags "-X main.Version=$(git describe --tags)" && mv mkcert ~/bin/mkcert');
-    	run('mkcert -install');
-    	run('mkdir ~/.ssl/ && cd ~/.ssl/ && mkcert bx.local "*.bx.local"');
-    	sudo_run('a2enmod ssl');
-    }
 }
 
 sub action_lamp_install {
@@ -530,11 +491,6 @@ my %actions = (
 
 	'es9' => \&action_es9,
 	'minify' => \&action_minify,
-
-	'start' => \&action_start,
-	'stop' => \&action_stop,
-
-	'mkcert-install' => \&action_mkcert_install,
 
 	'docker-install' =>  \&action_docker_install,
 
