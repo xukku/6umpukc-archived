@@ -31,6 +31,17 @@ die(msg) {
   exit(0);
 }
 
+// TODO check https://pub.dev/packages/process_run/install
+/*
+system(cmd, args) {
+  Process.start(cmd, args).then((process) {
+    stdout.addStream(process.stdout);
+    stderr.addStream(process.stderr);
+    process.exitCode.then(print);
+  });
+}
+*/
+
 confirm_continue(title) {
   print(title + " Type 'yes' to continue: ");
   var line = stdin.readLineSync();
