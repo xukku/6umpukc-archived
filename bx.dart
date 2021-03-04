@@ -18,6 +18,15 @@ die(msg) {
   exit(0);
 }
 
+confirm_continue(title) async {
+	print(title + " Type 'yes' to continue: ");
+	//my $line = <STDIN>;
+	//chomp $line;
+  var line = '';
+	return line.trim() == 'yes';
+}
+
+
 require_site_root(basePath) {
   if (basePath == '') {
     die("Site root not found.\n");

@@ -3,6 +3,9 @@ use 5.016;
 use warnings;
 use FindBin qw($RealBin $Bin $Script);
 
+# TODO обычный процесс установки должен стать таким -> скачать бинарник с релизов и положить в папку ~/bin/ -> ~/bin/bx.exe / ~/bin/bx
+# TODO для параноиков и любителей исходного кода - процесс установки как был раньше bx self-install и т.д., bx будет оберткой для `dart run bx.dart command1 arg1...`, так же появляется дополнительный шаг с установкой dart-sdk
+
 sub is_mingw() {
     if (exists $ENV{'MSYSTEM'}) {
         if (($ENV{'MSYSTEM'} eq 'MINGW64')

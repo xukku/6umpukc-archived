@@ -8,14 +8,6 @@ use File::Copy;
 use File::Find qw(finddepth);
 use Config;
 
-sub confirm_continue {
-	my $title = shift;
-	print $title . " Type 'yes' to continue: ";
-	my $line = <STDIN>;
-	chomp $line;
-	return trim($line) eq 'yes';
-}
-
 sub git_clone {
 	my $pathModules = shift;
 	my $moduleId = shift;
