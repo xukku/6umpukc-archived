@@ -122,7 +122,7 @@ run(cmd, args, [output = false]) async {
   }
   ProcessResult result;
   try {
-    result = await Process.run(cmd, args, environment: ENV_LOCAL);
+    result = await Process.run(cmd, new List<String>.from(args), environment: ENV_LOCAL);
   } catch (e) {
     return -1;
   }
@@ -166,10 +166,10 @@ request_useragent() {
 request_get(url, [outfile = '']) async {
   await require_command('curl');
 
-  var args = ['-s', '-L', url.toString(), '-A', request_useragent().toString()];
+  var args = ['-s', '-L', url, '-A', request_useragent()];
   if (outfile != '') {
     args.add('-o');
-    args.add(outfile.toString());
+    args.add(outfile);
   }
 
   return run('curl', args);
@@ -178,13 +178,13 @@ request_get(url, [outfile = '']) async {
 zip_archive_extract(src, dest) async {
   await require_command('unzip');
 
-  return run('unzip', ['-o', src.toString(), '-d', dest.toString()]);
+  return run('unzip', ['-o', src, '-d', dest]);
 }
 
 archive_extract(src, dest) async {
   await require_command('tar');
 
-  return run('tar', ['-xvzf', src.toString(), dest.toString()]);
+  return run('tar', ['-xvzf', src, dest]);
 }
 
 file_get_contents(filename) {
@@ -358,7 +358,7 @@ action_fetch([basePath = '']) async {
   }
 
   if ((edition == 'setup') || (edition == 'restore')) {
-    exit;
+    exit(0);
   }
 
   print('Extracting files...');
@@ -520,7 +520,7 @@ git_clone(pathModules, moduleId, urlRepo) async {
   if (Directory(pathModule).existsSync()) {
     await run('rm', ['-Rf', pathModule]);
   }
-  chdir(pathModules); //!!!
+  chdir(pathModules);
   await run('git', ['clone', urlRepo, moduleId]);
   if (Directory(pathModule).existsSync()) {
     chdir(pathModule);
@@ -543,9 +543,10 @@ fetch_repos(basePath) async {
     print("\t$u");
   }
   if (!confirm_continue('Warning! Modules will be removed.')) {
-    exit;
+    exit(0);
   }
   for (final urlRepo in solutionRepos) {
+    print('Fetch repo ' + urlRepo + ' ...');
     await git_clone(pathModules, p.basenameWithoutExtension(urlRepo), urlRepo);
     print('');
   }
