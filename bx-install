@@ -36,7 +36,9 @@ sub file_put_contents {
     return 0;
 }
 
-sub action_self_install {
+sub action_install {
+    #TODO check ~/bin exists
+    #TODO copy binary file for OS (bx-win.exe / bx-linux.exe / bx-macos.exe -> bx)
     if (is_mingw()) {
         my $fname = $ENV{'HOME'} . '/.bash_profile';
         my $initPath = 'PATH=$PATH:$HOME/bin/6umpukc';
@@ -64,4 +66,4 @@ sub action_self_install {
     }
 }
 
-action_self_install();
+action_install();
