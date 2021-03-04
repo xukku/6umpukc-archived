@@ -32,24 +32,6 @@ sub fetch_repos {
 	}
 }
 
-sub action_status {
-	my $basePath = shift;
-	require_site_root($basePath);
-
-	my $pathModules = $basePath . '/bitrix/modules/';
-	my @solutionRepos = git_repos();
-	if (scalar @solutionRepos == 0) {
-		return;
-	}
-	for my $urlRepo (@solutionRepos) {
-		chdir $pathModules . basename($urlRepo, '.git');
-		run 'pwd';
-		run 'git status';
-		run 'git branch';
-		say "";
-	}
-}
-
 sub action_pull {
 	my $basePath = shift;
 	require_site_root($basePath);
@@ -743,7 +725,6 @@ my %actions = (
 
 	'fixdir' => \&action_fixdir,
 
-	'status' => \&action_status,
 	'pull' => \&action_pull,
 	'reset' => \&action_reset,
 	'checkout' => \&action_checkout,

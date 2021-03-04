@@ -13,6 +13,10 @@ var REAL_BIN = p.dirname(Platform.script.toFilePath());
 var ARGV;
 var ENV_LOCAL;
 
+chdir(dir) {
+  Directory.current = dir;
+}
+
 get_env(name) {
   if (ENV_LOCAL.containsKey(name)) {
     return (ENV_LOCAL[name] ?? '');
@@ -505,13 +509,30 @@ git_clone(pathModules, moduleId, urlRepo) async {
   if (Directory(pathModule).existsSync()) {
     await run('rm', ['-Rf', pathModule]);
   }
-  Directory.current = pathModules; // chdir???
+  chdir(pathModules);
   await run('git', ['clone', urlRepo, moduleId]);
   if (Directory(pathModule).existsSync()) {
-    Directory.current = pathModule; // chdir???
+    chdir(pathModule);
     await run('git', ['config', 'core.fileMode', 'false']);
     await run('git', ['checkout', 'master']);
   }
+}
+
+action_status(basePath) async {
+	require_site_root(basePath);
+
+	var pathModules = basePath + '/bitrix/modules/';
+	var solutionRepos = git_repos();
+	if (solutionRepos.length == 0) {
+		return;
+	}
+	for (final urlRepo in solutionRepos) {
+		chdir(pathModules + p.basenameWithoutExtension(urlRepo));
+		await run('pwd', []);
+		await run('git', ['status']);
+		await run('git', ['branch']);
+		print('');
+	}
 }
 
 void main(List<String> args) async {
@@ -534,12 +555,18 @@ void main(List<String> args) async {
   //await bitrix_micromize();
 
   var actions = {
+    // bitrix
     'help': action_help,
     'fetch': action_fetch,
+
+    // site
     'env': action_env,
     'ftp': action_ftp,
     'ssh': action_ssh,
     'db': action_db,
+
+    // git
+    'status': action_status,
   };
 
   var action = '';
