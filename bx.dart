@@ -9,23 +9,30 @@ import 'dart:async';
 import 'package:csv/csv.dart';
 import 'package:path/path.dart' as p;
 
-var ARGV;
-var ENV;
 var REAL_BIN = p.dirname(Platform.script.toFilePath());
+var ARGV;
+var ENV_LOCAL;
+
+get_env(name) {
+  if (ENV_LOCAL.containsKey(name)) {
+    return (ENV_LOCAL[name] ?? '');
+  }
+  var ENV = Platform.environment;
+
+  return (ENV[name] ?? '');
+}
 
 die(msg) {
   print(msg);
   exit(0);
 }
 
-confirm_continue(title) async {
-	print(title + " Type 'yes' to continue: ");
-	//my $line = <STDIN>;
-	//chomp $line;
-  var line = '';
-	return line.trim() == 'yes';
-}
+confirm_continue(title) {
+  print(title + " Type 'yes' to continue: ");
+  var line = stdin.readLineSync();
 
+  return (line ?? '').trim() == 'yes';
+}
 
 require_site_root(basePath) {
   if (basePath == '') {
@@ -45,8 +52,7 @@ require_command(cmd) async {
 }
 
 is_bx_debug() {
-  var ENV = Platform.environment;
-  return (ENV['BX_DEBUG'] != null) && (ENV['BX_DEBUG'] == '1');
+  return get_env('BX_DEBUG') == '1';
 }
 
 //TODO!!! test on ubuntu
@@ -70,11 +76,9 @@ is_ubuntu() async {
 }
 
 is_mingw() {
-  var ENV = Platform.environment;
-  if (ENV['MSYSTEM'] != null) {
-    if ((ENV['MSYSTEM'] == 'MINGW64') || (ENV['MSYSTEM'] == 'MINGW32') || (ENV['MSYSTEM'] == 'MSYS')) {
-      return true;
-    }
+  var msystem = get_env('MSYSTEM');
+  if ((msystem == 'MINGW64') || (msystem == 'MINGW32') || (msystem == 'MSYS')) {
+    return true;
   }
 
   return false;
@@ -103,7 +107,7 @@ run(cmd, args, [output = false]) async {
   }
   ProcessResult result;
   try {
-    result = await Process.run(cmd, args, environment: ENV);
+    result = await Process.run(cmd, args, environment: ENV_LOCAL);
   } catch (e) {
     return -1;
   }
@@ -120,8 +124,7 @@ sudo_run(cmd, args) async {
   if (!await is_ubuntu()) {
     return run(cmd, args);
   }
-  var ENV = Platform.environment;
-  if ((ENV['BX_ROOT_USER'] != null) && (ENV['BX_ROOT_USER'] == '1')) {
+  if (get_env('BX_ROOT_USER') == '1') {
     return run(cmd, args);
   }
   args.unshift(cmd);
@@ -132,9 +135,9 @@ sudo_run(cmd, args) async {
 //TODO!!! rewrite to array
 php(args) {
   var result = 'php ';
-  var ENV = Platform.environment;
-  if ((ENV['SOLUTION_PHP_ARGS'] != null) && (ENV['SOLUTION_PHP_ARGS'] != '')) {
-    result += ENV['SOLUTION_PHP_ARGS'] + ' ';
+  var phpArgs = get_env('SOLUTION_PHP_ARGS');
+  if (phpArgs != '') {
+    result += phpArgs + ' ';
   }
   result += args;
 
@@ -358,32 +361,31 @@ action_fetch([basePath = '']) async {
 }
 
 ftp_conn_str() {
-  var ENV = Platform.environment;
-  return (ENV['DEPLOY_METHOD'] ?? '') +
+  return get_env('DEPLOY_METHOD') +
       '://' +
-      (ENV['DEPLOY_USER'] ?? '') +
+      get_env('DEPLOY_USER') +
       ':' +
-      (ENV['DEPLOY_PASSWORD'] ?? '') +
+      get_env('DEPLOY_PASSWORD') +
       '@' +
-      (ENV['DEPLOY_SERVER'] ?? '') +
-      (ENV['DEPLOY_PORT'] ?? '') +
-      (ENV['DEPLOY_PATH'] ?? '');
+      get_env('DEPLOY_SERVER') +
+      get_env('DEPLOY_PORT') +
+      get_env('DEPLOY_PATH');
 }
 
 ssh_exec_remote([cmd = '']) {
-  var ENV = Platform.environment;
   var args = [
     'sshpass',
     '-p',
-    (ENV['DEPLOY_PASSWORD'] ?? ''),
+    get_env('DEPLOY_PASSWORD'),
     'ssh',
-    (ENV['DEPLOY_USER'] ?? '') + '@' + (ENV['DEPLOY_SERVER'] ?? '') + (ENV['DEPLOY_PORT'] ?? ''),
+    get_env('DEPLOY_USER') + '@' + get_env('DEPLOY_SERVER') + get_env('DEPLOY_PORT'),
     '-t'
   ];
 
-  if ((ENV['DEPLOY_PATH'] != null) && (ENV['DEPLOY_PATH'] != '')) {
+  var deployPath = get_env('DEPLOY_PATH');
+  if (deployPath != '') {
     args.add('cd');
-    args.add(ENV['DEPLOY_PATH'] ?? '');
+    args.add(deployPath);
     args.add(';');
   }
 
@@ -400,8 +402,8 @@ action_env(basePath) async {
 
   print("Site root:\n\t$basePath\n");
   print('Env config:');
-  for (final k in ENV.keys) {
-    print("\t" + k + " -> " + ENV[k]);
+  for (final k in ENV_LOCAL.keys) {
+    print("\t" + k + " -> " + ENV_LOCAL[k]);
   }
   print('');
   print("Ftp connection:\n\t" + ftp_conn_str());
@@ -415,20 +417,16 @@ action_db(basePath) async {
   require_site_root(basePath);
   await require_command('xdg-open');
 
-  var ENV = Platform.environment;
   var url = '';
-  if ((ENV['SITE_URL'] != null) && (ENV['SITE_URL'] != '')) {
-    url = ENV['SITE_URL'] ?? '';
+  var siteUrl = get_env('SITE_URL');
+  if (siteUrl != '') {
+    url = siteUrl;
   } else {
     //TODO http or https from settings
     url = 'http://' + p.basename(basePath) + '/';
   }
-  url += 'adminer/?username=' +
-      (ENV['DB_USER'] ?? '') +
-      '&db=' +
-      (ENV['DB_NAME'] ?? '') +
-      '&password=' +
-      (ENV['DB_PASSWORD'] ?? '');
+  url +=
+      'adminer/?username=' + get_env('DB_USER') + '&db=' + get_env('DB_NAME') + '&password=' + get_env('DB_PASSWORD');
 
   return run('xdg-open', [url]);
 }
@@ -463,8 +461,38 @@ action_ssh(basePath) async {
   return run(cmd, args);
 }
 
+git_repos() {
+  var solutionRepos = get_env('SOLUTION_GIT_REPOS').split("\n");
+  var result = [];
+  for (final line in solutionRepos) {
+    if (line.trim() == '') {
+      continue;
+    }
+    var tmp = line.split(';');
+    result.add(tmp[0].trim());
+  }
+
+  return result;
+}
+
+git_clone(pathModules, moduleId, urlRepo) async {
+  var pathModule = pathModules + moduleId;
+  if (Directory(pathModule).existsSync()) {
+    await run('rm', ['-Rf', pathModule]);
+  }
+  Directory.current = pathModules; // chdir???
+  await run('git', ['clone', urlRepo, moduleId]);
+  if (Directory(pathModule).existsSync()) {
+    Directory.current = pathModule; // chdir???
+    await run('git', ['config', 'core.fileMode', 'false']);
+    await run('git', ['checkout', 'master']);
+  }
+}
+
 void main(List<String> args) async {
   ARGV = args;
+  var site_root = detect_site_root('');
+  ENV_LOCAL = await load_env(site_root + '/.env');
 
   //require_site_root('');
   //await require_command('git');
@@ -477,13 +505,6 @@ void main(List<String> args) async {
   //print(php('1 2 4'));
   //await request_get('https://google.com/', '_test.log');
   //file_put_contents('.test.log', '1'); print(file_get_contents('.test.log'));
-
-  var site_root = detect_site_root('');
-  ENV = await load_env(site_root + '/.env');
-
-  print(site_root);
-  print(ENV);
-
   //await bitrix_minimize();
   //await bitrix_micromize();
 
@@ -505,8 +526,9 @@ void main(List<String> args) async {
   if (!actions.containsKey(action)) {
     action = 'help';
   }
+  await actions[action](site_root);
 
-  await actions['env'](site_root);
+  print(git_repos());
 
   print('OK.');
 }

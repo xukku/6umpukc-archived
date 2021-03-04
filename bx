@@ -8,32 +8,6 @@ use File::Copy;
 use File::Find qw(finddepth);
 use Config;
 
-sub git_clone {
-	my $pathModules = shift;
-	my $moduleId = shift;
-	my $urlRepo = shift;
-
-	my $pathModule = $pathModules . $moduleId;
-	if (-d $pathModule) {
-		remove_tree $pathModule;
-	}
-	chdir $pathModules;
-	run 'git clone "' . $urlRepo . '" ' . $moduleId;
-	if (-d $pathModule) {
-		chdir $pathModule;
-		run 'git config core.fileMode false';
-		run 'git checkout master';
-	}
-}
-
-sub git_repos {
-	my @solutionRepos = map {
-		my @repo = split(";", $_);
-		trim shift @repo;
-	} split("\n", trim($ENV{'SOLUTION_GIT_REPOS'}));
-	return @solutionRepos;
-}
-
 sub git_repos_map {
 	my %solutionRepos = map {
 		my @repo = split(";", $_);
