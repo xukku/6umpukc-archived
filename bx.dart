@@ -1135,59 +1135,57 @@ action_lamp_install([basePath = '']) async {
 
     await sudo_run('snap', ['install', 'node', '--classic']);
 
-    /*
-    # patch configs
-		my $phpContent = file_get_contents($RealBin . '/.template/bitrix.php.ini');
-		my $phpVersion = '7.0';
-		if (-d '/etc/php/7.4/') {
-			$phpVersion = '7.4';
-		} elsif (-d '/etc/php/7.2/') {
-			$phpVersion = '7.2';
-		} elsif (-d '/etc/php/7.1/') {
-			$phpVersion = '7.1';
-		}
-		sudo_patch_file('/etc/php/' . $phpVersion . '/apache2/php.ini', $phpContent);
-		sudo_patch_file('/etc/php/' . $phpVersion . '/cli/php.ini', $phpContent);
+    // patch configs
+    var phpContent = file_get_contents(REAL_BIN + '/.template/bitrix.php.ini');
+    var phpVersion = '7.0';
+    if (Directory('/etc/php/7.4').existsSync()) {
+      phpVersion = '7.4';
+    } else if (Directory('/etc/php/7.2').existsSync()) {
+      phpVersion = '7.2';
+    } else if (Directory('/etc/php/7.1').existsSync()) {
+      phpVersion = '7.1';
+    }
+    await sudo_patch_file('/etc/php/' + phpVersion + '/apache2/php.ini', phpContent);
+    await sudo_patch_file('/etc/php/' + phpVersion + '/cli/php.ini', phpContent);
 
-		my $homePath = $ENV{'HOME'};
-		my $extWww = $homePath . '/ext_www';
-		if (! -d $extWww) {
-			mkdir $extWww;
-		}
-		sudo_run('usermod -a -G www-data ' . $ENV{'USER'});
-		#run 'chmod +x /home/' . $ENV{'USER'};
+    var homePath = get_env('HOME');
+    var extWww = homePath + '/ext_www';
+    if (!Directory(extWww).existsSync()) {
+      new Directory(extWww).createSync(recursive: true);
+    }
+    await sudo_run('usermod', ['-a', '-G', 'www-data', get_user()]);
+    // await system('chmod +x /home/' + get_user());
 
-		say '';
-		say '# Mysql config setup...';
-		sudo_run('mysql_secure_installation');
-		say '';
-		say '# Mysql config check...';
-		sudo_run('mysqladmin -p -u root version');
+    print('');
+    print('# Mysql config setup...');
+    await sudo_run('mysql_secure_installation', []);
+    print('');
+    print('# Mysql config check...');
+    await sudo_run('mysqladmin', ['-p', '-u', 'root', 'version']);
+    var mysqlContent = file_get_contents(REAL_BIN + '/.template/ubuntu18.04/bitrix.my.cnf');
+    await sudo_patch_file('/etc/mysql/my.cnf', mysqlContent);
 
-		my $mysqlContent = file_get_contents($RealBin . '/.template/ubuntu18.04/bitrix.my.cnf');
-		sudo_patch_file('/etc/mysql/my.cnf', $mysqlContent);
+    print('');
+    print('# Mail sender setup...');
+    var mailConfig = homePath + '/.msmtprc';
+    File(REAL_BIN + '/.template/.msmtprc').copySync();
+    await sudo_run('chown', ['www-data:www-data', mailConfig]);
+    await sudo_run('chmod', ['0600', mailConfig]);
+    if (File('/etc/msmtprc').existsSync()) {
+      await sudo_run('unlink', ['/etc/msmtprc']);
+    }
+    await sudo_run('ln', ['-s', homePath + '/.msmtprc', '/etc/msmtprc');
 
-		say '';
-		say '# Mail sender setup...';
-		copy($RealBin . '/.template/.msmtprc', $homePath . '/.msmtprc');
-		sudo_run('chown www-data:www-data ' . $homePath . '/.msmtprc');
-		sudo_run('chmod 0600 ' . $homePath . '/.msmtprc');
-		if (-f '/etc/msmtprc') {
-			sudo_run('unlink /etc/msmtprc');
-		}
-		sudo_run('ln -s ' . $homePath . '/.msmtprc /etc/msmtprc');
+    print('');
+    print('# Setup locale for windows-1251...');
+    await sudo_run('locale-gen', ['ru_RU.CP1251']);
+    await sudo_run('dpkg-reconfigure', ['locales']);
 
-		say '';
-		say '# Setup locale for windows-1251...';
-		sudo_run('locale-gen ru_RU.CP1251');
-		sudo_run('dpkg-reconfigure locales');
-
-		# check locale:
-		#	`locale -a | grep ru`
-		#	`less /usr/share/i18n/SUPPORTED | grep ru_RU | grep CP1251`
-		# for centos:
-		#	`localedef -c -i ru_RU -f CP1251 ru_RU.CP1251`
-     */
+    // check locale:
+    //    `locale -a | grep ru`
+    //    `less /usr/share/i18n/SUPPORTED | grep ru_RU | grep CP1251`
+    // for centos:
+    //    `localedef -c -i ru_RU -f CP1251 ru_RU.CP1251`
   }
 }
 
