@@ -1,4 +1,3 @@
-// BUILD: dart compile exe bx.dart
 
 // EXAMPLE: https://dart.dev/tutorials/server/cmdline
 // EXAMPLE: dart create -t console-full cli

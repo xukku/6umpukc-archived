@@ -33,6 +33,46 @@ sub file_put_contents {
     return 0;
 }
 
+sub trim {
+    my $s = shift;
+    $s =~ s/^\s+|\s+$//g;
+    return $s;
+}
+
+sub confirm_continue {
+    my $title = shift;
+    print $title . " Type 'yes' to continue: ";
+    my $line = <STDIN>;
+    chomp $line;
+    return trim($line) eq 'yes';
+}
+
+sub require_command {
+    my $cmd = shift;
+    my $test = 'which ' . $cmd;
+    if (qx{$test} eq '') {
+        die('[' . $cmd . '] command - not found.');
+    }
+}
+
+sub request_useragent {
+    return 'Mozilla/5.0 (X11; Linux x86_64; rv:66.0) Gecko/20100101 Firefox/66.0';
+}
+
+sub request_get {
+    require_command('curl');
+
+    my ($url, $outfile) = @_;
+    my $result = '';
+    my $cmd = "curl -L '$url'"
+        . " -A '" . request_useragent() . "'";
+    if ($outfile && ($outfile ne '')) {
+        $cmd .= " -o '$outfile'";
+    }
+    $result = qx{$cmd};
+    return $result;
+}
+
 sub action_install {
     my $homeBin = $ENV{'HOME'} . '/bin';
     if (!-d $homeBin) {
@@ -58,9 +98,20 @@ sub action_install {
     if (-l $homeScript) {
         unlink($homeScript);
     }
-    symlink($Bin . '/' . $Script, $homeScript);
+    symlink($RealBin . '/' . $Script, $homeScript);
 
-    #TODO запрос пользователю - установить бинарник с гитхаба (если не качают то ставят dart-sdk самостоятельно или скачивают бинарник вручную)
+    my $releasesUrl = 'https://github.com/whateveruse/6umpukc/releases/';
+    if (confirm_continue("Install compiled bx from $releasesUrl ?")) {
+        say 'TODO!!! download bx.exe from releases';
+        #request_get($srcUrl, $outputFile);
+    }
+    elsif (confirm_continue('Compile bx (for speed up the launching)?')) {
+        system "dart compile exe '$RealBin/bx.dart'";
+    }
+    else {
+        say 'You must install Dart https://dart.dev/get-dart';
+        say "  or download bx.exe from $releasesUrl to ~/bin/6umpukc/";
+    }
 }
 
 if (defined($ARGV[0]) && ($ARGV[0] eq 'self-install')) {
@@ -68,7 +119,12 @@ if (defined($ARGV[0]) && ($ARGV[0] eq 'self-install')) {
 }
 else {
     my $args = join(' ', @ARGV);
-    system "dart run '$RealBin/bx.dart' $args";
+    if (-f "$RealBin/bx.exe") {
+        system "$RealBin/bx.exe $args";
+    }
+    else {
+        system "dart run '$RealBin/bx.dart' $args";
+    }
 }
 
 
