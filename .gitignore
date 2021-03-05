@@ -3,3 +3,6 @@
 /.dev/solution.env.settings/
 /.dev/bin/
 /bitrix/
+
+/.dart_tool/
+/.packages
