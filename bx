@@ -82,22 +82,6 @@ sub action_es9 {
 	}, $basePath);
 }
 
-sub sudo_patch_file {
-	my $fname = shift;
-	my $content = shift;
-	if (! -f $fname) {
-		return;
-	}
-	my $path = $ENV{'HOME'};
-	my $tmp = $path . '/.patch.' . basename($fname) . '.tmp';
-	my $originalContent = file_get_contents($fname);
-	if (index($originalContent, $content) < 0) {
-		$content = $originalContent . "\n" . $content . "\n";
-		file_put_contents($tmp, $content);
-		sudo_run("mv '" . $tmp . "' " . $fname);
-	}
-}
-
 sub action_lamp_install {
 	if (is_ubuntu()) {
 		say '';
@@ -329,24 +313,6 @@ sub action_site_init {
 	}
 }
 
-sub action_site_hosts {
-	my $localIp = '127.0.0.1';
-	my $path = getcwd();
-	my $sitehost = basename($path);
-
-	my @hosts = split("\n", file_get_contents('/etc/hosts'));
-	my @newHosts = ();
-	for my $line (@hosts) {
-		if (index($line, $sitehost) < 0) {
-			push(@newHosts, $line);
-		}
-	}
-	push(@newHosts, $localIp . "\t" . $sitehost);
-	my $tmp = $path . '/.hosts.tmp';
-	file_put_contents($tmp, join("\n", @newHosts) . "\n");
-	sudo_run("mv '" . $tmp . "' /etc/hosts");
-}
-
 sub action_site_proxy {
 	if (is_ubuntu()) {
 		my $path = getcwd();
@@ -388,7 +354,6 @@ my %actions = (
 
 	'lamp-install' => \&action_lamp_install,
 	'site-init' => \&action_site_init,
-	'site-hosts' => \&action_site_hosts,
 	'site-proxy' => \&action_site_proxy,
 
 	'es9' => \&action_es9,

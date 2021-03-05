@@ -233,6 +233,20 @@ file_put_contents(filename, content) {
   return 1;
 }
 
+sudo_patch_file(fname, content) async {
+  if (!File(fname).existsSync()) {
+    return;
+  }
+  var path = get_env('HOME');
+  var tmp = path + '/.patch.' + p.basename(fname) + '.tmp';
+  var originalContent = file_get_contents(fname);
+  if (originalContent.indexOf(content) < 0) {
+    content = originalContent + "\n" + content + "\n";
+    file_put_contents(tmp, content);
+    await sudo_run('mv', [tmp, fname]);
+  }
+}
+
 load_env(path) async {
   Map<String, String> result = {};
   if (!File(path).existsSync()) {
@@ -926,6 +940,24 @@ action_site_remove(basePath) async {
   }
 }
 
+action_site_hosts() async {
+  var localIp = '127.0.0.1';
+  var path = getcwd();
+  var sitehost = p.basename(path);
+
+  var hosts = file_get_contents('/etc/hosts').split("\n");
+  var newHosts = [];
+  for (final line in hosts) {
+    if (line.indexOf(sitehost) < 0) {
+      newHosts.add(line);
+    }
+  }
+  newHosts.add(localIp + "\t" + sitehost);
+  var tmp = path + '/.hosts.tmp';
+  file_put_contents(tmp, newHosts.join("\n") + "\n");
+  await sudo_run('mv', [tmp, '/etc/hosts']);
+}
+
 void main(List<String> args) async {
   ARGV = args;
   var site_root = detect_site_root('');
@@ -972,6 +1004,7 @@ void main(List<String> args) async {
     'mod-update': action_mod_update,
     'site-reset': action_site_reset,
     'site-remove': action_site_remove,
+    'site-hosts': action_site_hosts,
 
     // server
     'start': action_start,
