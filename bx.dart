@@ -782,6 +782,9 @@ action_fixdir(basePath) async {
 }
 
 action_js_install([basePath = '']) async {
+  //TODO!!! download latest LTS to .dev/bin/node/
+  //TODO!!! downlaod node for bitrixcli to .dev/bin/node_legacy/
+  //TODO!!! check running node versions without conflicts
   await require_command('node');
   await require_command('npm');
 
