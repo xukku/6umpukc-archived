@@ -35,27 +35,6 @@ die(msg) {
   exit(0);
 }
 
-// TODO check https://pub.dev/packages/process_run/install
-system(cmdLine) async {
-  return run('perl', ['-e', 'system("' + cmdLine.replaceAll('"', '\\"') + '");']);
-}
-/*
-system(cmd, args) {
-  Process.start(cmd, args).then((process) {
-    stdout.addStream(process.stdout);
-    stderr.addStream(process.stderr);
-    process.exitCode.then(print);
-  });
-}
-*/
-/*
-runWithInputFromFile(cmd, args, inputFle) async {
-  var process = await Process.start(cmd, new List<String>.from(args));
-  process.stdout.transform(utf8.decoder).forEach(print);
-  //process.stdin.writeln(new File(inputFle).readAsStringSync());
-}
-*/
-
 confirm_continue(title) {
   print(title + " Type 'yes' to continue: ");
   var line = stdin.readLineSync();
@@ -159,7 +138,27 @@ run(cmd, args) async {
   }
 }
 
-//TODO!!! test on ubuntu
+// TODO check https://pub.dev/packages/process_run/install
+system(cmdLine) async {
+  return run('perl', ['-e', 'system("' + cmdLine.replaceAll('"', '\\"') + '");']);
+}
+/*
+system(cmd, args) {
+  Process.start(cmd, args).then((process) {
+    stdout.addStream(process.stdout);
+    stderr.addStream(process.stderr);
+    process.exitCode.then(print);
+  });
+}
+*/
+/*
+runWithInputFromFile(cmd, args, inputFle) async {
+  var process = await Process.start(cmd, new List<String>.from(args));
+  process.stdout.transform(utf8.decoder).forEach(print);
+  //process.stdin.writeln(new File(inputFle).readAsStringSync());
+}
+*/
+
 sudo_run(cmd, args) async {
   if (!await is_ubuntu()) {
     return run(cmd, args);
@@ -167,7 +166,7 @@ sudo_run(cmd, args) async {
   if (get_env('BX_ROOT_USER') == '1') {
     return run(cmd, args);
   }
-  args.unshift(cmd);
+  args.insert(0, cmd);
 
   return run('sudo', args);
 }
@@ -1057,10 +1056,10 @@ action_minify(basePath) async {
   var toolPath = REAL_BIN + '/.dev/bin/esbuild/node_modules/.bin/esbuild';
   await require_command(toolPath);
 
-	if ((ARGV.length != 2) || !(ARGV[1] == 'all')) {
+  if ((ARGV.length != 2) || !(ARGV[1] == 'all')) {
     basePath = getcwd();
   }
-	final dir = new Directory(basePath);
+  final dir = new Directory(basePath);
   dir.list(recursive: true, followLinks: true).listen((FileSystemEntity entity) async {
     if ((entity is Directory) || skip_file(entity.path)) {
       return;
@@ -1071,29 +1070,125 @@ action_minify(basePath) async {
     }
 
     var destFile = f;
-		var is_css = false;
-		if (f.substring(f.length - 3) == '.js') {
-			destFile = destFile.replaceAll('.js', '.min.js');
-		} else if (f.substring(f.length - 4) == '.css') {
-		  destFile = destFile.replaceAll('.css', '.min.css');
-			is_css = true;
-		} else {
-			return;
-		}
+    var is_css = false;
+    if (f.substring(f.length - 3) == '.js') {
+      destFile = destFile.replaceAll('.js', '.min.js');
+    } else if (f.substring(f.length - 4) == '.css') {
+      destFile = destFile.replaceAll('.css', '.min.css');
+      is_css = true;
+    } else {
+      return;
+    }
 
-		if (!is_bx_debug()) {
+    if (!is_bx_debug()) {
       print('Processing ' + f + ' -> ' + p.basename(destFile));
     }
 
-		var toolArgs = [];
-		if (is_css) {
-		  toolArgs.add('--loader=css');
+    var toolArgs = [];
+    if (is_css) {
+      toolArgs.add('--loader=css');
     }
-		toolArgs.add('--minify');
-		await action_conv_utf(f);
-		var args = toolArgs.join(' ');
-		await system("cat '$f' | $toolPath $args > '$destFile'");
-	});
+    toolArgs.add('--minify');
+    await action_conv_utf(f);
+    var args = toolArgs.join(' ');
+    await system("cat '$f' | $toolPath $args > '$destFile'");
+  });
+}
+
+action_lamp_install([basePath = '']) async {
+  if (await is_ubuntu()) {
+    print('');
+    print('# Install php, apache2, mysql and tools...');
+    await sudo_run('apt', [
+      'install',
+      'unzip',
+      'wget',
+      'curl',
+      'dos2unix',
+      'pwgen',
+      'sshpass',
+      'screen',
+      'php',
+      'apache2',
+      'libapache2-mod-php',
+      'mysql-server',
+      'mysql-client',
+      'php-mysql',
+      'php-mbstring',
+      'php-opcache',
+      'php-zip',
+      'php-xml',
+      'php-curl',
+      'php-gd',
+      'php-sqlite3',
+      'php-imagick',
+      'php-xdebug',
+      'msmtp'
+    ]);
+
+    await sudo_run('apt', ['install', 'optipng', 'jpegoptim', 'pngquant']);
+    await sudo_run('apt', ['install', 'rinetd']);
+
+    await sudo_run('a2enmod', ['rewrite']);
+    await sudo_run('a2enmod', ['proxy']);
+    await sudo_run('a2enmod', ['proxy_http']);
+
+    await sudo_run('snap', ['install', 'node', '--classic']);
+
+    /*
+    # patch configs
+		my $phpContent = file_get_contents($RealBin . '/.template/bitrix.php.ini');
+		my $phpVersion = '7.0';
+		if (-d '/etc/php/7.4/') {
+			$phpVersion = '7.4';
+		} elsif (-d '/etc/php/7.2/') {
+			$phpVersion = '7.2';
+		} elsif (-d '/etc/php/7.1/') {
+			$phpVersion = '7.1';
+		}
+		sudo_patch_file('/etc/php/' . $phpVersion . '/apache2/php.ini', $phpContent);
+		sudo_patch_file('/etc/php/' . $phpVersion . '/cli/php.ini', $phpContent);
+
+		my $homePath = $ENV{'HOME'};
+		my $extWww = $homePath . '/ext_www';
+		if (! -d $extWww) {
+			mkdir $extWww;
+		}
+		sudo_run('usermod -a -G www-data ' . $ENV{'USER'});
+		#run 'chmod +x /home/' . $ENV{'USER'};
+
+		say '';
+		say '# Mysql config setup...';
+		sudo_run('mysql_secure_installation');
+		say '';
+		say '# Mysql config check...';
+		sudo_run('mysqladmin -p -u root version');
+
+		my $mysqlContent = file_get_contents($RealBin . '/.template/ubuntu18.04/bitrix.my.cnf');
+		sudo_patch_file('/etc/mysql/my.cnf', $mysqlContent);
+
+		say '';
+		say '# Mail sender setup...';
+		copy($RealBin . '/.template/.msmtprc', $homePath . '/.msmtprc');
+		sudo_run('chown www-data:www-data ' . $homePath . '/.msmtprc');
+		sudo_run('chmod 0600 ' . $homePath . '/.msmtprc');
+		if (-f '/etc/msmtprc') {
+			sudo_run('unlink /etc/msmtprc');
+		}
+		sudo_run('ln -s ' . $homePath . '/.msmtprc /etc/msmtprc');
+
+		say '';
+		say '# Setup locale for windows-1251...';
+		sudo_run('locale-gen ru_RU.CP1251');
+		sudo_run('dpkg-reconfigure locales');
+
+		# check locale:
+		#	`locale -a | grep ru`
+		#	`less /usr/share/i18n/SUPPORTED | grep ru_RU | grep CP1251`
+		# for centos:
+		#	`localedef -c -i ru_RU -f CP1251 ru_RU.CP1251`
+     */
+  }
 }
 
 void main(List<String> args) async {
@@ -1148,17 +1243,16 @@ void main(List<String> args) async {
     'site-proxy': action_site_proxy,
 
     // server
+    'lamp-install': action_lamp_install,
+    'mkcert-install': action_mkcert_install,
+    'docker-install': action_docker_install,
     'start': action_start,
     'stop': action_stop,
-    'mkcert-install': action_mkcert_install,
 
     // tools
     'js-install': action_js_install,
     'es9': action_es9,
     'minify': action_minify,
-
-    // docker
-    'docker-install': action_docker_install,
     'bitrixcli-install': action_bitrixcli_install,
     'bitrixcli-build': action_bitrixcli_build,
     'bitrixcli-build-deps': action_bitrixcli_build_deps,

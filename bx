@@ -10,81 +10,6 @@ use Config;
 
 die;
 
-sub action_lamp_install {
-	if (is_ubuntu()) {
-		say '';
-		say '# Install php, apache2, mysql and tools...';
-		sudo_run(
-            'apt install'
-			. ' unzip wget curl dos2unix pwgen sshpass screen'
-			. ' php apache2 libapache2-mod-php mysql-server mysql-client php-mysql'
-			. ' php-mbstring php-opcache php-zip php-xml php-curl php-gd php-sqlite3 php-imagick'
-			. ' php-xdebug'
-			. ' msmtp'
-        );
-        sudo_run('apt install optipng jpegoptim pngquant');
-        sudo_run('apt install rinetd');
-
-		sudo_run('a2enmod rewrite');
-		sudo_run('a2enmod proxy');
-		sudo_run('a2enmod proxy_http');
-
-		sudo_run('snap install node --classic');
-
-        # patch configs
-		my $phpContent = file_get_contents($RealBin . '/.template/bitrix.php.ini');
-		my $phpVersion = '7.0';
-		if (-d '/etc/php/7.4/') {
-			$phpVersion = '7.4';
-		} elsif (-d '/etc/php/7.2/') {
-			$phpVersion = '7.2';
-		} elsif (-d '/etc/php/7.1/') {
-			$phpVersion = '7.1';
-		}
-		sudo_patch_file('/etc/php/' . $phpVersion . '/apache2/php.ini', $phpContent);
-		sudo_patch_file('/etc/php/' . $phpVersion . '/cli/php.ini', $phpContent);
-
-		my $homePath = $ENV{'HOME'};
-		my $extWww = $homePath . '/ext_www';
-		if (! -d $extWww) {
-			mkdir $extWww;
-		}
-		sudo_run('usermod -a -G www-data ' . $ENV{'USER'});
-		#run 'chmod +x /home/' . $ENV{'USER'};
-
-		say '';
-		say '# Mysql config setup...';
-		sudo_run('mysql_secure_installation');
-		say '';
-		say '# Mysql config check...';
-		sudo_run('mysqladmin -p -u root version');
-
-		my $mysqlContent = file_get_contents($RealBin . '/.template/ubuntu18.04/bitrix.my.cnf');
-		sudo_patch_file('/etc/mysql/my.cnf', $mysqlContent);
-
-		say '';
-		say '# Mail sender setup...';
-		copy($RealBin . '/.template/.msmtprc', $homePath . '/.msmtprc');
-		sudo_run('chown www-data:www-data ' . $homePath . '/.msmtprc');
-		sudo_run('chmod 0600 ' . $homePath . '/.msmtprc');
-		if (-f '/etc/msmtprc') {
-			sudo_run('unlink /etc/msmtprc');
-		}
-		sudo_run('ln -s ' . $homePath . '/.msmtprc /etc/msmtprc');
-
-		say '';
-		say '# Setup locale for windows-1251...';
-		sudo_run('locale-gen ru_RU.CP1251');
-		sudo_run('dpkg-reconfigure locales');
-
-		# check locale:
-		#	`locale -a | grep ru`
-		#	`less /usr/share/i18n/SUPPORTED | grep ru_RU | grep CP1251`
-		# for centos:
-		#	`localedef -c -i ru_RU -f CP1251 ru_RU.CP1251`
-	}
-}
-
 sub random_password {
 	my $length = 20;
 	my $result = '';
@@ -244,6 +169,5 @@ sub action_site_init {
 # main
 
 my %actions = (
-	'lamp-install' => \&action_lamp_install,
 	'site-init' => \&action_site_init,
 );
