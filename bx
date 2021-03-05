@@ -91,14 +91,14 @@ sub action_install {
         else {
             file_put_contents($fname, "\n" . $initPath . "\n");
         }
-        return;
     }
-
-    my $homeScript = $homeBin . '/' . $Script;
-    if (-l $homeScript) {
-        unlink($homeScript);
+    else {
+        my $homeScript = $homeBin . '/' . $Script;
+        if (-l $homeScript) {
+            unlink($homeScript);
+        }
+        symlink($RealBin . '/' . $Script, $homeScript);
     }
-    symlink($RealBin . '/' . $Script, $homeScript);
 
     my $releasesUrl = 'https://github.com/whateveruse/6umpukc/releases/';
     if (confirm_continue("Install compiled bx from $releasesUrl ?")) {
