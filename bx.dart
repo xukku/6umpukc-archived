@@ -920,6 +920,7 @@ action_site_remove(basePath) async {
     dbconf = path + '/.dbdrop.tmp.sql';
     file_put_contents(dbconf, sqlContent);
     // TODO!!! using pipes for run() / sudo_run()
+    // TODO!!! use mysql from dart https://github.com/adamlofts/mysql1_dart
     await system('sudo mysql -u root < ' + dbconf);
     File(dbconf).deleteSync();
   }
