@@ -39,9 +39,6 @@ sub action_install {
         mkdir($homeBin);
     }
 
-    return;
-
-    #TODO check ~/bin exists
     if (is_mingw()) {
         my $fname = $ENV{'HOME'} . '/.bash_profile';
         my $initPath = 'PATH=$PATH:$HOME/bin/6umpukc';
@@ -57,16 +54,11 @@ sub action_install {
         return;
     }
 
-    if (-d $homeBin) {
-        my $homeScript = $homeBin . '/' . $Script;
-        if (-l $homeScript) {
-            unlink($homeScript);
-        }
-        symlink($Bin . '/' . $Script, $homeScript);
+    my $homeScript = $homeBin . '/' . $Script;
+    if (-l $homeScript) {
+        unlink($homeScript);
     }
-    else {
-        die('$HOME/bin/ not exists');
-    }
+    symlink($Bin . '/' . $Script, $homeScript);
 
     #TODO запрос пользователю - установить бинарник с гитхаба (если не качают то ставят dart-sdk самостоятельно или скачивают бинарник вручную)
 }
