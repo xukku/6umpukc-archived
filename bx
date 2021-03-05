@@ -47,6 +47,15 @@ sub confirm_continue {
     return trim($line) eq 'yes';
 }
 
+sub check_command {
+    my $cmd = shift;
+    my $test = 'which ' . $cmd;
+    if (qx{$test} eq '') {
+        return 0;
+    }
+    return 1;
+}
+
 sub require_command {
     my $cmd = shift;
     my $test = 'which ' . $cmd;
@@ -105,7 +114,7 @@ sub action_install {
         say 'TODO!!! download bx.exe from releases';
         #request_get($srcUrl, $outputFile);
     }
-    elsif (confirm_continue('Compile bx (for speed up the launching)?')) {
+    elsif (check_command('dart') && confirm_continue('Compile bx (for speed up the launching)?')) {
         system "dart compile exe '$RealBin/bx.dart'";
     }
     else {
