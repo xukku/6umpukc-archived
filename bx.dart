@@ -781,7 +781,7 @@ action_fixdir(basePath) async {
   }
 }
 
-action_js_install() async {
+action_js_install([basePath = '']) async {
   await require_command('node');
   await require_command('npm');
 
