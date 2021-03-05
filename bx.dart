@@ -1010,9 +1010,9 @@ skip_file(path) {
 }
 
 action_es9(basePath) async {
-  await require_command('google-closure-compiler');
-
   var compilerPath = 'google-closure-compiler';
+  await require_command(compilerPath);
+
   if ((ARGV.length != 2) || !(ARGV[1] == 'all')) {
     basePath = getcwd();
   }
@@ -1021,14 +1021,14 @@ action_es9(basePath) async {
     if ((entity is Directory) || skip_file(entity.path)) {
       return;
     }
-    var extraParams = [];
     var f = entity.path;
-    var destFile = f;
     var type = f.substring(f.length - 7);
     if (type == '.min.js') {
       return;
     }
 
+    var extraParams = [];
+    var destFile = f;
     var es9 = false;
     if ((type == '.es9.js') || (type == '.es6.js')) {
       destFile = destFile.replaceAll('.es9.js', '.min.js').replaceAll('.es6.js', '.min.js');
@@ -1043,16 +1043,57 @@ action_es9(basePath) async {
     if (!is_bx_debug()) {
       print('Processing ' + f + ' -> ' + p.basename(destFile));
     }
-
     await action_conv_utf(f);
     await run(compilerPath, ['--js', f, '--js_output_file', destFile, ...extraParams]);
-
     if (es9) {
       var srcFile = destFile;
       destFile = destFile.replaceAll('.min.js', '.js');
       File(srcFile).copySync(destFile);
     }
   });
+}
+
+action_minify(basePath) async {
+  var toolPath = REAL_BIN + '/.dev/bin/esbuild/node_modules/.bin/esbuild';
+  await require_command(toolPath);
+
+	if ((ARGV.length != 2) || !(ARGV[1] == 'all')) {
+    basePath = getcwd();
+  }
+	final dir = new Directory(basePath);
+  dir.list(recursive: true, followLinks: true).listen((FileSystemEntity entity) async {
+    if ((entity is Directory) || skip_file(entity.path)) {
+      return;
+    }
+    var f = entity.path;
+    if ((f.substring(f.length - 7) == '.min.js') || (f.substring(f.length - 8) == '.min.css')) {
+      return;
+    }
+
+    var destFile = f;
+		var is_css = false;
+		if (f.substring(f.length - 3) == '.js') {
+			destFile = destFile.replaceAll('.js', '.min.js');
+		} else if (f.substring(f.length - 4) == '.css') {
+		  destFile = destFile.replaceAll('.css', '.min.css');
+			is_css = true;
+		} else {
+			return;
+		}
+
+		if (!is_bx_debug()) {
+      print('Processing ' + f + ' -> ' + p.basename(destFile));
+    }
+
+		var toolArgs = [];
+		if (is_css) {
+		  toolArgs.add('--loader=css');
+    }
+		toolArgs.add('--minify');
+		await action_conv_utf(f);
+		var args = toolArgs.join(' ');
+		await system("cat '$f' | $toolPath $args > '$destFile'");
+	});
 }
 
 void main(List<String> args) async {
@@ -1114,6 +1155,9 @@ void main(List<String> args) async {
     // tools
     'js-install': action_js_install,
     'es9': action_es9,
+    'minify': action_minify,
+
+    // docker
     'docker-install': action_docker_install,
     'bitrixcli-install': action_bitrixcli_install,
     'bitrixcli-build': action_bitrixcli_build,

@@ -10,37 +10,6 @@ use Config;
 
 die;
 
-sub action_minify {
-	my $basePath = shift;
-	if ((scalar @ARGV != 2) || !($ARGV[1] eq 'all')) {
-		$basePath = getcwd();
-	}
-	finddepth(sub {
-		if (($_ eq '.') || ($_ eq '..')) {
-			return;
-		}
-		my $f = $File::Find::name;
-		my $destFile = $f;
-		my $is_css = 0;
-		if ((substr($_, -3) eq '.js') && (substr($_, -7) ne '.min.js')) {
-			$destFile =~ s/\.js/\.min.js/gi;
-		} elsif ((substr($_, -4) eq '.css') && (substr($_, -8) ne '.min.css')) {
-			$destFile =~ s/\.css/\.min.css/gi;
-			$is_css = 1;
-		} else {
-			return;
-		}
-		if (!is_bx_debug()) {
-			say "processing $f -> $destFile ...";
-		}
-		my $toolPath = $RealBin . '/.dev/bin/esbuild/node_modules/.bin/esbuild'
-			. ($is_css? ' --loader=css' : '')
-			. ' --minify';
-		action_conv_utf($f);
-		run("cat '$f' | $toolPath > '$destFile'");
-	}, $basePath);
-}
-
 sub action_lamp_install {
 	if (is_ubuntu()) {
 		say '';
@@ -277,6 +246,4 @@ sub action_site_init {
 my %actions = (
 	'lamp-install' => \&action_lamp_install,
 	'site-init' => \&action_site_init,
-
-	'minify' => \&action_minify,
 );
