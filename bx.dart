@@ -36,6 +36,9 @@ die(msg) {
 }
 
 // TODO check https://pub.dev/packages/process_run/install
+system(cmdLine) async {
+  return run('perl', ['-e', 'system("' + cmdLine.replaceAll('"', '\\"') + '");']);
+}
 /*
 system(cmd, args) {
   Process.start(cmd, args).then((process) {
@@ -43,6 +46,13 @@ system(cmd, args) {
     stderr.addStream(process.stderr);
     process.exitCode.then(print);
   });
+}
+*/
+/*
+runWithInputFromFile(cmd, args, inputFle) async {
+  var process = await Process.start(cmd, new List<String>.from(args));
+  process.stdout.transform(utf8.decoder).forEach(print);
+  //process.stdin.writeln(new File(inputFle).readAsStringSync());
 }
 */
 
@@ -909,23 +919,11 @@ action_site_remove(basePath) async {
         .replaceAll('bitrixpassword1', dbpassword);
     dbconf = path + '/.dbdrop.tmp.sql';
     file_put_contents(dbconf, sqlContent);
-    // TODO!!! using pipes
-    //await sudo_run('mysql', ['-u', 'root', '<' + dbconf]);
-    await run('perl', [
-      '-e',
-      'system "mysql -u root < ' + dbconf + '";'
-    ]);
+    // TODO!!! using pipes for run() / sudo_run()
+    await system('sudo mysql -u root < ' + dbconf);
     File(dbconf).deleteSync();
   }
 }
-
-/*
-runWithInputFromFile(cmd, args, inputFle) async {
-  var process = await Process.start(cmd, new List<String>.from(args));
-  process.stdout.transform(utf8.decoder).forEach(print);
-  //process.stdin.writeln(new File(inputFle).readAsStringSync());
-}
-*/
 
 void main(List<String> args) async {
   ARGV = args;
