@@ -8,6 +8,8 @@ use File::Copy;
 use File::Find qw(finddepth);
 use Config;
 
+die;
+
 sub action_minify {
 	my $basePath = shift;
 	if ((scalar @ARGV != 2) || !($ARGV[1] eq 'all')) {
@@ -36,49 +38,6 @@ sub action_minify {
 			. ' --minify';
 		action_conv_utf($f);
 		run("cat '$f' | $toolPath > '$destFile'");
-	}, $basePath);
-}
-
-sub action_es9 {
-	require_command('google-closure-compiler');
-	require_command('php');
-
-    my $basePath = shift;
-    if ((scalar @ARGV != 2) || !($ARGV[1] eq 'all')) {
-        $basePath = getcwd();
-    }
-    my $compilerPath = 'google-closure-compiler';
-
-    finddepth(sub {
-		if (($_ eq '.') || ($_ eq '..')) {
-			return;
-		}
-		my $extraParams = '';
-		my $f = $File::Find::name;
-		my $destFile = $f;
-		my $type = substr($_, -7);
-		my $es9 = 0;
-		if (($type eq '.es9.js') || ($type eq '.es6.js')) {
-			$destFile =~ s/\.es\d+\.js/\.min.js/gi;
-			$extraParams = ' --language_in ECMASCRIPT_2018'
-            . ' --language_out ECMASCRIPT5_STRICT';
-            $es9 = 1;
-		} elsif ((substr($_, -3) eq '.js') && (substr($_, -7) ne '.min.js')) {
-			$destFile =~ s/\.js/\.min.js/gi;
-		} else {
-			return;
-		}
-		if (!is_bx_debug()) {
-			say "processing $f -> $destFile ...";
-		}
-		action_conv_utf($f);
-		run("$compilerPath --js '$f' --js_output_file '$destFile'" . $extraParams);
-		if ($es9)
-		{
-			my $srcFile = $destFile;
-			$destFile =~ s/\.min.js/\.js/gi;
-			copy($srcFile, $destFile);
-		}
 	}, $basePath);
 }
 
@@ -316,11 +275,8 @@ sub action_site_init {
 # main
 
 my %actions = (
-	'self-install' => \&action_self_install,
-
 	'lamp-install' => \&action_lamp_install,
 	'site-init' => \&action_site_init,
 
-	'es9' => \&action_es9,
 	'minify' => \&action_minify,
 );

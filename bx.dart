@@ -76,7 +76,7 @@ check_command(cmd) async {
 
 require_command(cmd) async {
   if (!await check_command(cmd)) {
-    die(cmd + ' - command not found.');
+    die('[' + cmd + '] command - not found.');
   }
 }
 
@@ -538,6 +538,9 @@ git_repos() {
     var tmp = line.split(';');
     result.add(tmp[0].trim());
   }
+  if (result.length == 0) {
+    print('Solutions git repositories not defined in SOLUTION_GIT_REPOS');
+  }
 
   return result;
 }
@@ -712,7 +715,7 @@ action_solution_init(basePath) async {
   var solutionConfigPath = REAL_BIN + '/.dev/solution.env.settings/' + solution + '/example.env';
   if (solution != '') {
     if (!File(solutionConfigPath).existsSync()) {
-      die("Config for solution $solution not defined.");
+      die("Config for solution [$solution] not defined.");
     }
     var siteConfig = basePath + '/.env';
     var originalContent = file_get_contents(siteConfig);
@@ -738,10 +741,12 @@ action_solution_reset(basePath) async {
   return run_php([REAL_BIN + '/.action_solution_reset.php', basePath]);
 }
 
+//TODO!!! use native conv
 action_conv_win([basePath = '']) async {
   return run_php([REAL_BIN + '/.action_conv.php', 'win']);
 }
 
+//TODO!!! use native conv
 action_conv_utf([basePath = '']) async {
   var args = [REAL_BIN + '/.action_conv.php', 'utf'];
   if (basePath != '') {
@@ -940,7 +945,7 @@ action_site_remove(basePath) async {
   }
 }
 
-action_site_hosts() async {
+action_site_hosts([basePath = '']) async {
   var localIp = '127.0.0.1';
   var path = getcwd();
   var sitehost = p.basename(path);
@@ -958,7 +963,7 @@ action_site_hosts() async {
   await sudo_run('mv', [tmp, '/etc/hosts']);
 }
 
-action_site_proxy() async {
+action_site_proxy([basePath = '']) async {
   if (await is_ubuntu()) {
     var path = getcwd();
     var sitehost = p.basename(path);
@@ -997,6 +1002,59 @@ ProxyPassReverse /  http://$ip/
   }
 }
 
+skip_file(path) {
+  if ((path.indexOf('/.dev/') >= 0) || (path.indexOf('/.git/') >= 0)) {
+    return true;
+  }
+  return false;
+}
+
+action_es9(basePath) async {
+  await require_command('google-closure-compiler');
+
+  var compilerPath = 'google-closure-compiler';
+  if ((ARGV.length != 2) || !(ARGV[1] == 'all')) {
+    basePath = getcwd();
+  }
+  final dir = new Directory(basePath);
+  dir.list(recursive: true, followLinks: true).listen((FileSystemEntity entity) async {
+    if ((entity is Directory) || skip_file(entity.path)) {
+      return;
+    }
+    var extraParams = [];
+    var f = entity.path;
+    var destFile = f;
+    var type = f.substring(f.length - 7);
+    if (type == '.min.js') {
+      return;
+    }
+
+    var es9 = false;
+    if ((type == '.es9.js') || (type == '.es6.js')) {
+      destFile = destFile.replaceAll('.es9.js', '.min.js').replaceAll('.es6.js', '.min.js');
+      extraParams = ['--language_in', 'ECMASCRIPT_2018', '--language_out', 'ECMASCRIPT5_STRICT'];
+      es9 = true;
+    } else if ((f.substring(f.length - 3) == '.js')) {
+      destFile = destFile.replaceAll('.js', '.min.js');
+    } else {
+      return;
+    }
+
+    if (!is_bx_debug()) {
+      print('Processing ' + f + ' -> ' + p.basename(destFile));
+    }
+
+    await action_conv_utf(f);
+    await run(compilerPath, ['--js', f, '--js_output_file', destFile, ...extraParams]);
+
+    if (es9) {
+      var srcFile = destFile;
+      destFile = destFile.replaceAll('.min.js', '.js');
+      File(srcFile).copySync(destFile);
+    }
+  });
+}
+
 void main(List<String> args) async {
   ARGV = args;
   var site_root = detect_site_root('');
@@ -1016,6 +1074,8 @@ void main(List<String> args) async {
   //await bitrix_micromize();
 
   var actions = {
+    // 'self-install': action_self_install,
+
     // bitrix
     'help': action_help,
     'fetch': action_fetch,
@@ -1053,6 +1113,7 @@ void main(List<String> args) async {
 
     // tools
     'js-install': action_js_install,
+    'es9': action_es9,
     'docker-install': action_docker_install,
     'bitrixcli-install': action_bitrixcli_install,
     'bitrixcli-build': action_bitrixcli_build,
@@ -1070,13 +1131,12 @@ void main(List<String> args) async {
   if (!actions.containsKey(action)) {
     action = 'help';
   }
-  await actions[action](site_root);
+  await actions[action]!(site_root);
 
   //await run_php(['-i']);
   //print(git_repos());
   //print(git_repos_map());
   //print(module_names_from_repos());
-  //await fetch_repos(site_root);
   //print(await get_user());
 
   //await runWithInputFromFile('perl', [], '_test.pl');
