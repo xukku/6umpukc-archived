@@ -5,13 +5,101 @@
 
 import 'dart:io';
 import 'dart:convert';
-import 'dart:async';
+import 'dart:math';
 import 'package:csv/csv.dart';
 import 'package:path/path.dart' as p;
 
 var REAL_BIN = p.dirname(Platform.script.toFilePath());
 var ARGV;
 var ENV_LOCAL;
+
+final chars = [
+  'A',
+  'B',
+  'C',
+  'D',
+  'E',
+  'F',
+  'G',
+  'H',
+  'I',
+  'J',
+  'K',
+  'L',
+  'M',
+  'N',
+  'O',
+  'P',
+  'Q',
+  'R',
+  'S',
+  'T',
+  'U',
+  'V',
+  'W',
+  'X',
+  'Y',
+  'Z',
+  'a',
+  'b',
+  'c',
+  'd',
+  'e',
+  'f',
+  'g',
+  'h',
+  'i',
+  'j',
+  'k',
+  'l',
+  'm',
+  'n',
+  'o',
+  'p',
+  'q',
+  'r',
+  's',
+  't',
+  'u',
+  'v',
+  'w',
+  'x',
+  'y',
+  'z'
+];
+final digits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+final addchars = ['!', '_', '-', '.', ',', '|'];
+
+final chars_digits = [...chars, ...digits];
+
+final chars_digits_specs = [...chars, ...digits, ...addchars];
+
+random_password() {
+  final length = 20;
+  var r = new Random();
+
+  var result = [];
+  result.add(addchars[r.nextInt(addchars.length - 1)]);
+  for (var i = 0; i < length; i++) {
+    result.add(chars_digits_specs[r.nextInt(chars_digits_specs.length - 1)]);
+  }
+  result.add(addchars[r.nextInt(addchars.length - 1)]);
+  result.add(digits[r.nextInt(digits.length - 1)]);
+
+  return result.join();
+}
+
+random_name() {
+  final length = 9;
+  var r = new Random();
+
+  var result = [];
+  for (var i = 0; i < length; i++) {
+    result.add(chars_digits[r.nextInt(chars_digits.length - 1)]);
+  }
+
+  return 'usr' + result.join();
+}
 
 chdir(dir) {
   Directory.current = dir;
@@ -1168,13 +1256,13 @@ action_lamp_install([basePath = '']) async {
     print('');
     print('# Mail sender setup...');
     var mailConfig = homePath + '/.msmtprc';
-    File(REAL_BIN + '/.template/.msmtprc').copySync();
+    File(REAL_BIN + '/.template/.msmtprc').copySync(mailConfig);
     await sudo_run('chown', ['www-data:www-data', mailConfig]);
     await sudo_run('chmod', ['0600', mailConfig]);
     if (File('/etc/msmtprc').existsSync()) {
       await sudo_run('unlink', ['/etc/msmtprc']);
     }
-    await sudo_run('ln', ['-s', homePath + '/.msmtprc', '/etc/msmtprc');
+    await sudo_run('ln', ['-s', homePath + '/.msmtprc', '/etc/msmtprc']);
 
     print('');
     print('# Setup locale for windows-1251...');
@@ -1186,6 +1274,143 @@ action_lamp_install([basePath = '']) async {
     //    `less /usr/share/i18n/SUPPORTED | grep ru_RU | grep CP1251`
     // for centos:
     //    `localedef -c -i ru_RU -f CP1251 ru_RU.CP1251`
+  }
+}
+
+action_site_init(basePath) async {
+  var site_root = basePath;
+  var site_exists = (site_root != '') && (get_env('SITE_ENCODING') != '');
+  var path = getcwd();
+  var encoding = (ARGV.length > 1) ? ARGV[1] : 'win'; // win | utf | utflegacy
+  var sitehost = p.basename(path);
+
+  if (await is_ubuntu()) {
+    await action_fixdir(basePath);
+    var dbpassword = random_password();
+    var dbname = random_name();
+
+    if (site_exists) {
+      encoding = get_env('SITE_ENCODING');
+      dbpassword = get_env('DB_PASSWORD');
+      dbname = get_env('DB_NAME');
+      path = site_root;
+      sitehost = p.basename(path);
+    } else {
+      var https = (ARGV.length > 2) ? ARGV[2] : ''; // http | https
+      var siteconf = '';
+      var dbconf = '';
+      if (encoding == 'win') {
+        siteconf = 'win1251site.conf';
+        dbconf = 'win1251dbcreate.sql';
+      } else if (encoding == 'utflegacy') {
+        siteconf = 'utf8legacysite.conf';
+        dbconf = 'utf8dbcreate.sql';
+        encoding = 'utf';
+      } else {
+        siteconf = 'utf8site.conf';
+        dbconf = 'utf8dbcreate.sql';
+        encoding = 'utf';
+      }
+      if (https == 'https') {
+        siteconf = https + siteconf;
+      }
+
+      // init site conf files
+      site_root = path;
+      var currentUser = get_user();
+      siteconf = REAL_BIN + '/.template/ubuntu18.04/' + siteconf;
+      var content = file_get_contents(siteconf);
+      content = content
+          .replaceAll('/home/user/ext_www/bitrix-site.com', path)
+          .replaceAll('bitrix-site.com', sitehost)
+          .replaceAll('/home/user/.ssl/', "/home/$currentUser/.ssl/");
+      siteconf = path + '/.apache2.conf.tmp';
+      file_put_contents(siteconf, content);
+
+      // init database
+      dbconf = REAL_BIN + '/.template/ubuntu18.04/' + dbconf;
+      var sqlContent = file_get_contents(dbconf);
+      sqlContent = sqlContent
+          .replaceAll('bitrixdb1', dbname)
+          .replaceAll('bitrixuser1', dbname)
+          .replaceAll('bitrixpassword1', dbpassword);
+      dbconf = path + '/.dbcreate.tmp.sql';
+      file_put_contents(dbconf, sqlContent);
+      await system('sudo mysql -u root < ' + dbconf);
+      File(dbconf).deleteSync();
+
+      var destpath = '/etc/apache2/sites-available/' + sitehost + '.conf';
+      print('');
+      print('# Apache2 site config -> ' + destpath);
+      print('');
+      print(content);
+      await sudo_run('mv', [siteconf, destpath]);
+      await sudo_run('a2ensite', [sitehost + '.conf']);
+      await sudo_run('systemctl', ['reload', 'apache2']);
+    }
+
+    var wwwFiles = {
+      // adminer
+      '.template/adminer/index.php': 'adminer/index.php',
+      '.template/adminer/adminer.php': 'adminer/adminer.php',
+
+      // bitrix scripts
+      '.template/bitrixsetup.php': 'bitrixsetup.php',
+      '.template/restore.php': 'restore.php',
+      '.template/bitrix_server_test.php': 'bitrix_server_test.php',
+
+      '.template/.env': '.env',
+      '.template/www_' + encoding + '/bitrix/.settings.php': 'bitrix/.settings.php',
+      '.template/www_' + encoding + '/bitrix/.settings_extra.php': 'bitrix/.settings_extra.php',
+      '.template/www_' + encoding + '/bitrix/php_interface/dbconn.php': 'bitrix/php_interface/dbconn.php',
+      '.template/www_' + encoding + '/bitrix/php_interface/after_connect.php': 'bitrix/php_interface/after_connect.php',
+      '.template/www_' + encoding + '/bitrix/php_interface/after_connect_d7.php':
+          'bitrix/php_interface/after_connect_d7.php',
+    };
+    var replaceIgnoredFiles = {'adminer.php': true};
+    if (site_exists) {
+      wwwFiles.remove('.template/.env');
+    }
+
+    // init folders and files from template
+    if (!Directory(path + '/adminer').existsSync()) {
+      new Directory(path + '/adminer').createSync();
+    }
+    if (!Directory(path + '/bitrix').existsSync()) {
+      new Directory(path + '/bitrix').createSync();
+    }
+    if (!Directory(path + '/bitrix/php_interface').existsSync()) {
+      new Directory(path + '/bitrix/php_interface').createSync();
+    }
+    for (final fname in wwwFiles.keys) {
+      if (replaceIgnoredFiles[p.basename(fname)] != null) {
+        File(REAL_BIN + '/' + fname).copySync(path + '/' + wwwFiles[fname]);
+      } else {
+        var envContent = file_get_contents(REAL_BIN + '/' + fname);
+        envContent = envContent
+            .replaceAll('dbname1', dbname)
+            .replaceAll('dbuser1', dbname)
+            .replaceAll('dbpassword12345', dbpassword)
+            .replaceAll('111encoding111', encoding)
+            .replaceAll('http://bitrixsolution01.example.org/', 'https://' + sitehost + '/');
+        file_put_contents(path + '/' + wwwFiles[fname], envContent);
+      }
+    }
+
+    ENV_LOCAL = await load_env(site_root + '/.env');
+    await action_fixdir(site_root);
+  } else if (is_mingw()) {
+    var wwwFiles = {
+      '.template/.env': '.env',
+      '.template/sublime-text/bitrix-solution-example.sublime-project': 'solution.sublime-project',
+    };
+    for (final fname in wwwFiles.keys) {
+      var destPath = path + '/' + wwwFiles[fname];
+      if (!File(destPath).existsSync()) {
+        //TODO!!! для .env если настройки bitrix существуют - взять настройку utf/win из .settings.php
+        File(REAL_BIN + '/' + fname).copySync(destPath);
+      }
+    }
   }
 }
 
@@ -1235,6 +1460,7 @@ void main(List<String> args) async {
     'conv-utf': action_conv_utf,
     'mod-pack': action_mod_pack,
     'mod-update': action_mod_update,
+    'site-init': action_site_init,
     'site-reset': action_site_reset,
     'site-remove': action_site_remove,
     'site-hosts': action_site_hosts,
