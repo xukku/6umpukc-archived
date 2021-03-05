@@ -3,16 +3,10 @@ use 5.016;
 use warnings;
 use FindBin qw($RealBin $Bin $Script);
 
-# bx - обертка для запуска dart run bx.dart command arg1 arg2 arg3 ...
-# bx self-install - делает тоже самое что и раньше + опция: скачать бинарник (если не качают то ставят dart-sdk самостоятельно)
-
 sub is_mingw() {
-    if (exists $ENV{'MSYSTEM'}) {
-        if (($ENV{'MSYSTEM'} eq 'MINGW64')
-            or ($ENV{'MSYSTEM'} eq 'MINGW32')
-            or ($ENV{'MSYSTEM'} eq 'MSYS')) {
-            return 1;
-        }
+    my $msystem = exists $ENV{'MSYSTEM'} ? $ENV{'MSYSTEM'} : '';
+    if (($msystem eq 'MINGW64') or ($msystem eq 'MINGW32') or ($msystem eq 'MSYS')) {
+        return 1;
     }
     return 0;
 }
@@ -40,8 +34,14 @@ sub file_put_contents {
 }
 
 sub action_install {
+    my $homeBin = $ENV{'HOME'} . '/bin';
+    if (!-d $homeBin) {
+        mkdir($homeBin);
+    }
+
+    return;
+
     #TODO check ~/bin exists
-    #TODO copy binary file for OS (bx-win.exe / bx-linux.exe / bx-macos.exe -> bx)
     if (is_mingw()) {
         my $fname = $ENV{'HOME'} . '/.bash_profile';
         my $initPath = 'PATH=$PATH:$HOME/bin/6umpukc';
@@ -56,7 +56,7 @@ sub action_install {
         }
         return;
     }
-    my $homeBin = $ENV{'HOME'} . '/bin';
+
     if (-d $homeBin) {
         my $homeScript = $homeBin . '/' . $Script;
         if (-l $homeScript) {
@@ -67,10 +67,16 @@ sub action_install {
     else {
         die('$HOME/bin/ not exists');
     }
+
+    #TODO запрос пользователю - установить бинарник с гитхаба (если не качают то ставят dart-sdk самостоятельно или скачивают бинарник вручную)
 }
 
-if (defined($ARGV[1]) && ($ARGV[1] eq 'self-install')) {
+if (defined($ARGV[0]) && ($ARGV[0] eq 'self-install')) {
     action_install();
+}
+else {
+    my $args = join(' ', @ARGV);
+    system "dart run '$RealBin/bx.dart' $args";
 }
 
 
