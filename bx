@@ -313,40 +313,6 @@ sub action_site_init {
 	}
 }
 
-sub action_site_proxy {
-	if (is_ubuntu()) {
-		my $path = getcwd();
-		my $sitehost = basename($path);
-		my $destpath = '/etc/apache2/sites-available/' . $sitehost . '.conf';
-		if (!-f $destpath) {
-			die "Config for site $sitehost not exists.\n";
-		}
-		my $ip = $ARGV[1]? $ARGV[1] : 'remove';
-		my $originalContent = file_get_contents($destpath);
-		my $content = "\n";
-		if (($ip ne '') && ($ip ne 'remove')) {
-			$content = "
-ProxyPreserveHost On
-ProxyPass        /  http://$ip/
-ProxyPassReverse /  http://$ip/
-";
-		}
-		if ($originalContent =~ m|\#bx\-proxy\s+start.+?\#bx\-proxy\s+end|gis) {
-			$originalContent =~ s|\#bx\-proxy\s+start.+?\#bx\-proxy\s+end|\#bx\-proxy start$content\#bx\-proxy end|gis;
-		} else {
-			$originalContent =~ s|\<\/VirtualHost\>|\#bx\-proxy start$content\#bx\-proxy end\n\n</VirtualHost>|gis;
-		}
-		say '';
-		say '# Apache2 site config -> ' . $destpath;
-		say '';
-		say $originalContent;
-		my $tmp = $path . '/.newsiteconfig.tmp';
-		file_put_contents($tmp, $originalContent);
-		sudo_run('mv ' . $tmp . ' ' . $destpath);
-		sudo_run('systemctl reload apache2');
-	}
-}
-
 # main
 
 my %actions = (
@@ -354,7 +320,6 @@ my %actions = (
 
 	'lamp-install' => \&action_lamp_install,
 	'site-init' => \&action_site_init,
-	'site-proxy' => \&action_site_proxy,
 
 	'es9' => \&action_es9,
 	'minify' => \&action_minify,

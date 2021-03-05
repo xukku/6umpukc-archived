@@ -958,6 +958,45 @@ action_site_hosts() async {
   await sudo_run('mv', [tmp, '/etc/hosts']);
 }
 
+action_site_proxy() async {
+  if (await is_ubuntu()) {
+    var path = getcwd();
+    var sitehost = p.basename(path);
+    var destpath = '/etc/apache2/sites-available/' + sitehost + '.conf';
+    if (!File(destpath).existsSync()) {
+      die("Config for site $sitehost not exists.");
+    }
+    var ip = (ARGV.length > 1) ? ARGV[1] : 'remove';
+    var originalContent = file_get_contents(destpath);
+    var content = "\n";
+    if ((ip != '') && (ip != 'remove')) {
+      content = """
+ProxyPreserveHost On
+ProxyPass        /  http://$ip/
+ProxyPassReverse /  http://$ip/
+""";
+    }
+    var re = new RegExp(
+      r"\#bx\-proxy\s+start.+?\#bx\-proxy\s+end",
+      caseSensitive: false,
+      multiLine: false,
+    );
+    if (re.hasMatch(originalContent)) {
+      originalContent.replaceFirst(re, "#bx-proxy start$content#bx-proxy end");
+    } else {
+      originalContent.replaceFirst('</VirtualHost>', "#bx-proxy start$content#bx-proxy end\n\n</VirtualHost>");
+    }
+    print('');
+    print('# Apache2 site config -> ' + destpath);
+    print('');
+    print(originalContent);
+    var tmp = path + '/.newsiteconfig.tmp';
+    file_put_contents(tmp, originalContent);
+    await sudo_run('mv', [tmp, destpath]);
+    await sudo_run('systemctl', ['reload', 'apache2']);
+  }
+}
+
 void main(List<String> args) async {
   ARGV = args;
   var site_root = detect_site_root('');
@@ -1005,6 +1044,7 @@ void main(List<String> args) async {
     'site-reset': action_site_reset,
     'site-remove': action_site_remove,
     'site-hosts': action_site_hosts,
+    'site-proxy': action_site_proxy,
 
     // server
     'start': action_start,
