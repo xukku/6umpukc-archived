@@ -8,8 +8,9 @@ import 'package:csv/csv.dart';
 import 'package:path/path.dart' as p;
 
 var REAL_BIN = p.dirname(Platform.script.toFilePath());
-var ARGV;
+var PATH_ORIGINAL = Platform.environment['PATH'];
 var ENV_LOCAL;
+var ARGV;
 
 final chars = [
   'A',
@@ -178,6 +179,10 @@ is_mingw() {
   return false;
 }
 
+is_windows_32bit() {
+  return get_env('PROCESSOR_ARCHITECTURE').indexOf('x86') >= 0;
+}
+
 quote_args(args) {
   var result = [];
   for (final arg in args) {
@@ -209,12 +214,13 @@ runReturnContent(cmd, [args = null]) async {
   }
 }
 
-run(cmd, args) async {
+run(cmd, args, [runInShell = false]) async {
   if (is_bx_debug()) {
     print(cmd + ' ' + quote_args(args));
   }
   try {
-    ProcessResult result = await Process.run(cmd, new List<String>.from(args), environment: ENV_LOCAL);
+    ProcessResult result =
+        await Process.run(cmd, new List<String>.from(args), environment: ENV_LOCAL, runInShell: runInShell);
     print(result.stdout.trimRight());
     return result.exitCode;
   } catch (e) {
@@ -300,10 +306,22 @@ zip_archive_extract(src, dest) async {
   return run('unzip', ['-o', src, '-d', dest]);
 }
 
-archive_extract(src, dest) async {
+tgz_archive_extract(src, dest, [dirFromArchive = '']) async {
   await require_command('tar');
 
-  return run('tar', ['-xvzf', src, dest]);
+  if (is_mingw()) {
+    src = src.replaceAll('\\', '/').replaceFirst('C:', '/c');
+  }
+
+  return run('tar', ['-xvzf', src, '-C', dest, dirFromArchive]);
+}
+
+any_archive_extract(src, dest) async {
+  if (p.extension(src) == '.zip') {
+    return zip_archive_extract(src, dest);
+  } else if (p.extension(src, 2) == '.tar.gz') {
+    return tgz_archive_extract(src, dest);
+  }
 }
 
 file_get_contents(filename) {
@@ -332,7 +350,7 @@ sudo_patch_file(fname, content) async {
   }
 }
 
-load_env(path) async {
+load_env_file(path) async {
   Map<String, String> result = {};
   if (!File(path).existsSync()) {
     return result;
@@ -355,6 +373,13 @@ load_env(path) async {
     var value = row[1].trim();
     result[key] = value;
   }
+
+  return result;
+}
+
+load_env(path) async {
+  Map<String, String> result = await load_env_file(REAL_BIN + '/.env');
+  result.addAll(await load_env_file(path));
 
   return result;
 }
@@ -397,6 +422,7 @@ bitrix_minimize() async {
   ];
   for (final dir in removeDirs) {
     if (Directory(dir).existsSync()) {
+      //TODO!!! replace rm -Rf to new Directory(dir).delete(recursive: true);
       await run('rm', ['-Rf', dir]);
     }
   }
@@ -466,7 +492,8 @@ action_fetch([basePath = '']) async {
     'test': 'https://dev.1c-bitrix.ru/download/scripts/bitrix_server_test.php',
   };
   var outputFile = '.bitrix.tar.gz';
-  var extractOptions = './';
+  var extractDir = './';
+  var extractOptions = '';
 
   var edition = (ARGV.length > 1) ? ARGV[1] : 'start';
   if (!urlEditions.containsKey(edition)) {
@@ -499,7 +526,7 @@ action_fetch([basePath = '']) async {
   }
 
   print('Extracting files...');
-  await archive_extract(outputFile, extractOptions);
+  await tgz_archive_extract(outputFile, extractDir, extractOptions);
   File(outputFile).deleteSync();
 
   if (edition == 'core') {
@@ -779,21 +806,105 @@ action_fixdir(basePath) async {
   }
 }
 
+download_node(srcUrl, path, nodeDir) async {
+  var extension = p.extension(srcUrl, 2);
+  var outputFile = path + '/node.tmp' + extension;
+  if (File(outputFile).existsSync()) {
+    File(outputFile).deleteSync();
+  }
+  var nodePath = path + '/' + nodeDir;
+  if (Directory(nodePath).existsSync()) {
+    print('Remove ' + nodePath + ' ...');
+    new Directory(nodePath).delete(recursive: true);
+  }
+  print("Loading $srcUrl ...");
+  await request_get(srcUrl, outputFile);
+  if (!File(outputFile).existsSync()) {
+    die('Error on loading nodejs from ' + srcUrl);
+  }
+  chdir(path);
+  print('Extracting files ...');
+  await any_archive_extract(outputFile, './');
+  if (File(outputFile).existsSync()) {
+    File(outputFile).deleteSync();
+  }
+  var extractedDirName = p.basenameWithoutExtension(srcUrl);
+  if (p.extension(extractedDirName) == '.tar') {
+    extractedDirName = p.basenameWithoutExtension(extractedDirName);
+  }
+  var srcNodePath = path + '/' + extractedDirName;
+  if (!Directory(srcNodePath).existsSync()) {
+    die('Extracted nodejs folder [' + srcNodePath + '] not found.');
+  }
+  Directory(srcNodePath).renameSync(nodePath);
+}
+
+node_path(cmd, [prefix = '']) {
+  var path = REAL_BIN + '/.dev/bin/node' + prefix;
+  if (!Directory(path).existsSync()) {
+    die('Nodejs directory [' + path + '] - not exists.');
+  }
+  if (!Platform.isWindows) {
+    // set PATH temporarily for node
+    ENV_LOCAL['PATH'] = (PATH_ORIGINAL ?? '') + ':' + path + '/bin/';
+    path += '/bin/' + cmd;
+  } else {
+    // set PATH temporarily for node
+    ENV_LOCAL['PATH'] = (PATH_ORIGINAL ?? '') + ';' + path + '/';
+    path += '/' + cmd + '.cmd';
+  }
+
+  return path;
+}
+
 action_js_install([basePath = '']) async {
-  //TODO!!! download latest LTS to .dev/bin/node/
-  //TODO!!! downlaod node for bitrixcli to .dev/bin/node_legacy/
-  //TODO!!! check running node versions without conflicts
-  await require_command('node');
-  await require_command('npm');
-
-  await sudo_run('npm', ['install', '-g', 'google-closure-compiler']);
-
-  var path = REAL_BIN + '/.dev/bin/esbuild';
+  var path = REAL_BIN + '/.dev/bin';
   if (!Directory(path).existsSync()) {
     new Directory(path).createSync(recursive: true);
   }
-  chdir(path);
-  await run('npm', ['install', 'esbuild']);
+
+  var srcUrl = '';
+  print('Download nodejs LTS');
+  if (Platform.isLinux) {
+    srcUrl = get_env('NODE_URLS_LINUX');
+  } else if (Platform.isMacOS) {
+    srcUrl = get_env('NODE_URLS_MACOS');
+  } else if (Platform.isWindows) {
+    if (is_windows_32bit()) {
+      srcUrl = get_env('NODE_URLS_WIN32');
+    } else {
+      srcUrl = get_env('NODE_URLS_WIN64');
+    }
+  }
+  if (srcUrl != '') {
+    await download_node(srcUrl, path, 'node');
+  }
+
+  // https://nodejs.org/en/blog/release/v9.11.2/
+  // https://nodejs.org/dist/v9.11.2/
+  srcUrl = '';
+  print('Download nodejs for Bitrix');
+  if (Platform.isLinux) {
+    srcUrl = get_env('NODE_URLS_BITRIX_LINUX');
+  } else if (Platform.isMacOS) {
+    srcUrl = get_env('NODE_URLS_BITRIX_MACOS');
+  } else if (Platform.isWindows) {
+    if (is_windows_32bit()) {
+      srcUrl = get_env('NODE_URLS_BITRIX_WIN32');
+    } else {
+      srcUrl = get_env('NODE_URLS_BITRIX_WIN64');
+    }
+  }
+  if (srcUrl != '') {
+    await download_node(srcUrl, path, 'node_bitrix');
+  }
+
+  //TODO!!! check running node versions without conflicts
+  await run(node_path('npm', '_bitrix'), ['install', '-g', '@bitrix/cli'], true);
+
+  await run(node_path('npm'), ['install', '-g', 'google-closure-compiler'], true);
+  // https://esbuild.github.io/getting-started/#download-a-build
+  await run(node_path('npm'), ['install', '-g', 'esbuild'], true);
 }
 
 action_solution_init(basePath) async {
