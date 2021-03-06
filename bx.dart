@@ -1333,8 +1333,6 @@ action_lamp_install([basePath = '']) async {
     await sudo_run('a2enmod', ['proxy']);
     await sudo_run('a2enmod', ['proxy_http']);
 
-    await sudo_run('snap', ['install', 'node', '--classic']);
-
     // patch configs
     var phpContent = file_get_contents(REAL_BIN + '/.template/bitrix.php.ini');
     var phpVersion = '7.0';
