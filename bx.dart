@@ -857,6 +857,10 @@ node_path(cmd, [prefix = '']) {
   return path;
 }
 
+node_path_bitrix(cmd) {
+  return node_path(cmd, '_bitrix');
+}
+
 action_js_install([basePath = '']) async {
   var path = REAL_BIN + '/.dev/bin';
   if (!Directory(path).existsSync()) {
@@ -900,7 +904,7 @@ action_js_install([basePath = '']) async {
   }
 
   print('Install bitrixcli ...');
-  await run(node_path('npm', '_bitrix'), ['install', '-g', '@bitrix/cli'], true);
+  await run(node_path_bitrix('npm'), ['install', '-g', '@bitrix/cli'], true);
 
   print('Install google-closure-compiler, esbuild ...');
   await run(node_path('npm'), ['install', '-g', 'google-closure-compiler'], true);
@@ -1048,7 +1052,14 @@ action_docker_install([basePath = '']) async {
   }
 }
 
+bitrixcli_use_docker() {
+  return get_env('BITRIXCLI_USE_DOCKER') == '1';
+}
+
 action_bitrixcli_install([basePath = '']) async {
+  if (!bitrixcli_use_docker()) {
+    die('This command build docker image for bitrixcli - add to .env file BITRIXCLI_USE_DOCKER="1" before.');
+  }
   await require_command('docker');
 
   chdir(REAL_BIN + '/.template/bitrixcli/');
@@ -1057,11 +1068,15 @@ action_bitrixcli_install([basePath = '']) async {
 }
 
 action_bitrixcli_build([basePath = '']) async {
-  await require_command('docker');
+  if (bitrixcli_use_docker()) {
+    await require_command('docker');
 
-  var path = getcwd();
-  await run('docker', ['run', '--volume="' + path + ':/home/node"', 'bitrixcli']);
-  action_fixdir(path);
+    var path = getcwd();
+    await run('docker', ['run', '--volume="' + path + ':/home/node"', 'bitrixcli']);
+    action_fixdir(path);
+  } else {
+    await run(node_path_bitrix('bitrixcli'), ['build'], true);
+  }
 }
 
 action_bitrixcli_build_deps(basePath) async {
