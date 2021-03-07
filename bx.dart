@@ -1114,17 +1114,20 @@ action_bitrixcli_build_deps(basePath) async {
 }
 
 action_bitrixcli_create([basePath = '']) async {
+  var path = getcwd();
   if (bitrixcli_use_docker()) {
     await require_command('docker');
 
-    var path = getcwd();
     await run('docker', ['run', '-it', '--volume="' + path + ':/home/node"', 'bitrixcli', 'bitrix', 'create']);
     action_fixdir(path);
   } else {
     //TODO!!! how to run interactive commands
     //await run(node_path_bitrix('bitrix'), ['create'], true); // not work
-    print('Create extension file ./src/test1.js' +
-        """
+    var srcPath = path + '/src';
+    if (!Directory(srcPath).existsSync()) {
+      new Directory(srcPath).createSync();
+    }
+    file_put_contents(srcPath + '/test1.js', """
 import {Type} from 'main.core';
 
 export class Test1
@@ -1148,12 +1151,11 @@ export class Test1
 	}
 }
 """);
-    print('Create config file ./bundle.config.js' +
-        """
+    file_put_contents(path + '/bundle.config.js', """
 module.exports = {
 	input: 'src/test1.js',
 	output: 'dist/test1.bundle.js',
-	namespace: 'BX.'
+	namespace: 'BX.Custom.'
 };
 """);
   }
