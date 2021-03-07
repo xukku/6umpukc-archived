@@ -846,7 +846,7 @@ node_path(cmd, [prefix = '']) {
   }
   if (!Platform.isWindows) {
     // set PATH temporarily for node
-    ENV_LOCAL['PATH'] = (PATH_ORIGINAL ?? '') + ':' + path + '/bin/';
+    ENV_LOCAL['PATH'] = path + '/bin' + ':' + (PATH_ORIGINAL ?? '');
     path += '/bin/' + cmd;
   } else {
     // set PATH temporarily for node
