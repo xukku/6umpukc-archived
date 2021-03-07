@@ -1127,9 +1127,13 @@ action_bitrixcli_create([basePath = '']) async {
 }
 
 action_bitrixcli_help([basePath = '']) async {
-  await require_command('docker');
+  if (bitrixcli_use_docker()) {
+    await require_command('docker');
 
-  await run('docker', ['run', 'bitrixcli', 'bitrix', '--help']);
+    await run('docker', ['run', 'bitrixcli', 'bitrix', '--help']);
+  } else {
+    await run(node_path_bitrix('bitrix'), ['--help'], true);
+  }
 }
 
 action_site_reset(basePath) async {
