@@ -899,9 +899,10 @@ action_js_install([basePath = '']) async {
     await download_node(srcUrl, path, 'node_bitrix');
   }
 
-  //TODO!!! check running node versions without conflicts
+  print('Install bitrixcli ...');
   await run(node_path('npm', '_bitrix'), ['install', '-g', '@bitrix/cli'], true);
 
+  print('Install google-closure-compiler, esbuild ...');
   await run(node_path('npm'), ['install', '-g', 'google-closure-compiler'], true);
   // https://esbuild.github.io/getting-started/#download-a-build
   await run(node_path('npm'), ['install', '-g', 'esbuild'], true);
