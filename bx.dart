@@ -1075,7 +1075,7 @@ action_bitrixcli_build([basePath = '']) async {
     await run('docker', ['run', '--volume="' + path + ':/home/node"', 'bitrixcli']);
     action_fixdir(path);
   } else {
-    await run(node_path_bitrix('bitrixcli'), ['build'], true);
+    await run(node_path_bitrix('bitrix'), ['build'], true);
   }
 }
 
