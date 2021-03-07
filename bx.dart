@@ -1148,7 +1148,7 @@ export class Test1
 	}
 }
 """);
-    print('Create cofig file ./bundle.config.js' +
+    print('Create config file ./bundle.config.js' +
         """
 module.exports = {
 	input: 'src/test1.js',
