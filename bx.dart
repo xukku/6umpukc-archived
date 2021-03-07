@@ -1122,7 +1122,40 @@ action_bitrixcli_create([basePath = '']) async {
     action_fixdir(path);
   } else {
     //TODO!!! how to run interactive commands
-    await run(node_path_bitrix('bitrix'), ['create'], true);
+    //await run(node_path_bitrix('bitrix'), ['create'], true); // not work
+    print('Create extension file ./src/test1.js' +
+        """
+import {Type} from 'main.core';
+
+export class Test1
+{
+	constructor(options = {name: 'Test1'})
+	{
+		this.name = options.name;
+	}
+
+	setName(name)
+	{
+		if (Type.isString(name))
+		{
+			this.name = name;
+		}
+	}
+
+	getName()
+	{
+		return this.name;
+	}
+}
+""");
+    print('Create cofig file ./bundle.config.js' +
+        """
+module.exports = {
+	input: 'src/test1.js',
+	output: 'dist/test1.bundle.js',
+	namespace: 'BX.'
+};
+""");
   }
 }
 
