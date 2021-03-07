@@ -1543,8 +1543,6 @@ void main(List<String> args) async {
   //await bitrix_micromize();
 
   var actions = {
-    // 'self-install': action_self_install,
-
     // bitrix
     'help': action_help,
     'fetch': action_fetch,
