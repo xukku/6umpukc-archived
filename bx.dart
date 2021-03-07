@@ -1081,7 +1081,6 @@ action_bitrixcli_build([basePath = '']) async {
 
 action_bitrixcli_build_deps(basePath) async {
   require_site_root(basePath);
-  await require_command('docker');
 
   var bitrixPath = basePath + '/bitrix';
   var path = getcwd();
@@ -1096,10 +1095,22 @@ action_bitrixcli_build_deps(basePath) async {
     }
   }
 
-  var destPath = '/home/node/local/js/' + tmp[1];
-  await run('docker',
-      ['run', '--volume="' + bitrixPath + ':/home/node/local"', 'bitrixcli', 'bitrix', 'build', '--path', destPath]);
-  action_fixdir(path);
+  var destPath = '';
+  if (bitrixcli_use_docker()) {
+    await require_command('docker');
+
+    destPath = '/home/node/local/js/' + tmp[1];
+    await run('docker',
+        ['run', '--volume="' + bitrixPath + ':/home/node/local"', 'bitrixcli', 'bitrix', 'build', '--path', destPath]);
+    action_fixdir(path);
+  } else {
+    //TODO!!! нужно создавать символьные ссылки в /local/js на расширения в /bitrix/js
+    if (bitrixPath != (basePath + '/local')) {
+      die('Extensions should be located in /local/js/... site folder.');
+    }
+    destPath = bitrixPath + '/js/' + tmp[1];
+    await run(node_path_bitrix('bitrix'), ['build', '--path', destPath], true);
+  }
 }
 
 action_bitrixcli_create([basePath = '']) async {
