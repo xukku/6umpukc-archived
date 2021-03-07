@@ -1114,11 +1114,16 @@ action_bitrixcli_build_deps(basePath) async {
 }
 
 action_bitrixcli_create([basePath = '']) async {
-  await require_command('docker');
+  if (bitrixcli_use_docker()) {
+    await require_command('docker');
 
-  var path = getcwd();
-  await run('docker', ['run', '-it', '--volume="' + path + ':/home/node"', 'bitrixcli', 'bitrix', 'create']);
-  action_fixdir(path);
+    var path = getcwd();
+    await run('docker', ['run', '-it', '--volume="' + path + ':/home/node"', 'bitrixcli', 'bitrix', 'create']);
+    action_fixdir(path);
+  } else {
+    //TODO!!! how to run interactive commands
+    await run(node_path_bitrix('bitrix'), ['create'], true);
+  }
 }
 
 action_bitrixcli_help([basePath = '']) async {
