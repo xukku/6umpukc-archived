@@ -1058,7 +1058,7 @@ bitrixcli_use_docker() {
 
 action_bitrixcli_install([basePath = '']) async {
   if (!bitrixcli_use_docker()) {
-    die('This command build docker image for bitrixcli - add to .env file BITRIXCLI_USE_DOCKER="1" before.');
+    die('This command build docker image for bitrixcli - add to site .env file BITRIXCLI_USE_DOCKER="1" before.');
   }
   await require_command('docker');
 
