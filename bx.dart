@@ -422,7 +422,7 @@ bitrix_minimize() async {
   ];
   for (final dir in removeDirs) {
     if (Directory(dir).existsSync()) {
-      //TODO!!! replace rm -Rf to new Directory(dir).delete(recursive: true);
+      //TODO!!! replace rm -Rf to new Directory(dir).deleteSync(recursive: true);
       await run('rm', ['-Rf', dir]);
     }
   }
@@ -815,7 +815,7 @@ download_node(srcUrl, path, nodeDir) async {
   var nodePath = path + '/' + nodeDir;
   if (Directory(nodePath).existsSync()) {
     print('Remove ' + nodePath + ' ...');
-    new Directory(nodePath).delete(recursive: true);
+    new Directory(nodePath).deleteSync(recursive: true);
   }
   print("Loading $srcUrl ...");
   await request_get(srcUrl, outputFile);
