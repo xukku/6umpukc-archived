@@ -850,7 +850,7 @@ node_path(cmd, [prefix = '']) {
     path += '/bin/' + cmd;
   } else {
     // set PATH temporarily for node
-    ENV_LOCAL['PATH'] = (PATH_ORIGINAL ?? '') + ';' + path + '/';
+    ENV_LOCAL['PATH'] = path + ';' + (PATH_ORIGINAL ?? '');
     path += '/' + cmd + '.cmd';
   }
 
