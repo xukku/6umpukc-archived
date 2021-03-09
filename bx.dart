@@ -482,14 +482,14 @@ action_help([basePath = '']) async {
 
 action_fetch([basePath = '']) async {
   var urlEditions = {
-    'micro': 'https://www.1c-bitrix.ru/download/start_encode_php5.tar.gz',
-    'core': 'https://www.1c-bitrix.ru/download/start_encode_php5.tar.gz',
-    'start': 'https://www.1c-bitrix.ru/download/start_encode_php5.tar.gz',
-    'business': 'https://www.1c-bitrix.ru/download/business_encode_php5.tar.gz',
-    'crm': 'https://www.1c-bitrix.ru/download/portal/bitrix24_encode_php5.tar.gz',
-    'setup': 'https://www.1c-bitrix.ru/download/scripts/bitrixsetup.php',
-    'restore': 'https://www.1c-bitrix.ru/download/scripts/restore.php',
-    'test': 'https://dev.1c-bitrix.ru/download/scripts/bitrix_server_test.php',
+    'micro': get_env('BITRIX_SRC_MICRO'),
+    'core': get_env('BITRIX_SRC_CORE'),
+    'start': get_env('BITRIX_SRC_START'),
+    'business': get_env('BITRIX_SRC_BUSINESS'),
+    'crm': get_env('BITRIX_SRC_CRM'),
+    'setup': get_env('BITRIX_SRC_SETUP'),
+    'restore': get_env('BITRIX_SRC_RESTORE'),
+    'test': get_env('BITRIX_SRC_TEST'),
   };
   var outputFile = '.bitrix.tar.gz';
   var extractDir = './';
@@ -521,7 +521,7 @@ action_fetch([basePath = '']) async {
     die('Error on loading bitrix edition ' + (srcUrl ?? ''));
   }
 
-  if ((edition == 'setup') || (edition == 'restore')) {
+  if ((edition == 'setup') || (edition == 'restore') || (edition == 'test')) {
     exit(0);
   }
 
