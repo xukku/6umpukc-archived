@@ -1600,16 +1600,6 @@ void main(List<String> args) async {
   var site_root = detect_site_root('');
   ENV_LOCAL = await load_env(site_root + '/.env');
 
-  //require_site_root('');
-  //await require_command('git');
-  //print(await check_command('git')? 'git exists' : 'git not found');
-  //print(is_bx_debug()? 'DEBUG' : 'NORMAL');
-  //print(await is_ubuntu()? 'ubuntu' : 'not ubuntu');
-  //print(await is_mingw()? 'is mingw' : 'not mingw');
-  //await run('perl', ['-v']);
-  //await sudo_run('perl', ['-v']);
-  //await request_get('https://google.com/', '_test.log');
-  //file_put_contents('.test.log', '1'); print(file_get_contents('.test.log'));
   //await bitrix_minimize();
   //await bitrix_micromize();
 
@@ -1675,12 +1665,5 @@ void main(List<String> args) async {
   await actions[action]!(site_root);
 
   //await run_php(['-i']);
-  //print(git_repos());
-  //print(git_repos_map());
-  //print(module_names_from_repos());
-  //print(await get_user());
-
   //await runWithInputFromFile('perl', [], '_test.pl');
-
-  print('OK.');
 }
