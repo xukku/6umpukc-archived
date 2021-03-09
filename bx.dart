@@ -313,7 +313,16 @@ tgz_archive_extract(src, dest, [dirFromArchive = '']) async {
     src = src.replaceAll('\\', '/').replaceFirst('C:', '/c');
   }
 
-  return run('tar', ['-xvzf', src, '-C', dest, dirFromArchive]);
+  var args = ['-xzf', src];
+  if (dest != '') {
+    args.add('-C');
+    args.add(dest);
+  }
+  if (dirFromArchive != '') {
+    args.add(dirFromArchive);
+  }
+
+  return run('tar', args);
 }
 
 any_archive_extract(src, dest) async {
@@ -492,7 +501,6 @@ action_fetch([basePath = '']) async {
     'test': get_env('BITRIX_SRC_TEST'),
   };
   var outputFile = '.bitrix.tar.gz';
-  var extractDir = './';
   var extractOptions = '';
 
   var edition = (ARGV.length > 1) ? ARGV[1] : 'start';
@@ -526,7 +534,7 @@ action_fetch([basePath = '']) async {
   }
 
   print('Extracting files...');
-  await tgz_archive_extract(outputFile, extractDir, extractOptions);
+  await tgz_archive_extract(outputFile, '', extractOptions);
   File(outputFile).deleteSync();
 
   if (edition == 'core') {
