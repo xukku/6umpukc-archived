@@ -1,3 +1,12 @@
 {
-	"theme": "dimmed-monokai"
+	"theme": "dimmed-monokai",
+	"shell_configs": [
+        {
+            "name": "Git Bash",
+            "cmd": ["C:\\Users\\user\\bin\\6umpukc\\.template\\bitrixcli\\node4bitrixcli.bat"],
+            "env": {},
+            "enable": true,
+            "platforms": ["windows"]
+        }
+    ]
 }
