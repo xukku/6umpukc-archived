@@ -1300,9 +1300,7 @@ skip_file(path) {
 }
 
 action_es9(basePath) async {
-  var compilerPath = 'google-closure-compiler';
-  await require_command(compilerPath);
-
+  var compilerPath = node_path('google-closure-compiler');
   if ((ARGV.length != 2) || !(ARGV[1] == 'all')) {
     basePath = getcwd();
   }
@@ -1344,10 +1342,7 @@ action_es9(basePath) async {
 }
 
 action_minify(basePath) async {
-  var toolPath = get_home() + '/bin/node/bin/esbuild'; // for linux
-  //TODO!!! var toolPath = get_home() + '/bin/node/esbuild'; // for wiondows
-  await require_command(toolPath);
-
+  var toolPath = node_path('esbuild');
   if ((ARGV.length != 2) || !(ARGV[1] == 'all')) {
     basePath = getcwd();
   }
