@@ -1335,6 +1335,7 @@ action_es9(basePath) async {
     await run(compilerPath, ['--js', f, '--js_output_file', destFile, ...extraParams]);
     if (es9) {
       var srcFile = destFile;
+      //TODO!!! файл может не существовать - какая то проблема с асинхронностью
       destFile = destFile.replaceAll('.min.js', '.js');
       File(srcFile).copySync(destFile);
     }
