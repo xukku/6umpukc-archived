@@ -232,7 +232,17 @@ run(cmd, args, [runInShell = false]) async {
   try {
     ProcessResult result =
         await Process.run(cmd, new List<String>.from(args), environment: ENV_LOCAL, runInShell: runInShell);
-    print(result.stdout.trimRight());
+    var output = result.stdout.trimRight();
+    if (output.length > 0) {
+      print(output);
+    }
+    var errors = result.stderr.trimRight();
+    if (errors.length > 0) {
+      print('');
+      print('ERRORS:');
+      print('');
+      print(errors);
+    }
     return result.exitCode;
   } catch (e) {
     print('Error on running command:');
@@ -1331,13 +1341,17 @@ action_es9(basePath) async {
     if (!is_bx_debug()) {
       print('Processing ' + f + ' -> ' + p.basename(destFile));
     }
-    await action_conv_utf(f);
-    await run(compilerPath, ['--js', f, '--js_output_file', destFile, ...extraParams]);
     if (es9) {
-      var srcFile = destFile;
-      //TODO!!! файл может не существовать - какая то проблема с асинхронностью
-      destFile = destFile.replaceAll('.min.js', '.js');
-      File(srcFile).copySync(destFile);
+      //TODO!!! как передавать пути к модулям
+      await action_conv_utf(f);
+      var res = await run(compilerPath, ['--js', f, '--js_output_file', destFile, ...extraParams]);
+      if ((res == 0) && File(destFile).existsSync()) {
+        var srcFile = destFile;
+        destFile = destFile.replaceAll('.min.js', '.js');
+        File(srcFile).copySync(destFile);
+      }
+    } else {
+      File(f).copySync(destFile);
     }
   });
 }
