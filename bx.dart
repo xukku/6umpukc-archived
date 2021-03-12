@@ -1344,7 +1344,8 @@ action_es9(basePath) async {
 }
 
 action_minify(basePath) async {
-  var toolPath = get_home() + '/bin/node/esbuild';
+  var toolPath = get_home() + '/bin/node/bin/esbuild'; // for linux
+  //TODO!!! var toolPath = get_home() + '/bin/node/esbuild'; // for wiondows
   await require_command(toolPath);
 
   if ((ARGV.length != 2) || !(ARGV[1] == 'all')) {
