@@ -161,7 +161,6 @@ is_bx_debug() {
   return get_env('BX_DEBUG') == '1';
 }
 
-//TODO!!! test on ubuntu
 is_ubuntu() async {
   if (!Platform.isLinux) {
     return false;
@@ -288,8 +287,12 @@ run_php(args) async {
   var phpBin = get_env('SOLUTION_PHP_BIN');
   if (phpBin == '') {
     phpBin = 'php';
-  } else {
-    phpBin += "\\php";
+    if (!check_command(phpBin)) {
+      //TODO!!! detect php
+      //phpBin = 'C:\\Program Files (x86)\\Local\\resources\\extraResources\\lightning-services\\php-7.*\\bin\\win32\\php';
+      //phpBin = 'C:\\Program Files (x86)\\Local\\resources\\extraResources\\lightning-services\\php-7.*\\bin\\win64\\php';
+      //phpBin = get_home() + '/bin/php';
+    }
   }
   var cmdArgs = [];
   var phpArgs = get_env('SOLUTION_PHP_ARGS');
@@ -1013,6 +1016,58 @@ action_solution_conv_utf(basePath) async {
   }
 }
 
+action_mod_links(basePath) async {
+  require_site_root(basePath);
+
+  var srcSymlinkDirs = [
+    'install/js',
+    //TODO!!!
+    //'install/components',
+    //'install/wizards',
+    //'install/admin',
+    //'install/tools',
+    //'install/gadgets',
+    //'install/templates',
+    //'install/services',
+    //'install/css',
+    //'install/themes'
+  ];
+  var path = getcwd();
+  for (final dir in srcSymlinkDirs) {
+    var srcDir = path + '/' + dir;
+    if (!Directory(srcDir).existsSync()) {
+      continue;
+    }
+
+    print('Symlinks for ' + srcDir);
+    var contents = new Directory(srcDir).listSync();
+    for (var f in contents) {
+      if (f is Directory) {
+        var relPath = p.basename(dir) + '/' + p.basename(f.path);
+        var dest = basePath + '/local/' + relPath;
+        if (!Directory(dest).existsSync()) {
+          Directory(dest).createSync(recursive: true);
+        }
+
+        var contentsForSymlinks = new Directory(f.path).listSync();
+        for (var v in contentsForSymlinks) {
+          if (v is Directory) {
+            var destSymlinkDir = dest + '/' + p.basename(v.path);
+            print('  ' + relPath + '/' + p.basename(v.path) + ' -> ' + destSymlinkDir);
+            if (Link(destSymlinkDir).existsSync()) {
+              Link(destSymlinkDir).deleteSync();
+            }
+            Link(destSymlinkDir).createSync(v.path);
+          }
+        }
+      }
+    }
+  }
+
+  //TODO!!! install/wizards/*/site/templates, install/wizards/*/site/templates_common
+  // example for cmd: mklink /D "path to newlink" "path to module folder"
+}
+
 action_mod_pack([basePath = '']) async {
   return run_php([REAL_BIN + '/.action_conv.php', 'modpack']);
 }
@@ -1660,6 +1715,7 @@ void main(List<String> args) async {
     'conv-utf': action_conv_utf,
     'mod-pack': action_mod_pack,
     'mod-update': action_mod_update,
+    'mod-links': action_mod_links,
     'site-init': action_site_init,
     'site-reset': action_site_reset,
     'site-remove': action_site_remove,
