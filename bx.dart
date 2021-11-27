@@ -107,6 +107,9 @@ chdir(dir) {
 }
 
 get_env(name) {
+  if (ENV_LOCAL == null) {
+    return '';
+  }
   if (ENV_LOCAL.containsKey(name)) {
     return (ENV_LOCAL[name] ?? '');
   }
@@ -261,19 +264,28 @@ run(cmd, args, [runInShell = false]) async {
   }
 }
 
-// TODO check https://pub.dev/packages/process_run/install
+// для не интерактивных команд с перенаправлением
 system(cmdLine) async {
   return run('perl', ['-e', 'system("' + cmdLine.replaceAll('"', '\\"') + '");']);
 }
-/*
-system(cmd, args) {
+
+runInteractive(cmd, args) async { // https://pub.dev/packages/process_run/install
+  var process = await Process.start(
+    cmd,
+    args,
+    mode: ProcessStartMode.inheritStdio
+  );
+  //...
+  await process.exitCode;
+  /*
   Process.start(cmd, args).then((process) {
     stdout.addStream(process.stdout);
     stderr.addStream(process.stderr);
     process.exitCode.then(print);
   });
+  */
 }
-*/
+
 /*
 runWithInputFromFile(cmd, args, inputFle) async {
   var process = await Process.start(cmd, new List<String>.from(args));
@@ -614,7 +626,7 @@ ftp_conn_str() {
 }
 
 ssh_exec_remote([cmd = '']) {
-  var args = [
+  List<String> args = [
     'sshpass',
     '-p',
     get_env('DEPLOY_PASSWORD'),
@@ -623,16 +635,20 @@ ssh_exec_remote([cmd = '']) {
     '-t'
   ];
 
+  var commandLine = '';
+
   var deployPath = get_env('DEPLOY_PATH');
   if (deployPath != '') {
-    args.add('cd');
-    args.add(deployPath);
-    args.add(';');
+    commandLine += 'cd ' + deployPath + ' && ';
   }
 
   if (cmd == '') {
-    args.add('bash --login');
-    args.add(';');
+    cmd = 'bash --login';
+  }
+  commandLine += cmd;
+
+  if (commandLine != '') {
+    args.add(commandLine);
   }
 
   return args;
@@ -700,10 +716,13 @@ action_ssh(basePath) async {
   await require_command('ssh');
   await require_command('sshpass');
 
-  var args = ssh_exec_remote();
-  var cmd = args.shift();
+  var remoteCommand = new List.from(ARGV);
+  remoteCommand.removeAt(0);
+  var args = ssh_exec_remote(remoteCommand.join(' '));
+  var cmd = args.first;
+  args.removeAt(0);
 
-  return run(cmd, args);
+  await runInteractive(cmd, args);
 }
 
 git_repos() {
@@ -748,13 +767,13 @@ module_names_from_repos() {
   return result;
 }
 
-git_clone(pathModules, moduleId, urlRepo) async {
+git_clone(String pathModules, String moduleId, String urlRepo) async {
   var pathModule = pathModules + moduleId;
   if (Directory(pathModule).existsSync()) {
     await run('rm', ['-Rf', pathModule]);
   }
   chdir(pathModules);
-  await run('git', ['clone', urlRepo, moduleId]);
+  await runInteractive('git', ['clone', urlRepo, moduleId]);
   if (Directory(pathModule).existsSync()) {
     chdir(pathModule);
     await run('git', ['config', 'core.fileMode', 'false']);
@@ -1016,9 +1035,8 @@ action_solution_reset(basePath) async {
     exit(0);
   }
 
-  action_fixdir(basePath);
-
-  return run_php([
+  await action_fixdir(basePath);
+  await run_php([
     REAL_BIN + '/.action_solution_reset.php',
     get_public_path(basePath),
   ]);
@@ -1284,7 +1302,7 @@ action_site_reset(basePath) async {
     exit(0);
   }
 
-  action_fixdir(basePath);
+  await action_fixdir(basePath);
   await run_php([
     REAL_BIN + '/.action_site_reset.php',
     get_public_path(basePath),
