@@ -14,6 +14,8 @@ var PATH_ORIGINAL = Platform.environment['PATH'];
 var ENV_LOCAL;
 var ARGV;
 
+const BASE_ENV_NAME = '.env';
+
 final chars = [
   'A',
   'B',
@@ -310,14 +312,16 @@ run_php(args) async {
   var phpBin = get_env('SOLUTION_PHP_BIN');
   if (phpBin == '') {
     phpBin = 'php';
-    if (!await check_command(phpBin)) {
-      //TODO!!! detect php
-      //phpBin = 'C:\\Program Files (x86)\\Local\\resources\\extraResources\\lightning-services\\php-7.*\\bin\\win32\\php';
-      //phpBin = 'C:\\Program Files (x86)\\Local\\resources\\extraResources\\lightning-services\\php-7.*\\bin\\win64\\php';
-      //phpBin = get_home() + '/bin/php';
-    }
+    await require_command(phpBin);
+  } else {
+    //TODO!!! check other versions
+    //ENV_LOCAL['PATH'] = p.dirname(phpBin) + ':'
+    //  + p.dirname(p.dirname(phpBin)) + '/shared-libs' + ':'
+    //  + (PATH_ORIGINAL ?? '');
+    //  print(ENV_LOCAL['PATH']);
+    //ENV_LOCAL['LD_LIBRARY_PATH'] = p.dirname(p.dirname(phpBin)) + '/shared-libs';
   }
-  var cmdArgs = [];
+  List<String> cmdArgs = new List.from([]);
   var phpArgs = get_env('SOLUTION_PHP_ARGS');
   if (phpArgs != '') {
     for (final arg in phpArgs.split(' ')) {
@@ -327,8 +331,9 @@ run_php(args) async {
   for (final arg in args) {
     cmdArgs.add(arg);
   }
+  //!!! print(phpBin); print(cmdArgs);
 
-  return run(phpBin, cmdArgs);
+  await runInteractive(phpBin, cmdArgs);
 }
 
 request_useragent() {
@@ -446,8 +451,17 @@ load_env_file(path) async {
 }
 
 load_env(path) async {
-  Map<String, String> result = await load_env_file(REAL_BIN + '/.env');
+  // load tool config .env file
+  Map<String, String> result = await load_env_file(REAL_BIN + '/' + BASE_ENV_NAME);
+
+  // load project config .env file
   result.addAll(await load_env_file(path));
+
+  // load current env .env file
+  var prefix = Platform.environment['BX_ENV'] ?? '';
+  if (prefix != '') {
+    result.addAll(await load_env_file(path + '.' + prefix));
+  }
 
   return result;
 }
@@ -460,9 +474,9 @@ detect_site_root(path, [checkVars = true]) {
   if (path == '') {
     path = getcwd();
   }
-  if (File(path + '/.env').existsSync()) {
+  if (File(path + '/' + BASE_ENV_NAME).existsSync()) {
     if (checkVars) {
-      var configContent = file_get_contents(path + '/.env');
+      var configContent = file_get_contents(path + '/' + BASE_ENV_NAME);
       if ((configContent.indexOf('APP_URL=') >= 0) || (configContent.indexOf('SOLUTION_GIT_REPOS=') >= 0)) {
         return path;
       }
@@ -654,19 +668,27 @@ ssh_exec_remote([cmd = '']) {
   return args;
 }
 
+get_ssh_command() {
+  return 'ssh ' + get_env('DEPLOY_USER') + '@' + get_env('DEPLOY_SERVER') + get_env('DEPLOY_PORT');
+}
+
 action_env(basePath) async {
   require_site_root(basePath);
 
   print("Site root:\n\t$basePath\n");
-  print('Env config:');
+
+  print("FTP:\n\t" + ftp_conn_str());
+  print('');
+
+  print('SSH:');
+  print("\t" + get_ssh_command());
+  print("\t" + quote_args(ssh_exec_remote()));
+  print('');
+
+  print('ENV config:');
   for (final k in ENV_LOCAL.keys) {
     print("\t" + k + " -> " + ENV_LOCAL[k]);
   }
-  print('');
-  print("Ftp connection:\n\t" + ftp_conn_str());
-  print('');
-  print('Ssh connection command:');
-  print("\t" + quote_args(ssh_exec_remote()));
   print('');
 }
 
@@ -723,6 +745,12 @@ action_ssh(basePath) async {
   args.removeAt(0);
 
   await runInteractive(cmd, args);
+}
+
+action_ssh_test(basePath) async {
+  require_site_root(basePath);
+  await require_command('ssh');
+  await runInteractive(get_ssh_command(), new List<String>.from([]));
 }
 
 git_repos() {
@@ -1016,7 +1044,7 @@ action_solution_init(basePath) async {
     if (!File(solutionConfigPath).existsSync()) {
       die("Config for solution [$solution] not defined.");
     }
-    var siteConfig = basePath + '/.env';
+    var siteConfig = basePath + '/' + BASE_ENV_NAME;
     var originalContent = file_get_contents(siteConfig);
     var content = file_get_contents(solutionConfigPath);
     if (originalContent.indexOf(content) < 0) {
@@ -1563,6 +1591,12 @@ add_site(path, sitehost, siteconf) async {
   await sudo_run('systemctl', ['reload', 'apache2']);
 }
 
+action_php(basePath) async {
+  var args = new List.from(ARGV);
+  args.removeAt(0);
+  await run_php(args);
+}
+
 action_site_init(basePath) async {
   var site_root = basePath;
   var site_exists = (site_root != '') && (get_env('SITE_ENCODING') != '');
@@ -1608,7 +1642,7 @@ action_site_init(basePath) async {
         return true;
       }
 
-      if (path.indexOf('/.template/www/.env') > 0) {
+      if (path.indexOf('/.template/www/' + BASE_ENV_NAME) > 0) {
         return false;
       }
 
@@ -1642,7 +1676,7 @@ action_site_init(basePath) async {
     }
 
     // поправить права
-    ENV_LOCAL = await load_env(site_root + '/.env');
+    ENV_LOCAL = await load_env(site_root + '/' + BASE_ENV_NAME);
     await action_fixdir(site_root);
   }
 }
@@ -1653,7 +1687,7 @@ void main(List<String> args) async {
   if (site_root == '') {
     site_root = detect_site_root('', false);
   }
-  ENV_LOCAL = await load_env(site_root + '/.env');
+  ENV_LOCAL = await load_env(site_root + '/' + BASE_ENV_NAME);
 
   var actions = {
     // bitrix
@@ -1664,8 +1698,10 @@ void main(List<String> args) async {
     'env': action_env,
     'ftp': action_ftp,
     'ssh': action_ssh,
+    'ssh-test': action_ssh_test,
     'db': action_db,
     'fixdir': action_fixdir,
+    'php': action_php,
 
     // git
     'status': action_status,
