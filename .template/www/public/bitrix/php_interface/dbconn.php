@@ -1,5 +1,7 @@
 <?php
 
+//TODO!!! ?файл больше не обязателен
+
 define("SHORT_INSTALL_CHECK", true);
 
 define("DBPersistent", false);

@@ -1,7 +1,5 @@
 /tmp/
-/.dev/bitrix/
-/.dev/solution.env.settings/
-/.dev/bin/
+/.dev/
 /bitrix/
 
 /.dart_tool/

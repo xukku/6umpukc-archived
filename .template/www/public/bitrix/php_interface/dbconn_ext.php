@@ -1,5 +1,7 @@
 <?php
 
+//TODO!!! удалить эту хрень
+
 // extended dbconn.php init
 
 namespace

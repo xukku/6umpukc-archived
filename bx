@@ -185,6 +185,21 @@ sub action_install {
     }
 }
 
+sub action_mkcert_install {
+    if (is_ubuntu()) {
+		my $certKeyName = (exists $ENV{'BX_MKCERT'} && ($ENV{'BX_MKCERT'} ne '')) ? $ENV{'BX_MKCERT'} : 'bx.local *.bx.local';
+		$certKeyName = join(' ', map { '"' . $_ . '"' } split(/\s+/, $certKeyName));
+
+		sudo_run('apt install libnss3-tools');
+    	sudo_run('snap install go --classic');
+    	run('rm -Rf ~/bin/mkcert-src/');
+    	run('git clone https://github.com/FiloSottile/mkcert ~/bin/mkcert-src');
+    	run('cd ~/bin/mkcert-src/ && go build -ldflags "-X main.Version=$(git describe --tags)" && mv mkcert ~/bin/mkcert');
+    	run('mkcert -install');
+    	run('mkdir ~/.ssl/ && cd ~/.ssl/ && mkcert ' . $certKeyName);
+    	sudo_run('a2enmod ssl');
+    }
+}
 
 sub action_lamp_install {
 	if (is_ubuntu()) {
@@ -261,6 +276,9 @@ if (defined($ARGV[0]) && ($ARGV[0] eq 'self-install')) {
 }
 elsif (defined($ARGV[0]) && ($ARGV[0] eq 'lamp-install')) {
     action_lamp_install();
+}
+elsif (defined($ARGV[0]) && ($ARGV[0] eq 'mkcert-install')) {
+    action_mkcert_install();
 }
 else {
     my $args = join(' ', @ARGV);

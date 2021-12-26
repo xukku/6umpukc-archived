@@ -1,6 +1,41 @@
 // EXAMPLE: https://dart.dev/tutorials/server/cmdline
 // EXAMPLE: dart create -t console-full cli
 
+/*
+
+https://linuxize.com/post/how-to-install-php-8-on-ubuntu-20-04/
+
+--- install php 7.1
+
+https://www.8host.com/blog/zapusk-neskolkix-versij-php-na-odnom-servere-s-pomoshhyu-apache-i-php-fpm-v-ubuntu-20-04/
+
+sudo apt-get install software-properties-common -y
+sudo add-apt-repository ppa:ondrej/php
+sudo apt-get update -y
+
+sudo apt-get install php7.1 php7.1-fpm php7.1-mysql libapache2-mod-php7.1 libapache2-mod-fcgid -y
+
+sudo systemctl start php7.1-fpm
+sudo systemctl status php7.1-fpm
+
+sudo a2enmod actions fcgid alias proxy_fcgi
+
+в файл конфига сайта добавляется:
+
+  <FilesMatch \.php$>
+    # From the Apache version 2.4.10 and above, use the SetHandler to run PHP as a fastCGI process server
+    SetHandler "proxy:unix:/run/php/php7.1-fpm.sock|fcgi://localhost"
+  </FilesMatch>
+
+sudo apachectl configtest
+
+--- global switch php (для основной версии mod_php)
+
+sudo a2dismod php7.4
+sudo a2enmod php8.1
+
+*/
+
 import 'dart:io';
 import 'dart:convert';
 import 'dart:math';
@@ -10,11 +45,13 @@ import 'package:windows1251/windows1251.dart';
 import 'package:xml/xml.dart' as xml;
 
 var REAL_BIN = p.dirname(Platform.script.toFilePath());
-var PATH_ORIGINAL = Platform.environment['PATH'];
+var PATH_ORIGINAL = Platform.environment['PATH'] ?? '';
+var ENV_PATH_SEP = Platform.isWindows? ';' : ':';
 var ENV_LOCAL;
 var ARGV;
 
 const BASE_ENV_NAME = '.env';
+const SOLUTION_REPOS_SEP = ';';
 
 final chars = [
   'A',
@@ -157,8 +194,12 @@ confirm_continue(title) {
 }
 
 require_site_root(basePath) {
+  var sitesDir = get_sites_root();
   if (basePath == '') {
-    die("Site root not found.\n");
+    die('''
+Site root not found.
+Run command from your public folder of site [ ${sitesDir}yoursitefolder/app/ ]
+''');
   }
 }
 
@@ -170,6 +211,12 @@ check_command(cmd) async {
 require_command(cmd) async {
   if (!await check_command(cmd)) {
     die('[' + cmd + '] command - not found.');
+  }
+}
+
+require_file(path) async {
+  if (!File(path).existsSync()) {
+    die('File [' + path + '] - not found.');
   }
 }
 
@@ -242,7 +289,7 @@ runReturnContent(cmd, [args = null]) async {
 
 run(cmd, args, [runInShell = false]) async {
   if (is_bx_debug()) {
-    print(cmd + ' ' + quote_args(args));
+    print('RUN: ' + cmd + ' ' + quote_args(args));
   }
   try {
     ProcessResult result =
@@ -271,21 +318,17 @@ system(cmdLine) async {
   return run('perl', ['-e', 'system("' + cmdLine.replaceAll('"', '\\"') + '");']);
 }
 
-runInteractive(cmd, args) async { // https://pub.dev/packages/process_run/install
+runInteractive(cmd, List<String> args) async {
+  // https://pub.dev/packages/process_run/install
   var process = await Process.start(
     cmd,
     args,
-    mode: ProcessStartMode.inheritStdio
+    mode: ProcessStartMode.inheritStdio,
+    environment: ENV_LOCAL
   );
-  //...
+  //stdout.addStream(process.stdout);
+  //stderr.addStream(process.stderr);
   await process.exitCode;
-  /*
-  Process.start(cmd, args).then((process) {
-    stdout.addStream(process.stdout);
-    stderr.addStream(process.stderr);
-    process.exitCode.then(print);
-  });
-  */
 }
 
 /*
@@ -313,14 +356,16 @@ run_php(args) async {
   if (phpBin == '') {
     phpBin = 'php';
     await require_command(phpBin);
+  } else if (!Platform.isWindows) {
+    require_file(phpBin);
+    var phpBinDir = p.dirname(phpBin);
+    ENV_LOCAL['LD_LIBRARY_PATH'] = p.dirname(phpBinDir) + '/shared-libs';
+    ENV_LOCAL['PATH'] = phpBinDir + ENV_PATH_SEP + PATH_ORIGINAL;
   } else {
-    //TODO!!! check other versions
-    //ENV_LOCAL['PATH'] = p.dirname(phpBin) + ':'
-    //  + p.dirname(p.dirname(phpBin)) + '/shared-libs' + ':'
-    //  + (PATH_ORIGINAL ?? '');
-    //  print(ENV_LOCAL['PATH']);
-    //ENV_LOCAL['LD_LIBRARY_PATH'] = p.dirname(p.dirname(phpBin)) + '/shared-libs';
+    require_file(phpBin);
+    //TODO!!! for windows
   }
+
   List<String> cmdArgs = new List.from([]);
   var phpArgs = get_env('SOLUTION_PHP_ARGS');
   if (phpArgs != '') {
@@ -628,6 +673,10 @@ action_fetch([basePath = '']) async {
 }
 
 ftp_conn_str() {
+  if (get_env('DEPLOY_SERVER') == '') {
+    return '';
+  }
+
   return get_env('DEPLOY_METHOD') +
       '://' +
       get_env('DEPLOY_USER') +
@@ -640,14 +689,22 @@ ftp_conn_str() {
 }
 
 ssh_exec_remote([cmd = '']) {
+  var port = get_env('DEPLOY_PORT');
+  if (port != '') {
+    port = '-p' + port.substring(1, port.length);
+  }
+
   List<String> args = [
     'sshpass',
     '-p',
     get_env('DEPLOY_PASSWORD'),
     'ssh',
-    get_env('DEPLOY_USER') + '@' + get_env('DEPLOY_SERVER') + get_env('DEPLOY_PORT'),
-    '-t'
+    get_env('DEPLOY_USER') + '@' + get_env('DEPLOY_SERVER'),
   ];
+  if (port != '') {
+    args.add(port);
+  }
+  args.add('-t');
 
   var commandLine = '';
 
@@ -669,7 +726,15 @@ ssh_exec_remote([cmd = '']) {
 }
 
 get_ssh_command() {
-  return 'ssh ' + get_env('DEPLOY_USER') + '@' + get_env('DEPLOY_SERVER') + get_env('DEPLOY_PORT');
+  if (get_env('DEPLOY_SERVER') == '') {
+    return '';
+  }
+  var port = get_env('DEPLOY_PORT');
+  if (port != '') {
+    port = ' -p' + port.substring(1, port.length);
+  }
+
+  return 'ssh ' + get_env('DEPLOY_USER') + '@' + get_env('DEPLOY_SERVER') + port;
 }
 
 action_env(basePath) async {
@@ -677,13 +742,19 @@ action_env(basePath) async {
 
   print("Site root:\n\t$basePath\n");
 
-  print("FTP:\n\t" + ftp_conn_str());
-  print('');
+  var connStr = ftp_conn_str();
+  if (connStr != '') {
+    print("FTP:\n\t" + connStr);
+    print('');
+  }
 
-  print('SSH:');
-  print("\t" + get_ssh_command());
-  print("\t" + quote_args(ssh_exec_remote()));
-  print('');
+  connStr = get_ssh_command();
+  if (connStr != '') {
+    print('SSH:');
+    print("\t" + connStr);
+    print("\t" + quote_args(ssh_exec_remote()));
+    print('');
+  }
 
   print('ENV config:');
   for (final k in ENV_LOCAL.keys) {
@@ -753,81 +824,78 @@ action_ssh_test(basePath) async {
   await runInteractive(get_ssh_command(), new List<String>.from([]));
 }
 
-git_repos() {
-  var solutionRepos = get_env('SOLUTION_GIT_REPOS').split("\n");
-  var result = [];
-  for (final line in solutionRepos) {
-    if (line.trim() == '') {
-      continue;
-    }
-    var tmp = line.split(';');
-    result.add(tmp[0].trim());
-  }
-  if (result.length == 0) {
-    print('Solutions git repositories not defined in SOLUTION_GIT_REPOS');
-  }
-
-  return result;
+get_bitrix_modules_path(basePath) {
+  return get_public_path(basePath) + '/bitrix/modules/';
 }
 
-git_repos_map() {
+git_repos_map(basePath) {
+  var pathModules = get_bitrix_modules_path(basePath);
   var solutionRepos = get_env('SOLUTION_GIT_REPOS').split("\n");
   var result = {};
   for (final line in solutionRepos) {
     if (line.trim() == '') {
       continue;
     }
-    var tmp = line.split(';');
+    var tmp = line.split(SOLUTION_REPOS_SEP);
     var url = tmp[0].trim();
-    var k = p.basenameWithoutExtension(url);
-    var v = (tmp.length > 1) ? tmp[1].trim() : '';
-    result[k] = [v, url];
+    var moduleId = p.basenameWithoutExtension(url);
+    var branch = (tmp.length > 1) ? tmp[1].trim() : 'master';
+    var path = (tmp.length > 2) ?
+      (get_public_path(basePath) + tmp[2].trim())
+      : (pathModules + p.basenameWithoutExtension(url));
+    var page = (tmp.length > 3) ? tmp[3].trim() : '';
+    //TODO!!! названия директории в moduleId теперь могут совпадать - переделать result на массив
+    result[moduleId] = [page, url, branch, path];
   }
 
   return result;
 }
 
-module_names_from_repos() {
-  var result = [];
-  for (final url in git_repos()) {
-    result.add(p.basenameWithoutExtension(url));
+git_clone(String basePath, String moduleId, String urlRepo, String branch, String path) async {
+  if (Directory(path).existsSync()) {
+    await runInteractive('rm', ['-Rf', path]);
   }
-  return result;
-}
-
-git_clone(String pathModules, String moduleId, String urlRepo) async {
-  var pathModule = pathModules + moduleId;
-  if (Directory(pathModule).existsSync()) {
-    await run('rm', ['-Rf', pathModule]);
-  }
-  chdir(pathModules);
-  await runInteractive('git', ['clone', urlRepo, moduleId]);
-  if (Directory(pathModule).existsSync()) {
-    chdir(pathModule);
-    await run('git', ['config', 'core.fileMode', 'false']);
-    await run('git', ['checkout', 'master']);
+  await runInteractive('git', ['clone', urlRepo, path]);
+  if (Directory(path).existsSync()) {
+    chdir(path);
+    await runInteractive('git', ['config', 'core.fileMode', 'false']);
+    await runInteractive('git', ['checkout', branch]);
   }
 }
 
 fetch_repos(basePath) async {
-  var pathModules = basePath + '/bitrix/modules/';
+  var solutionRepos = git_repos_map(basePath);
+  if (solutionRepos.keys.length == 0) {
+    return;
+  }
+
+  var pathModules = get_bitrix_modules_path(basePath);
   if (!Directory(pathModules).existsSync()) {
     new Directory(pathModules).createSync(recursive: true);
   }
-  var solutionRepos = git_repos();
-  if (solutionRepos.length == 0) {
-    return;
-  }
-  print('Repositories:');
-  for (final u in solutionRepos) {
-    print("\t$u");
+
+  print('Repositories info:');
+  for (final moduleId in solutionRepos.keys) {
+    var repoInfo = solutionRepos[moduleId];
+    var page = repoInfo[0];
+    var url = repoInfo[1];
+    var branch = repoInfo[2];
+    var path = repoInfo[3];
+    print(moduleId + ' [$branch]');
+    print("\t$url");
+    print("\t\t-> $path\n");
   }
   if (!confirm_continue('Warning! Modules will be removed.')) {
     exit(0);
   }
-  for (final urlRepo in solutionRepos) {
-    print('Fetch repo ' + urlRepo + ' ...');
-    await git_clone(pathModules, p.basenameWithoutExtension(urlRepo), urlRepo);
+  for (final moduleId in solutionRepos.keys) {
+    var repoInfo = solutionRepos[moduleId];
+    var page = repoInfo[0];
+    var url = repoInfo[1];
+    var branch = repoInfo[2];
+    var path = repoInfo[3];
+    print('Fetch repo ' + url + ' ...');
+    await git_clone(basePath, moduleId, url, branch, path);
     print('');
   }
 }
@@ -835,16 +903,26 @@ fetch_repos(basePath) async {
 action_status(basePath) async {
   require_site_root(basePath);
 
-  var pathModules = get_public_path(basePath) + '/bitrix/modules/';
-  var solutionRepos = git_repos();
-  if (solutionRepos.length == 0) {
+  var solutionRepos = git_repos_map(basePath);
+  if (solutionRepos.keys.length == 0) {
     return;
   }
-  for (final urlRepo in solutionRepos) {
-    chdir(pathModules + p.basenameWithoutExtension(urlRepo));
-    await run('pwd', []);
-    await run('git', ['status']);
-    await run('git', ['branch']);
+
+  for (final moduleId in solutionRepos.keys) {
+    var repoInfo = solutionRepos[moduleId];
+    var page = repoInfo[0];
+    var url = repoInfo[1];
+    var branch = repoInfo[2];
+    var path = repoInfo[3];
+
+    if (!Directory(path).existsSync()) {
+      print("Directory '$path' for '$url' not exists");
+      continue;
+    }
+    chdir(path);
+    await runInteractive('pwd', []);
+    await runInteractive('git', ['status']);
+    await runInteractive('git', ['branch']);
     print('');
   }
 }
@@ -852,15 +930,25 @@ action_status(basePath) async {
 action_pull(basePath) async {
   require_site_root(basePath);
 
-  var pathModules = get_public_path(basePath) + '/bitrix/modules/';
-  var solutionRepos = git_repos();
-  if (solutionRepos.length == 0) {
+  var solutionRepos = git_repos_map(basePath);
+  if (solutionRepos.keys.length == 0) {
     return;
   }
-  for (final urlRepo in solutionRepos) {
-    chdir(pathModules + p.basenameWithoutExtension(urlRepo));
-    await run('pwd', []);
-    await run('git', ['pull']);
+
+  for (final moduleId in solutionRepos.keys) {
+    var repoInfo = solutionRepos[moduleId];
+    var page = repoInfo[0];
+    var url = repoInfo[1];
+    var branch = repoInfo[2];
+    var path = repoInfo[3];
+
+    if (!Directory(path).existsSync()) {
+      print("Directory '$path' for '$url' not exists");
+      continue;
+    }
+    chdir(path);
+    await runInteractive('pwd', []);
+    await runInteractive('git', ['pull']);
     print('');
   }
 }
@@ -868,18 +956,29 @@ action_pull(basePath) async {
 action_reset(basePath) async {
   require_site_root(basePath);
 
-  var pathModules = get_public_path(basePath) + '/bitrix/modules/';
-  var solutionRepos = git_repos();
-  if (solutionRepos.length == 0) {
+  var solutionRepos = git_repos_map(basePath);
+  if (solutionRepos.keys.length == 0) {
     return;
   }
+
   if (!confirm_continue('Warning! All file changes will be removed.')) {
     exit(0);
   }
-  for (final urlRepo in solutionRepos) {
-    chdir(pathModules + p.basenameWithoutExtension(urlRepo));
-    await run('pwd', []);
-    await run('git', ['reset', '--hard', 'HEAD']);
+
+  for (final moduleId in solutionRepos.keys) {
+    var repoInfo = solutionRepos[moduleId];
+    var page = repoInfo[0];
+    var url = repoInfo[1];
+    var branch = repoInfo[2];
+    var path = repoInfo[3];
+
+  if (!Directory(path).existsSync()) {
+      print("Directory '$path' for '$url' not exists");
+      continue;
+    }
+    chdir(path);
+    await runInteractive('pwd', []);
+    await runInteractive('git', ['reset', '--hard', 'HEAD']);
     print('');
   }
 }
@@ -887,19 +986,25 @@ action_reset(basePath) async {
 action_checkout(basePath) async {
   require_site_root(basePath);
 
-  var branch = (ARGV.length > 1) ? ARGV[1] : 'master';
-  var pathModules = get_public_path(basePath) + '/bitrix/modules/';
-  if (!Directory(pathModules).existsSync()) {
-    new Directory(pathModules).createSync(recursive: true);
-  }
-  var solutionRepos = git_repos();
-  if (solutionRepos.length == 0) {
+  var solutionRepos = git_repos_map(basePath);
+  if (solutionRepos.keys.length == 0) {
     return;
   }
-  for (final urlRepo in solutionRepos) {
-    chdir(pathModules + p.basenameWithoutExtension(urlRepo));
-    await run('pwd', []);
-    await run('git', ['checkout', branch]);
+
+  for (final moduleId in solutionRepos.keys) {
+    var repoInfo = solutionRepos[moduleId];
+    var page = repoInfo[0];
+    var url = repoInfo[1];
+    var branch = repoInfo[2];
+    var path = repoInfo[3];
+
+    if (!Directory(path).existsSync()) {
+      print("Directory '$path' for '$url' not exists");
+      continue;
+    }
+    chdir(path);
+    await runInteractive('pwd', []);
+    await runInteractive('git', ['checkout', branch]);
     print('');
   }
 }
@@ -959,11 +1064,11 @@ node_path(cmd, [prefix = '']) {
   }
   if (!Platform.isWindows) {
     // set PATH temporarily for node
-    ENV_LOCAL['PATH'] = path + '/bin' + ':' + (PATH_ORIGINAL ?? '');
+    ENV_LOCAL['PATH'] = path + '/bin' + ENV_PATH_SEP + PATH_ORIGINAL;
     path += '/bin/' + cmd;
   } else {
     // set PATH temporarily for node
-    ENV_LOCAL['PATH'] = path + ';' + (PATH_ORIGINAL ?? '');
+    ENV_LOCAL['PATH'] = path + ENV_PATH_SEP + PATH_ORIGINAL;
     path += '/' + cmd + '.cmd';
   }
 
@@ -1035,6 +1140,15 @@ get_public_path(basePath) {
   return basePath + prefix;
 }
 
+get_sites_root() {
+  var result = get_env('DIR_LOCAL_SITES');
+  if (result.startsWith('~/')) {
+    return get_home() + '/' + result.substring(2, result.length);
+  }
+
+  return result;
+}
+
 action_solution_init(basePath) async {
   require_site_root(basePath);
 
@@ -1053,7 +1167,9 @@ action_solution_init(basePath) async {
     }
     ENV_LOCAL = await load_env(siteConfig);
   }
-  await fetch_repos(get_public_path(basePath));
+  await fetch_repos(basePath);
+
+  //TODO!!! добавлять в .gitignore в корне сайта список путей для каждого репозитария
 }
 
 action_solution_reset(basePath) async {
@@ -1088,23 +1204,26 @@ action_conv_utf([basePath = '']) async {
 action_solution_conv_utf(basePath) async {
   require_site_root(basePath);
 
-  var solutionRepos = git_repos();
-  if (solutionRepos.length == 0) {
+  var solutionRepos = git_repos_map(basePath);
+  if (solutionRepos.keys.length == 0) {
     return;
   }
 
-  var pathModules = get_public_path(basePath) + '/bitrix/modules/';
-  if (!Directory(pathModules).existsSync()) {
-    return;
-  }
-  for (final urlRepo in solutionRepos) {
-    var path = pathModules + p.basenameWithoutExtension(urlRepo);
-    if (Directory(path).existsSync()) {
-      chdir(path);
-      await run('pwd', []);
-      await action_conv_utf();
-      print('');
+  for (final moduleId in solutionRepos.keys) {
+    var repoInfo = solutionRepos[moduleId];
+    var page = repoInfo[0];
+    var url = repoInfo[1];
+    var branch = repoInfo[2];
+    var path = repoInfo[3];
+
+    if (!Directory(path).existsSync()) {
+      print("Directory '$path' for '$url' not exists");
+      continue;
     }
+    chdir(path);
+    await runInteractive('pwd', []);
+    await action_conv_utf();
+    print('');
   }
 }
 
@@ -1170,7 +1289,8 @@ action_mod_pack([basePath = '']) async {
 action_mod_update([basePath = '']) async {
   var path = getcwd();
   var module = p.basename(path);
-  var solutionRepos = git_repos_map();
+  var solutionRepos = git_repos_map(basePath);
+  //TODO!!! переделать на поиск по массиву = проверять на директторию /bitrix/modules/
   var solutionUrl = solutionRepos.containsKey(module) ? solutionRepos[module][0] : '';
   var refresh = ((ARGV.length > 1) && (ARGV[1] == 'refresh')) ? ARGV[1] : '';
   return run_php([REAL_BIN + '/.action_mod_update.php', solutionUrl, refresh]);
@@ -1199,7 +1319,7 @@ action_stop([basePath = '']) async {
 }
 
 action_bitrixcli_build([basePath = '']) async {
-  await run(node_path_bitrix('bitrix'), ['build'], true);
+  await runInteractive(node_path_bitrix('bitrix'), ['build']);
 }
 
 removeEmptyDirs(basePath, path) {
@@ -1265,49 +1385,11 @@ action_bitrixcli_build_deps(basePath) async {
 }
 
 action_bitrixcli_create([basePath = '']) async {
-  var path = getcwd();
-
-  //TODO!!! how to run interactive commands
-  //await run(node_path_bitrix('bitrix'), ['create'], true); // not work
-  var srcPath = path + '/src';
-  if (!Directory(srcPath).existsSync()) {
-    new Directory(srcPath).createSync();
-  }
-  file_put_contents(srcPath + '/test1.js', """
-import {Type} from 'main.core';
-
-export class Test1
-{
-	constructor(options = {name: 'Test1'})
-	{
-		this.name = options.name;
-	}
-
-	setName(name)
-	{
-		if (Type.isString(name))
-		{
-			this.name = name;
-		}
-	}
-
-	getName()
-	{
-		return this.name;
-	}
-}
-""");
-  file_put_contents(path + '/bundle.config.js', """
-module.exports = {
-	input: 'src/test1.js',
-	output: 'dist/test1.bundle.js',
-	namespace: 'BX.Custom.'
-};
-""");
+  await runInteractive(node_path_bitrix('bitrix'), ['create']);
 }
 
 action_bitrixcli_help([basePath = '']) async {
-  await run(node_path_bitrix('bitrix'), ['--help'], true);
+  await runInteractive(node_path_bitrix('bitrix'), ['--help']);
 }
 
 action_iblock_parse([basePath = '']) async {
@@ -1365,14 +1447,14 @@ action_site_remove(basePath) async {
     file_put_contents(dbconf, sqlContent);
     // TODO!!! using pipes for run() / sudo_run()
     // TODO!!! use mysql from dart https://github.com/adamlofts/mysql1_dart
-    await system('sudo mysql -u root < ' + dbconf);
+    await system("sudo mysql -u root < '$dbconf'");
     File(dbconf).deleteSync();
   }
 }
 
 action_site_hosts([basePath = '']) async {
+  var path = basePath;
   var localIp = '127.0.0.1';
-  var path = getcwd();
   var sitehost = get_site_host(path);
 
   var hosts = file_get_contents('/etc/hosts').split("\n");
@@ -1388,14 +1470,36 @@ action_site_hosts([basePath = '']) async {
   await sudo_run('mv', [tmp, '/etc/hosts']);
 }
 
+get_site_config(sitehost) {
+  return '/etc/apache2/sites-available/' + sitehost + '.conf';
+}
+
+require_site_config(sitehost) {
+  var destpath = get_site_config(sitehost);
+  if (!File(destpath).existsSync()) {
+    die("Config for site $sitehost not exists.");
+  }
+}
+
+patch_site_config(path, destpath, originalContent) async {
+  print('');
+  print('# Apache2 site config -> ' + destpath);
+  print('');
+  print(originalContent);
+
+  var tmp = path + '/.newsiteconfig.tmp';
+  file_put_contents(tmp, originalContent);
+  await sudo_run('mv', [tmp, destpath]);
+  await sudo_run('systemctl', ['reload', 'apache2']);
+}
+
 action_site_proxy([basePath = '']) async {
   if (await is_ubuntu()) {
-    var path = getcwd();
+    var path = basePath;
     var sitehost = get_site_host(path);
-    var destpath = '/etc/apache2/sites-available/' + sitehost + '.conf';
-    if (!File(destpath).existsSync()) {
-      die("Config for site $sitehost not exists.");
-    }
+    require_site_config(sitehost);
+
+    var destpath = get_site_config(sitehost);
     var ip = (ARGV.length > 1) ? ARGV[1] : 'remove';
     var originalContent = file_get_contents(destpath);
     var content = "\n";
@@ -1420,15 +1524,50 @@ ProxyPassReverse /  http://$ip/
           originalContent.replaceFirst('</VirtualHost>', "\n#bx-proxy start$content#bx-proxy end\n\n</VirtualHost>");
     }
 
-    print('');
-    print('# Apache2 site config -> ' + destpath);
-    print('');
-    print(originalContent);
+    patch_site_config(path, destpath, originalContent);
+  }
+}
 
-    var tmp = path + '/.newsiteconfig.tmp';
-    file_put_contents(tmp, originalContent);
-    await sudo_run('mv', [tmp, destpath]);
-    await sudo_run('systemctl', ['reload', 'apache2']);
+action_site_https([basePath = '']) async {
+  if (await is_ubuntu()) {
+    var path = basePath;
+    var sitehost = get_site_host(path);
+    require_site_config(sitehost);
+
+    var certKeyName = get_env('BX_MKCERT');
+    if (certKeyName == '') {
+      certKeyName = 'bx.local *.bx.local';
+    }
+    var tmp = certKeyName.split(' ');
+    certKeyName = tmp[0];
+
+    var destpath = get_site_config(sitehost);
+    var action = (ARGV.length > 1) ? ARGV[1] : 'on'; // on | off
+    var originalContent = file_get_contents(destpath);
+
+    var sslPath = get_home() + '/.ssl/' + certKeyName + '+' + (tmp.length - 1).toString();
+    var sslCertPath = "SSLCertificateFile $sslPath.pem";
+    var sslCertKeyPath = "SSLCertificateKeyFile $sslPath-key.pem";
+    if (action == 'on') {
+      var sslContent = """
+        SSLEngine on
+        $sslCertPath
+        $sslCertKeyPath
+      """;
+      originalContent = originalContent
+        .replaceFirst('<VirtualHost *:80>', "<IfModule mod_ssl.c>\n<VirtualHost *:443>")
+        .replaceFirst('</VirtualHost>', sslContent + "\n</VirtualHost>\n</IfModule>");
+    } else if (action == 'off') {
+      originalContent = originalContent
+        .replaceFirst('<VirtualHost *:443>', "<VirtualHost *:80>")
+        .replaceFirst('SSLEngine on', '')
+        .replaceFirst(sslCertPath, '')
+        .replaceFirst(sslCertKeyPath, '')
+        .replaceFirst('<IfModule mod_ssl.c>', '')
+        .replaceFirst('</IfModule>', '');
+    }
+
+    patch_site_config(path, destpath, originalContent);
   }
 }
 
@@ -1564,7 +1703,7 @@ add_database(path, dbconf, dbname, dbpassword) async {
       .replaceAll('bitrixpassword1', dbpassword);
   dbconf = path + '/.dbcreate.tmp.sql';
   file_put_contents(dbconf, sqlContent);
-  await system('sudo mysql -u root < ' + dbconf);
+  await system("sudo mysql -u root < '$dbconf'");
   File(dbconf).deleteSync();
 }
 
@@ -1717,26 +1856,31 @@ void main(List<String> args) async {
     'conv-utf': action_conv_utf,
     'mod-pack': action_mod_pack,
     'mod-update': action_mod_update,
-    //'site-links': action_site_links, //TODO!!! create multisite links
     'site-init': action_site_init,
     'site-reset': action_site_reset,
     'site-remove': action_site_remove,
     'site-hosts': action_site_hosts,
     'site-proxy': action_site_proxy,
+    'site-https': action_site_https,
+    //'site-links': action_site_links, //TODO!!! create multisite links
+    'iblock-parse': action_iblock_parse, //TODO!!!
 
     // server
     'start': action_start,
     'stop': action_stop,
 
     // tools
+    //TODO!!! 'js': action_js -> bx js some-file.js
     'js-install': action_js_install,
     'es9': action_es9,
     'minify': action_minify,
-    'bitrixcli-build': action_bitrixcli_build,
-    'bitrixcli-build-deps': action_bitrixcli_build_deps,
-    'bitrixcli-create': action_bitrixcli_create,
-    'bitrixcli-help': action_bitrixcli_help,
-    'iblock-parse': action_iblock_parse
+
+    // bitrix cli
+    // https://dev.1c-bitrix.ru/learning/course/index.php?COURSE_ID=43&LESSON_ID=12435&LESSON_PATH=3913.3516.4776.3635.12435
+    'build': action_bitrixcli_build, // 'bitrix build' for single scripts
+    'build-deps': action_bitrixcli_build_deps, // 'bitrix build' with deps
+    'create': action_bitrixcli_create, // 'bitrix create'
+    'help-cli': action_bitrixcli_help, // 'bitrix help'
   };
 
   var action = '';
