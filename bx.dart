@@ -1,41 +1,6 @@
 // EXAMPLE: https://dart.dev/tutorials/server/cmdline
 // EXAMPLE: dart create -t console-full cli
 
-/*
-
-https://linuxize.com/post/how-to-install-php-8-on-ubuntu-20-04/
-
---- install php 7.1
-
-https://www.8host.com/blog/zapusk-neskolkix-versij-php-na-odnom-servere-s-pomoshhyu-apache-i-php-fpm-v-ubuntu-20-04/
-
-sudo apt-get install software-properties-common -y
-sudo add-apt-repository ppa:ondrej/php
-sudo apt-get update -y
-
-sudo apt-get install php7.1 php7.1-fpm php7.1-mysql libapache2-mod-php7.1 libapache2-mod-fcgid -y
-
-sudo systemctl start php7.1-fpm
-sudo systemctl status php7.1-fpm
-
-sudo a2enmod actions fcgid alias proxy_fcgi
-
-в файл конфига сайта добавляется:
-
-  <FilesMatch \.php$>
-    # From the Apache version 2.4.10 and above, use the SetHandler to run PHP as a fastCGI process server
-    SetHandler "proxy:unix:/run/php/php7.1-fpm.sock|fcgi://localhost"
-  </FilesMatch>
-
-sudo apachectl configtest
-
---- global switch php (для основной версии mod_php)
-
-sudo a2dismod php7.4
-sudo a2enmod php8.1
-
-*/
-
 import 'dart:io';
 import 'dart:convert';
 import 'dart:math';
