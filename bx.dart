@@ -796,6 +796,15 @@ get_bitrix_modules_path(basePath) {
 git_repos_map(basePath) {
   var pathModules = get_bitrix_modules_path(basePath);
   var solutionRepos = get_env('SOLUTION_GIT_REPOS').split("\n");
+  if (!Directory(pathModules).existsSync()) {
+    solutionRepos = [];
+    var content = new Directory(basePath).listSync();
+    for (final f in content) {
+      if (f is Directory) {
+        solutionRepos.add(f.path + ';master;/' + p.basename(f.path));
+      }
+    }
+  }
   var result = {};
   for (final line in solutionRepos) {
     if (line.trim() == '') {
