@@ -189,6 +189,10 @@ is_bx_debug() {
   return get_env('BX_DEBUG') == '1';
 }
 
+is_wsl() {
+  return get_env('USE_WSL') == '1';
+}
+
 is_ubuntu() async {
   if (!Platform.isLinux) {
     return false;
@@ -278,6 +282,16 @@ run(cmd, args, [runInShell = false]) async {
   }
 }
 
+start(cmd, args) async {
+  Process.start(
+    cmd,
+    new List<String>.from(args),
+    environment: ENV_LOCAL,
+    runInShell: false,
+    mode: ProcessStartMode.detached
+  );
+}
+
 // для не интерактивных команд с перенаправлением
 system(cmdLine) async {
   return run('perl', ['-e', 'system("' + cmdLine.replaceAll('"', '\\"') + '");']);
@@ -314,6 +328,14 @@ sudo_run(cmd, args) async {
   args.insert(0, cmd);
 
   return run('sudo', args);
+}
+
+service(name, action) async {
+  if (is_wsl()) {
+    await sudo_run('service', [name, action]);
+  } else {
+    await sudo_run('systemctl', [action, name]);
+  }
 }
 
 run_php(args) async {
@@ -755,10 +777,9 @@ action_ftp(basePath) async {
   await require_command('filezilla');
 
   var connStr = ftp_conn_str();
+
   if (is_mingw()) {
-    //TODO!!!
-    //    $path = $_SERVER["USERPROFILE"] . "/PortableApps/FileZillaPortable/FileZillaPortable.exe";
-    //    pclose(popen("start /B " . $path . ' "' . $connStr . '" --local="' . $basePath . '"', "r"));
+    return start('filezilla', [connStr, '--local=' + basePath]);
   } else if (await is_ubuntu()) {
     await require_command('screen');
     return run('screen', ['-d', '-m', 'filezilla', connStr, '--local=' + basePath]);
@@ -1272,23 +1293,27 @@ action_mod_update([basePath = '']) async {
 
 action_start([basePath = '']) async {
   if (await is_ubuntu()) {
-    await sudo_run('systemctl', ['start', 'apache2', 'mysql']);
+    await service('apache2', 'start');
+    await service('mysql', 'start');
     if (await check_command('rinetd')) {
       await sudo_run('service', ['rinetd', 'restart']);
     }
   } else {
-    await sudo_run('systemctl', ['start', 'httpd.service', 'mysqld.service']);
+    await service('httpd.service', 'start');
+    await service('mysqld.service', 'start');
   }
 }
 
 action_stop([basePath = '']) async {
   if (await is_ubuntu()) {
-    await sudo_run('systemctl', ['stop', 'apache2', 'mysql']);
+    await service('apache2', 'stop');
+    await service('mysql', 'stop');
     if (await check_command('rinetd')) {
       await sudo_run('service', ['rinetd', 'stop']);
     }
   } else {
-    await sudo_run('systemctl', ['stop', 'httpd.service', 'mysqld.service']);
+    await service('httpd.service', 'stop');
+    await service('mysqld.service', 'stop');
   }
 }
 
@@ -1406,7 +1431,7 @@ action_site_remove(basePath) async {
     var destpath = '/etc/apache2/sites-available/' + sitehost + '.conf';
     await sudo_run('a2dissite', [sitehost + '.conf']);
     await sudo_run('rm', [destpath]);
-    await sudo_run('systemctl', ['reload', 'apache2']);
+    await service('apache2', 'reload');
 
     // remove db
     var dbpassword = get_env('DB_PASSWORD');
@@ -1464,7 +1489,7 @@ patch_site_config(path, destpath, originalContent) async {
   var tmp = path + '/.newsiteconfig.tmp';
   file_put_contents(tmp, originalContent);
   await sudo_run('mv', [tmp, destpath]);
-  await sudo_run('systemctl', ['reload', 'apache2']);
+  await service('apache2', 'reload');
 }
 
 action_site_proxy([basePath = '']) async {
@@ -1701,13 +1726,17 @@ add_site(path, sitehost, siteconf) async {
   print(content);
   await sudo_run('mv', [siteconf, destpath]);
   await sudo_run('a2ensite', [sitehost + '.conf']);
-  await sudo_run('systemctl', ['reload', 'apache2']);
+  await service('apache2', 'reload');
 }
 
 action_php(basePath) async {
   var args = new List.from(ARGV);
   args.removeAt(0);
   await run_php(args);
+}
+
+action_vscode_sftp(basePath) async {
+  //TODO!!! create .vscode/sftp.json from env
 }
 
 action_site_init(basePath) async {
@@ -1815,6 +1844,7 @@ void main(List<String> args) async {
     'db': action_db,
     'fixdir': action_fixdir,
     'php': action_php,
+    'vscode-sftp': action_vscode_sftp,
 
     // git
     'status': action_status,
