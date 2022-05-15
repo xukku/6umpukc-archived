@@ -855,6 +855,7 @@ git_clone(String basePath, String moduleId, String urlRepo, String branch, Strin
     chdir(path);
     await runInteractive('git', ['config', 'core.fileMode', 'false']);
     await runInteractive('git', ['checkout', branch]);
+    await runInteractive('git', ['config', '--global', '--add', 'safe.directory', path]);
   }
 }
 
@@ -915,6 +916,9 @@ action_status(basePath) async {
       continue;
     }
     chdir(path);
+    if (!Directory(path + '/.git/').existsSync()) {
+      continue;
+    }
     await runInteractive('pwd', []);
     await runInteractive('git', ['status']);
     await runInteractive('git', ['branch']);
@@ -942,6 +946,9 @@ action_pull(basePath) async {
       continue;
     }
     chdir(path);
+    if (!Directory(path + '/.git/').existsSync()) {
+      continue;
+    }
     await runInteractive('pwd', []);
     await runInteractive('git', ['pull']);
     print('');
@@ -972,8 +979,45 @@ action_reset(basePath) async {
       continue;
     }
     chdir(path);
+    if (!Directory(path + '/.git/').existsSync()) {
+      continue;
+    }
     await runInteractive('pwd', []);
     await runInteractive('git', ['reset', '--hard', 'HEAD']);
+    print('');
+  }
+}
+
+action_push(basePath) async {
+  require_site_root(basePath);
+
+  var solutionRepos = git_repos_map(basePath);
+  if (solutionRepos.keys.length == 0) {
+    return;
+  }
+
+  if (!confirm_continue('Warning! All file changes will be pushed.')) {
+    exit(0);
+  }
+
+  for (final moduleId in solutionRepos.keys) {
+    var repoInfo = solutionRepos[moduleId];
+    var page = repoInfo[0];
+    var url = repoInfo[1];
+    var branch = repoInfo[2];
+    var path = repoInfo[3];
+
+  if (!Directory(path).existsSync()) {
+      print("Directory '$path' for '$url' not exists");
+      continue;
+    }
+    chdir(path);
+    if (!Directory(path + '/.git/').existsSync()) {
+      continue;
+    }
+    await runInteractive('pwd', []);
+    await runInteractive('git', ['add', '.']);
+    await runInteractive('git', ['commit', '-am', DateTime.now().toString()]);
     print('');
   }
 }
@@ -998,6 +1042,9 @@ action_checkout(basePath) async {
       continue;
     }
     chdir(path);
+    if (!Directory(path + '/.git/').existsSync()) {
+      continue;
+    }
     await runInteractive('pwd', []);
     await runInteractive('git', ['checkout', branch]);
     print('');
@@ -1850,6 +1897,7 @@ void main(List<String> args) async {
     'status': action_status,
     'pull': action_pull,
     'reset': action_reset,
+    'push': action_push,
     'checkout': action_checkout,
 
     // solution

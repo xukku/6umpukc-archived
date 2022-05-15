@@ -1,4 +1,5 @@
 #!/usr/bin/env perl
+
 use 5.016;
 use warnings;
 use FindBin qw($RealBin $Bin $Script);
@@ -12,6 +13,10 @@ sub is_mingw() {
         return 1;
     }
     return 0;
+}
+
+sub is_windows_32bit {
+	return (index($ENV{'PROCESSOR_ARCHITECTURE'}, 'x86') >= 0)? 1 : 0;
 }
 
 sub file_get_contents {
@@ -65,6 +70,16 @@ sub require_command {
     if (qx{$test} eq '') {
         die('[' . $cmd . '] command - not found.');
     }
+}
+
+sub ziparchive_extract {
+    require_command('unzip');
+
+	my ($src, $dest) = @_;
+	my $result = '';
+	my $cmd = "unzip -o '$src' -d '$dest'";
+	$result = qx{$cmd};
+	return $result;
 }
 
 sub request_useragent {
@@ -141,11 +156,105 @@ sub sudo_patch_file {
 	}
 }
 
-sub action_install {
+sub download_binaries {
+	my $urlPrefix = shift;
+	my $downloadPath = shift;
+	my $destPath = shift;
+
+	if (!$destPath) {
+		$destPath = $downloadPath;
+	}
+
+	my $srcUrl = '';
+	if (is_mingw()) {
+		if (is_windows_32bit()) {
+			$srcUrl = $ENV{$urlPrefix . '_WIN32'};
+		}
+		else {
+			$srcUrl = $ENV{$urlPrefix . '_WIN64'};
+		}
+	}
+	elsif (is_ubuntu()) {
+		$srcUrl = $ENV{$urlPrefix . '_LINUX'};
+	}
+	else {
+		$srcUrl = $ENV{$urlPrefix . '_MACOS'};
+	}
+
+	if ($srcUrl eq '') {
+		say 'Url for ' . $urlPrefix . ' not defined.';
+		return '';
+	}
+
+	my $outputFile = $downloadPath . '/' . basename($srcUrl);
+	say "Loading $srcUrl ...";
+	request_get($srcUrl, $outputFile);
+
+	say "Extracting $outputFile ...";
+	ziparchive_extract($outputFile, $destPath);
+
+	return $outputFile;
+}
+
+sub action_install_dart {
+	if (check_command('dart')) {
+		return;
+    }
+
+	# https://dart.dev/get-dart
+	my $homeBin = $ENV{'HOME'} . '/bin';
+	my $outputFile = download_binaries('DART_URLS', $homeBin);
+	if (-d $homeBin . '/dart-sdk') {
+		rename($homeBin . '/dart-sdk', $homeBin . '/dart');
+	}
+	if (-f $outputFile) {
+		unlink($outputFile);
+	}
+
+	my $initPath = 'PATH=$HOME/bin/dart/bin:$PATH';
+	my $fname;
+	if (is_mingw()) {
+		$fname = $ENV{'HOME'} . '/.bash_profile';
+	}
+	else {
+		$fname = $ENV{'HOME'} . '/.profile';
+	}
+	my $content = file_get_contents($fname);
+	if (index($content, $initPath) < 0) {
+		file_put_contents($fname, $content . "\n" . $initPath . "\n");
+	}
+
+	$ENV{'PATH'} = $ENV{'HOME'} . '/bin/dart/bin:' . $ENV{'PATH'};
+}
+
+sub action_php_install {
+	if (check_command('php')) {
+		return;
+    }
+
+	if (is_mingw()) {
+		my $homeBin = $ENV{'HOME'} . '/bin';
+		my $destPath = $homeBin . '/php';
+		my $outputFile = download_binaries('PHP_URLS', $homeBin, $destPath);
+		if (-f $outputFile) {
+			unlink($outputFile);
+		}
+	} elsif (is_ubuntu()) {
+		say 'TOO install php7.4 from ppa:ondrej/php ...';
+	}
+
+}
+
+sub action_self_install {
     my $homeBin = $ENV{'HOME'} . '/bin';
     if (!-d $homeBin) {
         mkdir($homeBin);
     }
+
+	my $fnameEnv = $RealBin . '/.env';
+	if (!(-f $fnameEnv)) {
+		copy($RealBin . '/.env.example', $fnameEnv);
+	}
 
     if (is_mingw()) {
         my $fname = $ENV{'HOME'} . '/.bash_profile';
@@ -168,26 +277,16 @@ sub action_install {
         symlink($RealBin . '/' . $Script, $homeScript);
     }
 
-    my $releasesUrl = 'https://github.com/whateveruse/6umpukc/releases/';
-    if (confirm_continue("Install compiled bx from $releasesUrl ?")) {
-        say 'TODO!!! download bx.exe from releases';
-        #request_get($srcUrl, $outputFile);
-    }
-    elsif (check_command('dart')) {
-		system "dart pub get";
-        if (confirm_continue('Compile bx?')) {
-            system "dart compile exe '$RealBin/bx.dart'";
-        }
-    }
-    else {
-        say 'You must install Dart https://dart.dev/get-dart';
-        say "  or download bx.exe from $releasesUrl to ~/bin/6umpukc/";
-    }
+	action_install_dart();
+	system 'dart pub get';
+
+	action_php_install();
 }
 
 sub action_mkcert_install {
     if (is_ubuntu()) {
-		my $certKeyName = (exists $ENV{'BX_MKCERT'} && ($ENV{'BX_MKCERT'} ne '')) ? $ENV{'BX_MKCERT'} : 'bx.local *.bx.local';
+		my $certKeyName = (exists $ENV{'BX_MKCERT'} && ($ENV{'BX_MKCERT'} ne ''))?
+			$ENV{'BX_MKCERT'} : 'bx.local *.bx.local';
 		$certKeyName = join(' ', map { '"' . $_ . '"' } split(/\s+/, $certKeyName));
 
 		sudo_run('apt install libnss3-tools');
@@ -317,8 +416,48 @@ sub action_lamp_install {
 	}
 }
 
+sub init_default_env {
+	$ENV{'DART_URLS_WIN32'} = 'https://storage.googleapis.com/dart-archive/channels/stable/release/2.17.1/sdk/dartsdk-windows-ia32-release.zip';
+	$ENV{'DART_URLS_WIN64'} = 'https://storage.googleapis.com/dart-archive/channels/stable/release/2.17.1/sdk/dartsdk-windows-x64-release.zip';
+	$ENV{'DART_URLS_MACOS'} = 'https://storage.googleapis.com/dart-archive/channels/stable/release/2.17.1/sdk/dartsdk-macos-x64-release.zip';
+	$ENV{'DART_URLS_LINUX'} = 'https://storage.googleapis.com/dart-archive/channels/stable/release/2.17.1/sdk/dartsdk-linux-x64-release.zip';
+
+	$ENV{'PHP_URLS_WIN32'} = 'https://windows.php.net/downloads/releases/php-7.4.29-Win32-vc15-x86.zip';
+	$ENV{'PHP_URLS_WIN64'} = 'https://windows.php.net/downloads/releases/php-7.4.29-Win32-vc15-x64.zip';
+	$ENV{'PHP_URLS_MACOS'} = '';
+	$ENV{'PHP_URLS_LINUX'} = '';
+
+	$ENV{'NODE_URLS_WIN32'} = "https://nodejs.org/dist/v14.16.0/node-v14.16.0-win-x86.zip";
+	$ENV{'NODE_URLS_WIN64'} = "https://nodejs.org/dist/v14.16.0/node-v14.16.0-win-x64.zip";
+	$ENV{'NODE_URLS_MACOS'} = "https://nodejs.org/dist/v14.16.0/node-v14.16.0-darwin-x64.tar.gz";
+	$ENV{'NODE_URLS_LINUX'} = "https://nodejs.org/dist/v14.16.0/node-v14.16.0-linux-x64.tar.gz";
+
+	$ENV{'NODE_URLS_BITRIX_WIN32'} = "https://nodejs.org/dist/v9.11.2/node-v9.11.2-win-x86.zip";
+	$ENV{'NODE_URLS_BITRIX_WIN64'} = "https://nodejs.org/dist/v9.11.2/node-v9.11.2-win-x64.zip";
+	$ENV{'NODE_URLS_BITRIX_MACOS'} = "https://nodejs.org/dist/v9.11.2/node-v9.11.2-darwin-x64.tar.gz";
+	$ENV{'NODE_URLS_BITRIX_LINUX'} = "https://nodejs.org/dist/v9.11.2/node-v9.11.2-linux-x64.tar.gz";
+
+	$ENV{'BITRIX_SRC_MICRO'} = "https://www.1c-bitrix.ru/download/start_encode_php5.tar.gz";
+	$ENV{'BITRIX_SRC_CORE'} = "https://www.1c-bitrix.ru/download/start_encode_php5.tar.gz";
+	$ENV{'BITRIX_SRC_START'} = "https://www.1c-bitrix.ru/download/start_encode_php5.tar.gz";
+	$ENV{'BITRIX_SRC_BUSINESS'} = "https://www.1c-bitrix.ru/download/business_encode_php5.tar.gz";
+	$ENV{'BITRIX_SRC_CRM'} = "https://www.1c-bitrix.ru/download/portal/bitrix24_encode_php5.tar.gz";
+	$ENV{'BITRIX_SRC_SETUP'} = "https://www.1c-bitrix.ru/download/scripts/bitrixsetup.php";
+	$ENV{'BITRIX_SRC_RESTORE'} = "https://www.1c-bitrix.ru/download/scripts/restore.php";
+	$ENV{'BITRIX_SRC_TEST'} = "https://dev.1c-bitrix.ru/download/scripts/bitrix_server_test.php";
+
+	$ENV{'BX_MKCERT'} = "bx.local *.bx.local";
+	$ENV{'DIR_LOCAL_SITES'} = "~/Local Sites/";
+	$ENV{'DIR_PUBLIC'} = "/public/";
+}
+
+init_default_env();
+
 if (defined($ARGV[0]) && ($ARGV[0] eq 'self-install')) {
-    action_install();
+    action_self_install();
+}
+elsif (defined($ARGV[0]) && ($ARGV[0] eq 'php-install')) {
+    action_php_install()
 }
 elsif (defined($ARGV[0]) && ($ARGV[0] eq 'lamp-install')) {
     action_lamp_install();
@@ -335,5 +474,3 @@ else {
         system "dart run '$RealBin/bx.dart' $args";
     }
 }
-
-
