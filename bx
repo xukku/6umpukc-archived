@@ -417,10 +417,10 @@ sub action_lamp_install {
 }
 
 sub init_default_env {
-	$ENV{'DART_URLS_WIN32'} = 'https://storage.googleapis.com/dart-archive/channels/stable/release/2.17.1/sdk/dartsdk-windows-ia32-release.zip';
-	$ENV{'DART_URLS_WIN64'} = 'https://storage.googleapis.com/dart-archive/channels/stable/release/2.17.1/sdk/dartsdk-windows-x64-release.zip';
-	$ENV{'DART_URLS_MACOS'} = 'https://storage.googleapis.com/dart-archive/channels/stable/release/2.17.1/sdk/dartsdk-macos-x64-release.zip';
-	$ENV{'DART_URLS_LINUX'} = 'https://storage.googleapis.com/dart-archive/channels/stable/release/2.17.1/sdk/dartsdk-linux-x64-release.zip';
+	$ENV{'DART_URLS_WIN32'} = 'https://storage.googleapis.com/dart-archive/channels/stable/release/2.17.5/sdk/dartsdk-windows-ia32-release.zip';
+	$ENV{'DART_URLS_WIN64'} = 'https://storage.googleapis.com/dart-archive/channels/stable/release/2.17.5/sdk/dartsdk-windows-x64-release.zip';
+	$ENV{'DART_URLS_MACOS'} = 'https://storage.googleapis.com/dart-archive/channels/stable/release/2.17.5/sdk/dartsdk-macos-x64-release.zip';
+	$ENV{'DART_URLS_LINUX'} = 'https://storage.googleapis.com/dart-archive/channels/stable/release/2.17.5/sdk/dartsdk-linux-x64-release.zip';
 
 	$ENV{'PHP_URLS_WIN32'} = 'https://windows.php.net/downloads/releases/php-7.4.29-Win32-vc15-x86.zip';
 	$ENV{'PHP_URLS_WIN64'} = 'https://windows.php.net/downloads/releases/php-7.4.29-Win32-vc15-x64.zip';
