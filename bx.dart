@@ -1018,6 +1018,7 @@ action_push(basePath) async {
     await runInteractive('pwd', []);
     await runInteractive('git', ['add', '.']);
     await runInteractive('git', ['commit', '-am', DateTime.now().toString()]);
+    await runInteractive('git', ['push']);
     print('');
   }
 }
