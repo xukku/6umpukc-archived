@@ -709,6 +709,8 @@ ssh_exec_remote([cmd = '']) {
     args.add(commandLine);
   }
 
+  //TODO!!! возможность передавать пароль и логин из .env при выполнеии команды
+
   return args;
 }
 
