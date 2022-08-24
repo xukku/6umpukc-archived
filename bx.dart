@@ -709,7 +709,37 @@ ssh_exec_remote([cmd = '']) {
     args.add(commandLine);
   }
 
+  /*
+
   //TODO!!! возможность передавать пароль и логин из .env при выполнеии команды
+
+  https://stackoverflow.com/questions/12202587/automatically-enter-ssh-password-with-script
+
+  #!/usr/bin/expect
+
+  set timeout 20
+
+  set cmd [lrange $argv 1 end]
+  set password [lindex $argv 0]
+
+  eval spawn $cmd
+  expect "password:"
+  send "$password\r";
+  interact
+
+  ---
+
+  #!/usr/bin/expect -f
+  spawn ssh HOSTNAME
+  expect "login:"
+  send "username\r"
+  expect "Password:"
+  send "password\r"
+  interact
+
+  https://linuxtechlab.com/how-to-use-ssh-command-with-password-in-single-line/ - 2- Using the ‘EXPECT’ command
+
+  */
 
   return args;
 }
