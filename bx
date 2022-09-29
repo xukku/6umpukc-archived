@@ -7,6 +7,41 @@ use Config;
 use File::Basename;
 use File::Copy;
 
+sub init_default_env {
+	$ENV{'DART_URLS_WIN32'} = 'https://storage.googleapis.com/dart-archive/channels/stable/release/2.18.2/sdk/dartsdk-windows-ia32-release.zip';
+	$ENV{'DART_URLS_WIN64'} = 'https://storage.googleapis.com/dart-archive/channels/stable/release/2.18.2/sdk/dartsdk-windows-x64-release.zip';
+	$ENV{'DART_URLS_MACOS'} = 'https://storage.googleapis.com/dart-archive/channels/stable/release/2.18.2/sdk/dartsdk-macos-x64-release.zip';
+	$ENV{'DART_URLS_LINUX'} = 'https://storage.googleapis.com/dart-archive/channels/stable/release/2.18.2/sdk/dartsdk-linux-x64-release.zip';
+
+	$ENV{'PHP_URLS_WIN32'} = 'https://windows.php.net/downloads/releases/php-7.4.32-Win32-vc15-x86.zip';
+	$ENV{'PHP_URLS_WIN64'} = 'https://windows.php.net/downloads/releases/php-7.4.32-Win32-vc15-x64.zip';
+	$ENV{'PHP_URLS_MACOS'} = '';
+	$ENV{'PHP_URLS_LINUX'} = '';
+
+	$ENV{'NODE_URLS_WIN32'} = "https://nodejs.org/dist/v14.16.0/node-v14.16.0-win-x86.zip";
+	$ENV{'NODE_URLS_WIN64'} = "https://nodejs.org/dist/v14.16.0/node-v14.16.0-win-x64.zip";
+	$ENV{'NODE_URLS_MACOS'} = "https://nodejs.org/dist/v14.16.0/node-v14.16.0-darwin-x64.tar.gz";
+	$ENV{'NODE_URLS_LINUX'} = "https://nodejs.org/dist/v14.16.0/node-v14.16.0-linux-x64.tar.gz";
+
+	$ENV{'NODE_URLS_BITRIX_WIN32'} = "https://nodejs.org/dist/v9.11.2/node-v9.11.2-win-x86.zip";
+	$ENV{'NODE_URLS_BITRIX_WIN64'} = "https://nodejs.org/dist/v9.11.2/node-v9.11.2-win-x64.zip";
+	$ENV{'NODE_URLS_BITRIX_MACOS'} = "https://nodejs.org/dist/v9.11.2/node-v9.11.2-darwin-x64.tar.gz";
+	$ENV{'NODE_URLS_BITRIX_LINUX'} = "https://nodejs.org/dist/v9.11.2/node-v9.11.2-linux-x64.tar.gz";
+
+	$ENV{'BITRIX_SRC_MICRO'} = "https://www.1c-bitrix.ru/download/start_encode_php5.tar.gz";
+	$ENV{'BITRIX_SRC_CORE'} = "https://www.1c-bitrix.ru/download/start_encode_php5.tar.gz";
+	$ENV{'BITRIX_SRC_START'} = "https://www.1c-bitrix.ru/download/start_encode_php5.tar.gz";
+	$ENV{'BITRIX_SRC_BUSINESS'} = "https://www.1c-bitrix.ru/download/business_encode_php5.tar.gz";
+	$ENV{'BITRIX_SRC_CRM'} = "https://www.1c-bitrix.ru/download/portal/bitrix24_encode_php5.tar.gz";
+	$ENV{'BITRIX_SRC_SETUP'} = "https://www.1c-bitrix.ru/download/scripts/bitrixsetup.php";
+	$ENV{'BITRIX_SRC_RESTORE'} = "https://www.1c-bitrix.ru/download/scripts/restore.php";
+	$ENV{'BITRIX_SRC_TEST'} = "https://dev.1c-bitrix.ru/download/scripts/bitrix_server_test.php";
+
+	$ENV{'BX_MKCERT'} = "bx.local *.bx.local";
+	$ENV{'DIR_LOCAL_SITES'} = "~/Local Sites/";
+	$ENV{'DIR_PUBLIC'} = "/public/";
+}
+
 sub is_mingw() {
     my $msystem = exists $ENV{'MSYSTEM'} ? $ENV{'MSYSTEM'} : '';
     if (($msystem eq 'MINGW64') or ($msystem eq 'MINGW32') or ($msystem eq 'MSYS')) {
@@ -414,41 +449,6 @@ sub action_lamp_install {
 		# for centos:
 		#	`localedef -c -i ru_RU -f CP1251 ru_RU.CP1251`
 	}
-}
-
-sub init_default_env {
-	$ENV{'DART_URLS_WIN32'} = 'https://storage.googleapis.com/dart-archive/channels/stable/release/2.17.5/sdk/dartsdk-windows-ia32-release.zip';
-	$ENV{'DART_URLS_WIN64'} = 'https://storage.googleapis.com/dart-archive/channels/stable/release/2.17.5/sdk/dartsdk-windows-x64-release.zip';
-	$ENV{'DART_URLS_MACOS'} = 'https://storage.googleapis.com/dart-archive/channels/stable/release/2.17.5/sdk/dartsdk-macos-x64-release.zip';
-	$ENV{'DART_URLS_LINUX'} = 'https://storage.googleapis.com/dart-archive/channels/stable/release/2.17.5/sdk/dartsdk-linux-x64-release.zip';
-
-	$ENV{'PHP_URLS_WIN32'} = 'https://windows.php.net/downloads/releases/php-7.4.29-Win32-vc15-x86.zip';
-	$ENV{'PHP_URLS_WIN64'} = 'https://windows.php.net/downloads/releases/php-7.4.29-Win32-vc15-x64.zip';
-	$ENV{'PHP_URLS_MACOS'} = '';
-	$ENV{'PHP_URLS_LINUX'} = '';
-
-	$ENV{'NODE_URLS_WIN32'} = "https://nodejs.org/dist/v14.16.0/node-v14.16.0-win-x86.zip";
-	$ENV{'NODE_URLS_WIN64'} = "https://nodejs.org/dist/v14.16.0/node-v14.16.0-win-x64.zip";
-	$ENV{'NODE_URLS_MACOS'} = "https://nodejs.org/dist/v14.16.0/node-v14.16.0-darwin-x64.tar.gz";
-	$ENV{'NODE_URLS_LINUX'} = "https://nodejs.org/dist/v14.16.0/node-v14.16.0-linux-x64.tar.gz";
-
-	$ENV{'NODE_URLS_BITRIX_WIN32'} = "https://nodejs.org/dist/v9.11.2/node-v9.11.2-win-x86.zip";
-	$ENV{'NODE_URLS_BITRIX_WIN64'} = "https://nodejs.org/dist/v9.11.2/node-v9.11.2-win-x64.zip";
-	$ENV{'NODE_URLS_BITRIX_MACOS'} = "https://nodejs.org/dist/v9.11.2/node-v9.11.2-darwin-x64.tar.gz";
-	$ENV{'NODE_URLS_BITRIX_LINUX'} = "https://nodejs.org/dist/v9.11.2/node-v9.11.2-linux-x64.tar.gz";
-
-	$ENV{'BITRIX_SRC_MICRO'} = "https://www.1c-bitrix.ru/download/start_encode_php5.tar.gz";
-	$ENV{'BITRIX_SRC_CORE'} = "https://www.1c-bitrix.ru/download/start_encode_php5.tar.gz";
-	$ENV{'BITRIX_SRC_START'} = "https://www.1c-bitrix.ru/download/start_encode_php5.tar.gz";
-	$ENV{'BITRIX_SRC_BUSINESS'} = "https://www.1c-bitrix.ru/download/business_encode_php5.tar.gz";
-	$ENV{'BITRIX_SRC_CRM'} = "https://www.1c-bitrix.ru/download/portal/bitrix24_encode_php5.tar.gz";
-	$ENV{'BITRIX_SRC_SETUP'} = "https://www.1c-bitrix.ru/download/scripts/bitrixsetup.php";
-	$ENV{'BITRIX_SRC_RESTORE'} = "https://www.1c-bitrix.ru/download/scripts/restore.php";
-	$ENV{'BITRIX_SRC_TEST'} = "https://dev.1c-bitrix.ru/download/scripts/bitrix_server_test.php";
-
-	$ENV{'BX_MKCERT'} = "bx.local *.bx.local";
-	$ENV{'DIR_LOCAL_SITES'} = "~/Local Sites/";
-	$ENV{'DIR_PUBLIC'} = "/public/";
 }
 
 init_default_env();
