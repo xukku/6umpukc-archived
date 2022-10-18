@@ -343,8 +343,11 @@ sub action_lamp_install {
         sudo_run('apt install software-properties-common -y');
 
         sudo_run('apt install unzip wget curl dos2unix pwgen sshpass screen');
-        #TODO!!! ломает php7.4 на ubuntu20.04
-        sudo_run('add-apt-repository ppa:ondrej/php');
+
+		#TODO!!! ломает php7.4 на ubuntu20.04
+		#!!!
+        #sudo_run('add-apt-repository ppa:ondrej/php');
+
         sudo_run('apt-get update -y');
 
         # sudo nano /etc/apache2/apache2.conf -> <Directory /> -> AllowOverride All
@@ -372,7 +375,8 @@ sub action_lamp_install {
 		sudo_run('a2enmod proxy');
 		sudo_run('a2enmod proxy_http');
 
-		sudo_run('snap install node --classic');
+		#!!!
+		#sudo_run('snap install node --classic');
 
         #TODO!!! настройки для установки разных версий php
         # https://www.8host.com/blog/zapusk-neskolkix-versij-php-na-odnom-servere-s-pomoshhyu-apache-i-php-fpm-v-ubuntu-20-04/
