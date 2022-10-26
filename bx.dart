@@ -1228,7 +1228,7 @@ action_solution_init(basePath) async {
   require_site_root(basePath);
 
   var solution = (ARGV.length > 1) ? ARGV[1] : '';
-  var solutionConfigPath = REAL_BIN + '/.dev/solution.env.settings/' + solution + '/example.env';
+  var solutionConfigPath = get_home() + '/bin/.dev/solution.env.settings/' + solution + '/example.env';
   if (solution != '') {
     if (!File(solutionConfigPath).existsSync()) {
       die("Config for solution [$solution] not defined.");
