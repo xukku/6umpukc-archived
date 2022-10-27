@@ -810,15 +810,14 @@ action_ftp(basePath) async {
 
   var connStr = ftp_conn_str();
 
-  if (is_mingw()) {
+  if (is_mingw() || is_wsl()) {
     return start('filezilla', [connStr, '--local=' + basePath]);
   } else if (await is_ubuntu()) {
     await require_command('screen');
     return run('screen', ['-d', '-m', 'filezilla', connStr, '--local=' + basePath]);
   }
   //else {
-  //	# arch - run without `screen` command
-  //	run '(filezilla "' . $conn_str . '" --local="' . $basePath . '"  &> /dev/null &)';
+  	// run('filezilla', connStr, '--local=' + basePath, &> /dev/null &)';
   //}
 }
 
