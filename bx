@@ -293,6 +293,9 @@ sub action_self_install {
 
     if (is_mingw()) {
         my $fname = $ENV{'HOME'} . '/.bash_profile';
+		#if (!(-f $fname)) {
+		#	$fname = $ENV{'HOME'} . '/.profile';
+		#}
         my $initPath = 'PATH=$PATH:$HOME/bin/6umpukc';
         if (-f $fname) {
             my $content = file_get_contents($fname);
