@@ -1533,6 +1533,7 @@ action_site_remove(basePath) async {
 action_site_hosts([basePath = '']) async {
   var path = basePath;
   var localIp = '127.0.0.1';
+  var localIpDup = '::1';
   var sitehost = get_site_host(path);
 
   var hosts = file_get_contents('/etc/hosts').split("\n");
@@ -1543,6 +1544,8 @@ action_site_hosts([basePath = '']) async {
     }
   }
   newHosts.add(localIp + "\t" + sitehost);
+  newHosts.add(localIpDup + "\t" + sitehost);
+
   var tmp = path + '/.hosts.tmp';
   file_put_contents(tmp, newHosts.join("\n") + "\n");
   await sudo_run('mv', [tmp, '/etc/hosts']);
