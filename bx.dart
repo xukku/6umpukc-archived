@@ -1543,12 +1543,22 @@ action_site_hosts([basePath = '']) async {
       newHosts.add(line);
     }
   }
-  newHosts.add(localIp + "\t" + sitehost);
-  newHosts.add(localIpDup + "\t" + sitehost);
+
+  print('ADD to config:');
+  print('');
+  var line = localIp + "\t" + sitehost;
+  print(line);
+  newHosts.add(line);
+  line = localIpDup + "\t" + sitehost;
+  print(line);
+  newHosts.add(line);
 
   var tmp = path + '/.hosts.tmp';
   file_put_contents(tmp, newHosts.join("\n") + "\n");
   await sudo_run('mv', [tmp, '/etc/hosts']);
+
+  print('');
+  print('NOTE: for WSL add lines to "%systemroot%\\system32\\drivers\\etc\\hosts" manually');
 }
 
 get_site_config(sitehost) {
