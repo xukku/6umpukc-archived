@@ -8,10 +8,10 @@ use File::Basename;
 use File::Copy;
 
 sub init_default_env {
-	$ENV{'DART_URLS_WIN32'} = 'https://storage.googleapis.com/dart-archive/channels/stable/release/2.18.2/sdk/dartsdk-windows-ia32-release.zip';
-	$ENV{'DART_URLS_WIN64'} = 'https://storage.googleapis.com/dart-archive/channels/stable/release/2.18.2/sdk/dartsdk-windows-x64-release.zip';
-	$ENV{'DART_URLS_MACOS'} = 'https://storage.googleapis.com/dart-archive/channels/stable/release/2.18.2/sdk/dartsdk-macos-x64-release.zip';
-	$ENV{'DART_URLS_LINUX'} = 'https://storage.googleapis.com/dart-archive/channels/stable/release/2.18.2/sdk/dartsdk-linux-x64-release.zip';
+	$ENV{'DART_URLS_WIN32'} = 'https://storage.googleapis.com/dart-archive/channels/stable/release/2.18.6/sdk/dartsdk-windows-ia32-release.zip';
+	$ENV{'DART_URLS_WIN64'} = 'https://storage.googleapis.com/dart-archive/channels/stable/release/2.18.6/sdk/dartsdk-windows-x64-release.zip';
+	$ENV{'DART_URLS_MACOS'} = 'https://storage.googleapis.com/dart-archive/channels/stable/release/2.18.6/sdk/dartsdk-macos-x64-release.zip';
+	$ENV{'DART_URLS_LINUX'} = 'https://storage.googleapis.com/dart-archive/channels/stable/release/2.18.6/sdk/dartsdk-linux-x64-release.zip';
 
 	$ENV{'PHP_URLS_WIN32'} = 'https://windows.php.net/downloads/releases/php-7.4.32-Win32-vc15-x86.zip';
 	$ENV{'PHP_URLS_WIN64'} = 'https://windows.php.net/downloads/releases/php-7.4.32-Win32-vc15-x64.zip';
@@ -82,6 +82,11 @@ sub trim {
     return $s;
 }
 
+sub is_wsl {
+	return ((exists $ENV{'IS_WSL'})
+		or (exists $ENV{'WSL_DISTRO_NAME'}));
+}
+
 sub confirm_continue {
     my $title = shift;
     print $title . " Type 'yes' to continue: ";
@@ -91,9 +96,18 @@ sub confirm_continue {
 }
 
 sub check_command {
-    my $cmd = shift;
-    my $test = 'which ' . $cmd;
-    if (qx{$test} eq '') {
+	my $cmd = shift;
+	my $test = 'which ' . $cmd;
+	my $path = trim(qx($test));
+
+	if (index($path, '/mnt/c/') >= 0) {
+		if (is_wsl()) {
+			# skip windows executable from WSL
+			return 0;
+		}
+	}
+
+    if ($path eq '') {
         return 0;
     }
     return 1;
@@ -281,7 +295,7 @@ sub action_php_install {
 }
 
 sub action_self_install {
-    my $homeBin = $ENV{'HOME'} . '/bin';
+	my $homeBin = $ENV{'HOME'} . '/bin';
     if (!-d $homeBin) {
         mkdir($homeBin);
     }
@@ -291,8 +305,8 @@ sub action_self_install {
 		copy($RealBin . '/.env.example', $fnameEnv);
 	}
 
-    if (is_mingw()) {
-        my $fname = $ENV{'HOME'} . '/.bash_profile';
+	if (is_mingw()) {
+		my $fname = $ENV{'HOME'} . '/.bash_profile';
 		#if (!(-f $fname)) {
 		#	$fname = $ENV{'HOME'} . '/.profile';
 		#}
@@ -308,14 +322,15 @@ sub action_self_install {
         }
     }
     else {
-        my $homeScript = $homeBin . '/' . $Script;
-        if (-l $homeScript) {
+		my $homeScript = $homeBin . '/' . $Script;
+		if (-l $homeScript) {
             unlink($homeScript);
         }
         symlink($RealBin . '/' . $Script, $homeScript);
     }
 
 	action_install_dart();
+
 	system 'dart pub get';
 
 	action_php_install();
@@ -461,7 +476,7 @@ sub action_lamp_install {
 init_default_env();
 
 if (defined($ARGV[0]) && ($ARGV[0] eq 'self-install')) {
-    action_self_install();
+	action_self_install();
 }
 elsif (defined($ARGV[0]) && ($ARGV[0] eq 'php-install')) {
     action_php_install()
