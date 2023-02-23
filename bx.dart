@@ -1942,7 +1942,7 @@ void main(List<String> args) async {
     'status': action_status,
     'pull': action_pull,
     'reset': action_reset,
-    'push': action_push,
+    //'push': action_push,
     'checkout': action_checkout,
 
     // solution
