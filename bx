@@ -98,8 +98,8 @@ sub confirm_continue {
 sub check_command {
 	my $cmd = shift;
 	my $test = 'which ' . $cmd;
-	my $path = trim(qx($test));
-
+	my $res = qx($test);
+	my $path = trim($res);
 	if (index($path, '/mnt/c/') >= 0) {
 		if (is_wsl()) {
 			# skip windows executable from WSL
@@ -276,7 +276,7 @@ sub action_install_dart {
 	$ENV{'PATH'} = $ENV{'HOME'} . '/bin/dart/bin:' . $ENV{'PATH'};
 }
 
-sub action_php_install {
+sub action_install_php {
 	if (check_command('php')) {
 		return;
     }
@@ -289,54 +289,11 @@ sub action_php_install {
 			unlink($outputFile);
 		}
 	} elsif (is_ubuntu()) {
-		say 'TOO install php7.4 from ppa:ondrej/php ...';
+		say 'TODO install php8.1 from ppa:ondrej/php ...';
 	}
-
 }
 
-sub action_self_install {
-	my $homeBin = $ENV{'HOME'} . '/bin';
-    if (!-d $homeBin) {
-        mkdir($homeBin);
-    }
-
-	my $fnameEnv = $RealBin . '/.env';
-	if (!(-f $fnameEnv)) {
-		copy($RealBin . '/.env.example', $fnameEnv);
-	}
-
-	if (is_mingw()) {
-		my $fname = $ENV{'HOME'} . '/.bash_profile';
-		#if (!(-f $fname)) {
-		#	$fname = $ENV{'HOME'} . '/.profile';
-		#}
-        my $initPath = 'PATH=$PATH:$HOME/bin/6umpukc';
-        if (-f $fname) {
-            my $content = file_get_contents($fname);
-            if (index($content, $initPath) < 0) {
-                file_put_contents($fname, $content . "\n" . $initPath . "\n");
-            }
-        }
-        else {
-            file_put_contents($fname, "\n" . $initPath . "\n");
-        }
-    }
-    else {
-		my $homeScript = $homeBin . '/' . $Script;
-		if (-l $homeScript) {
-            unlink($homeScript);
-        }
-        symlink($RealBin . '/' . $Script, $homeScript);
-    }
-
-	action_install_dart();
-
-	system 'dart pub get';
-
-	action_php_install();
-}
-
-sub action_mkcert_install {
+sub action_install_mkcert {
     if (is_ubuntu()) {
 		my $certKeyName = (exists $ENV{'BX_MKCERT'} && ($ENV{'BX_MKCERT'} ne ''))?
 			$ENV{'BX_MKCERT'} : 'bx.local *.bx.local';
@@ -353,7 +310,7 @@ sub action_mkcert_install {
     }
 }
 
-sub action_lamp_install {
+sub action_install_lamp {
 	if (is_ubuntu()) {
 		say '';
 		say '# Install php, apache2, mysql and tools...';
@@ -380,9 +337,9 @@ sub action_lamp_install {
         sudo_run('apt install'
 			. ' apache2'
             . ' mysql-server mysql-client'
-            . ' php7.4 libapache2-mod-php7.4 php7.4-mysql'
-			. ' php7.4-mbstring php7.4-opcache php7.4-zip php7.4-xml php7.4-curl php7.4-gd php7.4-sqlite3 php7.4-imagick'
-			. ' php7.4-xdebug'
+            . ' php8.1 libapache2-mod-php8.1 php8.1-mysql'
+			. ' php8.1-mbstring php8.1-opcache php8.1-zip php8.1-xml php8.1-curl php8.1-gd php8.1-sqlite3 php8.1-imagick'
+			. ' php8.1-xdebug'
         );
 
         sudo_run('apt install msmtp');
@@ -473,19 +430,61 @@ sub action_lamp_install {
 	}
 }
 
+sub action_install {
+	my $homeBin = $ENV{'HOME'} . '/bin';
+    if (!-d $homeBin) {
+        mkdir($homeBin);
+    }
+
+	my $fnameEnv = $RealBin . '/.env';
+	if (!(-f $fnameEnv)) {
+		copy($RealBin . '/.env.example', $fnameEnv);
+	}
+
+	if (is_mingw()) {
+		my $fname = $ENV{'HOME'} . '/.bash_profile';
+		#if (!(-f $fname)) {
+		#	$fname = $ENV{'HOME'} . '/.profile';
+		#}
+        my $initPath = 'PATH=$PATH:$HOME/bin/6umpukc';
+        if (-f $fname) {
+            my $content = file_get_contents($fname);
+            if (index($content, $initPath) < 0) {
+                file_put_contents($fname, $content . "\n" . $initPath . "\n");
+            }
+        }
+        else {
+            file_put_contents($fname, "\n" . $initPath . "\n");
+        }
+    }
+    else {
+		my $homeScript = $homeBin . '/' . $Script;
+		if (-l $homeScript) {
+            unlink($homeScript);
+        }
+        symlink($RealBin . '/' . $Script, $homeScript);
+    }
+
+	action_install_dart();
+
+	system 'dart pub get';
+
+	action_install_php();
+}
+
 init_default_env();
 
 if (defined($ARGV[0]) && ($ARGV[0] eq 'self-install')) {
-	action_self_install();
+	action_install();
 }
 elsif (defined($ARGV[0]) && ($ARGV[0] eq 'php-install')) {
-    action_php_install()
+    action_install_php()
 }
 elsif (defined($ARGV[0]) && ($ARGV[0] eq 'lamp-install')) {
-    action_lamp_install();
+    action_install_lamp();
 }
 elsif (defined($ARGV[0]) && ($ARGV[0] eq 'mkcert-install')) {
-    action_mkcert_install();
+    action_install_mkcert();
 }
 else {
     my $args = join(' ', @ARGV);
